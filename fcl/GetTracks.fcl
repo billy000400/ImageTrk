@@ -1,0 +1,34 @@
+#include "fcl/minimalMessageService.fcl"
+#include "fcl/standardServices.fcl"
+#include "TrkHitReco/fcl/prolog.fcl"
+#include "Filters/fcl/prolog.fcl"
+
+process_name : TracksToSQL
+
+source:{ module_type : RootInput
+				 fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/flatmugamma-mix/MDC2018d/art/00/0c/dig.mu2e.flatmugamma-mix.MDC2018d.001002_00003528.art"]
+				 # fileNames : ["data/dig.Billy.muon.test.0003.art"]
+				 maxEvents: -1
+}
+
+services : @local::Services.Reco
+
+physics:
+{
+
+		producers : {
+				@table::TrkHitReco.producers
+		}
+
+    analyzers : {
+        CHD : {
+          module_type : TracksOutputSQL
+					StrawDigiMCCollection : "compressDigiMCs"
+          ComboHitCollection : "makeSH"
+					sourceName : @local::source.fileNames[0]
+        }
+    }
+
+	 MyTrigPath : [ @sequence::TrkHitReco.PrepareHits]
+   MyEndPath : [CHD]
+}
