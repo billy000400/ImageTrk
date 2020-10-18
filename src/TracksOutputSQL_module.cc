@@ -59,23 +59,6 @@ namespace mu2e{
 			// data tag
 			art::InputTag _chTag;
       art::InputTag _mcdigisTag;
-
-			// cache of event objects#fileNames : ["data/dig.Billy.flateminus.FRCNN.0001.art"]
-#fileNames : ["/mu2e/app/Tutorials_2019/data/dig.mu2e.CeEndpoint-mix-subset.MDC2018d.001002_00000000.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/4e/dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/10/d0/dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/15/31/dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/18/02/dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/52/dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/fa/dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
-fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/36/a4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art"]
-#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
-
 			const ComboHitCollection* _chcol;
       const StrawDigiMCCollection* _mcdigis;
 
