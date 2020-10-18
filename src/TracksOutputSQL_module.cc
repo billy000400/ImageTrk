@@ -60,7 +60,22 @@ namespace mu2e{
 			art::InputTag _chTag;
       art::InputTag _mcdigisTag;
 
-			// cache of event objects
+			// cache of event objects#fileNames : ["data/dig.Billy.flateminus.FRCNN.0001.art"]
+#fileNames : ["/mu2e/app/Tutorials_2019/data/dig.mu2e.CeEndpoint-mix-subset.MDC2018d.001002_00000000.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/4e/dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/10/d0/dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/15/31/dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/18/02/dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/52/dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/fa/dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
+fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/36/a4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art"]
+#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
+
 			const ComboHitCollection* _chcol;
       const StrawDigiMCCollection* _mcdigis;
 
@@ -113,7 +128,7 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 	    // Below is the directory the script should be called
 	    // This absolute method should be changed if Billy want it to apply for
 	    // other people
-	    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite";
+	    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite/MLTracking/";
 
 	    // Get the current calling directory
 			cwd = boost::filesystem::current_path().string();
@@ -127,32 +142,24 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 			}
 
 	    // Construct Tracking/tracks if not constructed
-	    std::string trkDir = cwd_ideal+"/Tracking/tracks/";
+	    std::string trkDir = cwd_ideal+"tracks/";
 	    boost::filesystem::create_directory(trkDir);
-
-	    // An old script might create csvDir's like "cwd_ideal+"/Tracking/tracks/"+sourceName"
-	    // where every track is stored as a csv file in the csvDir.
-	    // The last part, "sourceName" directory is no longer needed
-	    // Check if the csvDir exists
-	    std::string csvDir = cwd_ideal+"/Tracking/tracks/"+sourceName;
-	    bool csvDirExist = boost::filesystem::is_directory(csvDir);
 
 	    // Check if an old database exists
 	    db_path = cwd_ideal+"/Tracking/tracks/"+sourceName+".db";
 	    bool oldDbExist = boost::filesystem::exists(db_path);
 
-	    if ((csvDirExist)||(oldDbExist)){
-	      // If csvDir exist or an old DB exists, ask for permission to
+	    if (oldDbExist){
+	      // If an old DB exists, ask for permission to
 	      // delete all old files and csvDir before saving to DB
 	      std::string reply;
-				std::cout << "source name: " << sourceName << "\n";
-	      std::cout << "The csv directory or a database of this data product has been constructed.\n";
+				std::cout << "Source name: " << sourceName << "\n";
+	      std::cout << "A database of this data product has been constructed.\n";
 	      std::cout << "Continue this script will delete all old track files or database.\n";
 	      std::cout << "Do you want to continue?(Y/n): ";
 	      std::cin >> reply;
 
 	      if ((reply == "Y")||(reply == "y")||(reply == "Yes")||(reply == "yes")){
-	        (csvDirExist)?boost::filesystem::remove_all(csvDir):true;
 	        (oldDbExist)?boost::filesystem::remove(db_path):true;
 	      }else{
 	        std::exit(0);
