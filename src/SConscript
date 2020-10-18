@@ -58,7 +58,7 @@ mainlib = helper.make_mainlib ( [
 # Fixme: split into link lists for each module.
 helper.make_plugins( [
    mainlib,
-   'sqlite3'
+   'sqlite3',
    'mu2e_TrkReco',
    'mu2e_ParticleID',
    'mu2e_BTrkData',
