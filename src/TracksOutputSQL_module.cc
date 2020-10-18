@@ -111,7 +111,7 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 	    // Below is the directory the script should be called
 	    // This absolute method should be changed if Billy want it to apply for
 	    // other people
-	    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite/MLTracking/";
+	    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite";
 
 	    // Get the current calling directory
 			cwd = boost::filesystem::current_path().string();
