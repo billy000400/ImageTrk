@@ -1,6 +1,12 @@
 import sys
+script, trkNum = sys.argv
+trkNum = int(trkNum)
 from pathlib import Path
+
 import random
+random.seed(3)
+
+import matplotlib.pyplot as plt
 
 from sqlalchemy import *
 
@@ -21,3 +27,32 @@ session = Session() # session object
 
 ptcl_ids = session.query(StrawHit.particle).distinct().all()
 ptcl_ids = [ x for (x,) in ptcl_ids]
+
+found = 0
+id_plot = []
+while found < trkNum:
+    id = random.sample(ptcl_ids, 1)[0]
+    if session.query(StrawHit.particle).filter(StrawHit.particle==id).count() > 9:
+        found += 1
+        id_plot.append(id)
+    else:
+        continue
+
+fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+ax1.set(title='MC Truth', xlabel='x', ylabel='y')
+ax2.set(title='Reco Signal', xlabel='x', ylabel='y')
+for id in id_plot:
+    hits = session.query(StrawHit).filter(StrawHit.particle==id).all()
+    mcs = session.query(StrawDigiMC).filter(StrawDigiMC.particle==id).all()
+
+    x,y,x_reco,y_reco = [ [] for i in range(4) ]
+    for mc in mcs:
+        x.append(mc.x)
+        y.append(mc.y)
+    for hit in hits:
+        x_reco.append(hit.x_reco)
+        y_reco.append(hit.y_reco)
+
+    ax1.scatter(x,y,s=5)
+    ax2.scatter(x_reco,y_reco,s=5)
+plt.show()
