@@ -116,9 +116,6 @@ def make_data_from_dp(track_dir, dp_name, window, mode):
             y_all = [ y for (x,y,z) in strawHits_pos_of_the_ptcl_in_group]
             z_all = [ z for (x,y,z) in strawHits_pos_of_the_ptcl_in_group]
 
-
-            x_all = np.array(x_all)
-            y_all = np.array(y_all)
             XMin = x_all.min()
             XMax = x_all.max()
             YMin = y_all.min()
@@ -254,7 +251,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
                 ptcl_iter = iter(ptcls)
                 ptcl = next(ptcl_iter)
                 track_box = [ptcl]
-                track_found_number = 1
+                track_found_number = 0
 
             strawHit_qrl = session.query(StrawHit).filter(StrawHit.particle==ptcl.id)
             hitNum = strawHit_qrl.count()
@@ -281,6 +278,15 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
         mcs_pos_flatten = [ (x,y,z) for mcs_pos_i in mcs_pos for x,y,z in mcs_pos_i ]
         xs_flatten = [ x for x, y, z in mcs_pos_flatten]
         ys_flatten = [ y for x, y, z in mcs_pos_flatten]
+
+        # for stats of difference
+        # x_all = np.array(xs_flatten)
+        # y_all = np.array(ys_flatten)
+        # x_all.sort(axis=0)
+        # y_all.sort(axis=0)
+        # x_diff = x_all[1:]-x_all[0:-1]
+        # print('x_diff_min', x_diff.min())
+        # print('x_diff_max', x_diff.max())
 
         bboxes = [ [min(xs_i), max(xs_i), min(ys_i), max(ys_i)] for xs_i, ys_i in zip(xs, ys) ]
 
