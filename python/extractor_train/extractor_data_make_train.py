@@ -322,7 +322,7 @@ if __name__ == "__main__":
     psystem('CNN track extractor')
     pmode('Training')
 
-    track_str = '/home/Billy/Mu2e/analysis/data/tracks'
+    track_str = '/home/Billy/Mu2e/analysis/MLTracking/tracks'
     track_dir = Path(track_str)
     C = Config(track_dir)
 

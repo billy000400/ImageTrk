@@ -2,6 +2,13 @@
 # Author: Billy Haoyang Li
 
 # General import
+
+"""@package docstring
+Documentation for this module.
+
+More details.
+"""
+
 import sys
 from pathlib import Path
 import random
@@ -164,7 +171,9 @@ def make_data_from_dp(track_dir, dp_name, window, resolution, mode='first'):
     return bbox_file, img_dir
 
 def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
+    '''
 
+    '''
     hitNumCut = 9
 
     ### Construct Path Objects
@@ -314,7 +323,7 @@ if __name__ == "__main__":
     pmode('Training')
 
     # initialize parameters
-    track_str = '/home/Billy/Mu2e/analysis/data/tracks'
+    track_str = '/home/Billy/Mu2e/analysis/MLTracks/tracks'
     # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
     # window = 20 # unit: ns
     window = 200 # unit: number of windows
