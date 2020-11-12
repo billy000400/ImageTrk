@@ -46,18 +46,10 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
     cwd = Path.cwd()
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
-    extractor_train_dir = data_dir.joinpath('extractor_train')
-    extractor_train_dir.mkdir(parents=True, exist_ok=True)
-
-    X_name = "hit_pos_train.csv"
-    Y_name = "hit_truth_train.csv"
-    X_file = extractor_train_dir.joinpath(X_name)
-    Y_file = extractor_train_dir.joinpath(Y_name)
-
-    X_open = open(X_file, 'w+')
-    Xwriter = csv.writer(X_open, delimiter=',')
-    Y_open = open(Y_file, 'w+')
-    Ywriter = csv.writer(Y_open, delimiter=',')
+    photographic_train_dir = data_dir.joinpath('photographic_train')
+    photographic_train_dir.mkdir(parents=True, exist_ok=True)
+    input_file = photographic_train_dir.joinpath('inputs.npy')
+    output_file = photographic_train_dir.joinpath('outputs.npy')
 
     pinfo('Importing the photographic grid')
     ### pixel truth labels
@@ -96,8 +88,8 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
     ptcl_iter = iter(ptcls)
 
     # get major tracks for each
-    bbox_table_row_num = 0
-    dict_for_df = {}
+    inputs = []
+    outputs = []
     for idx, track_number in enumerate(track_numbers):
         sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
         if idx+1 == windowNum:
@@ -161,51 +153,52 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
             pos_selected_by_y = binning_objects(mcs_pos_flatten, ys_flatten, y_bins)[2]
             selected_mcs_pos = list(set(pos_selected_by_x).intersection(pos_selected_by_y))
-            selected_mcs_z = [ z for x, y, z in selected_mcs_pos ]
+            selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
 
-            # sort positions by its z coordinate
-            pos_z_raw  = dict(zip(selected_mcs_pos, selected_mcs_z))
-            pos_z = sorted( pos_z_raw.items(), key=lambda item: item[1])
+            ### fill the density in the blank photo and truth
+            input_photo = deepcopy(blank_photo)
+            output_truth = deepcopy(blank_truth)
 
-            # justify if hit belongs to the major track
-            selected_mcs_pos_flatten = []
-            selected_mcs_truth = []
-            for pos, z in pos_z:
-                is_major = False
-                if pos in mcs_pos[i]:
-                    is_major = True
-                for coordinate in pos:
-                    selected_mcs_pos_flatten.append(coordinate)
-                selected_mcs_truth.append(is_major)
+            # first index is row
+            bins_by_row = binning_objects(selected_mcs_pos, selected_mcs_y, ybins)[1:]
+            if len(bins_by_row)!=800:
+                perr(f'Number of bins by row is not equal to 800, value is{len(bins_by_row)}')
+                sys.exit()
 
-            # write X and Y files
-            Xwriter.writerow(selected_mcs_pos_flatten)
-            Ywriter.writerow(selected_mcs_truth)
+            for row, bin in enumerate(bins_by_row):
+                x_bin_flatten = [ x for (x,y,z) in bin]
+                squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
+                for col, square in enumerate(squares_by_column):
+                    density = len(square)#number density
+                    input_photo[row][col] = density
+                    if density != 0 :
+                        has_major = False
+                        for pos in square:
+                            if pos in mcs_pos[i]:
+                                has_major = True
+                                break
+                        if has_major == True:
+                            output_truth[row][col] = is_major
+                        else:
+                            output_truth[row][col] = is_bg
 
+            inputs.append(input_photo)
+            outputs.append(output_truth)
 
-    X_open.close()
-    Y_open.close()
-    return extractor_train_dir, X_file, Y_file
+    inputs = np.array(inputs)
+    outputs = np.array(outputs)
+
+    np.save(input_file, inputs)
+    np.save(output_file, outputs)
+
+    return photographic_train_dir, input_file, output_file
+
 
 def make_data(C, mode):
     pstage("Making training data")
 
 
-    if mode == 'dp':
-        track_dir = C.track_dir
-        dp_names = C.source
-        window = C.window
-
-        dpNum = len(dp_names)
-
-        for idx, dp_name in enumerate(dp_names):
-            pinfo(f"making raw data for data product {idx+1}/{dpNum}: {dp_name}")
-            if idx == 0:
-                mode = 'first'
-            else:
-                mode = 'append'
-            train_dir, X_file, Y_file = make_data_from_dp(track_dir, dp_name, window, mode)
-    elif mode == "normal":
+    if mode == "normal":
         track_dir = C.track_dir
         mean = C.trackNum_mean
         std = C.trackNum_std
@@ -214,22 +207,22 @@ def make_data(C, mode):
 
     C.set_inputs(train_dir, X_file, Y_file)
     cwd = Path.cwd()
-    pickle_path = cwd.joinpath('extractor.train.config.pickle')
+    pickle_path = cwd.joinpath('photographic.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
     return C
 
 if __name__ == "__main__":
     pbanner()
-    psystem('CNN track extractor')
+    psystem('Photographic track extractor')
     pmode('Testing Feasibility')
     pinfo('Input DType for testing: StrawDigiMC')
 
-    track_str = '/home/Billy/Mu2e/analysis/MLTracking/tracks'
+    track_str = '../../tracks'
     track_dir = Path(track_str)
     C = Config(track_dir)
 
     mode = 'normal'
-    window = 4000 # unit: number of windows
+    window = 200 # unit: number of windows
     mean = 10
     std = 3
 
