@@ -17,7 +17,7 @@ from sqlalchemy import *
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from extractor_config import Config
-from frcnn_util import binning_objects
+from abstract import binning_objects
 from TrackDB_Classes import *
 from mu2e_output import *
 
@@ -53,18 +53,18 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
 
     pinfo('Importing the photographic grid')
     ### pixel truth labels
-    is_blank = np.array([1,0,0])
-    is_bg = np.array([0,1,0])
-    is_major = np.array([0,0,1])
+    is_blank = np.array([1,0,0], dtype=bool)
+    is_bg = np.array([0,1,0], dtype=bool)
+    is_major = np.array([0,0,1], dtype=bool)
 
     ### Construct the photographic grid
-    blank_photo = np.zeros(shape=(800,800))
+    blank_photo = np.zeros(shape=(800,800),dtype=np.int8)
     step = 1620/800
     xbins = [ -810+i*step for i in range(801) ]
     ybins = deepcopy(xbins)
 
-    blank_truth = np.zeros(shape=(800,800,3))
-    blank_truth[:,:,0]=1
+    blank_truth = np.zeros(shape=(800,800,3),dtype=bool)
+    blank_truth[:,:,0]=True
 
     ### initialize sqlite session
     # Connect to the database
@@ -156,8 +156,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
             selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
 
             ### fill the density in the blank photo and truth
-            input_photo = deepcopy(blank_photo)
-            output_truth = deepcopy(blank_truth)
+            input_photo = np.zeros(shape=(800,800),dtype=np.int8)
+            output_truth =  np.zeros(shape=(800,800,3),dtype=bool)
+            output_truth[:,:,0] = True
 
             # first index is row
             bins_by_row = binning_objects(selected_mcs_pos, selected_mcs_y, ybins)[1:]
@@ -170,7 +171,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
                     density = len(square)#number density
-                    input_photo[row][col] = density
+                    input_photo[799-row][col] = density
                     if density != 0 :
                         has_major = False
                         for pos in square:
@@ -178,15 +179,34 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
                                 has_major = True
                                 break
                         if has_major == True:
-                            output_truth[row][col] = is_major
+                            output_truth[799-row][col] = is_major
                         else:
-                            output_truth[row][col] = is_bg
+                            output_truth[799-row][col] = is_bg
 
+            if len(np.where(input_photo!=0)[0]) == 0:
+                pdebug(bins_by_row)
+                ptcl_found = False
+                for row, bin in enumerate(bins_by_row):
+                    x_bin_flatten = [ x for (x,y,z) in bin]
+                    squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
+                    for square in squares_by_column:
+                        if len(square)!= 0:
+                            ptcl_found = True
+                            break
+                    if ptcl_found:
+                        pdebug(squares_by_column,f'{799-row}th row')
+                    elif len(bin)!=0 :
+                        pdebug(bin,'bin')
+                        pdebug(x_bin_flatten, 'xbin_flatten')
+                        pdebug(xbins, 'xbins')
+                        pdebug(binning_objects(bin, x_bin_flatten, xbins))
+                pdebug('Empty input photo!')
+                sys.exit()
             inputs.append(input_photo)
             outputs.append(output_truth)
 
-    inputs = np.array(inputs)
-    outputs = np.array(outputs)
+    inputs = np.array(inputs,dtype=np.int8)
+    outputs = np.array(outputs,dtype=bool)
 
     np.save(input_file, inputs)
     np.save(output_file, outputs)

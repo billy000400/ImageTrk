@@ -25,13 +25,16 @@ def binning_objects(objects, features, bin_array):
 
     obj_ftr_raw  = dict(zip(objs,ftrs))
     obj_ftr = sorted( obj_ftr_raw.items(), key=lambda item: item[1])
+    obj_ftr_it = iter(obj_ftr)
 
     result = []
     obj_ftr_idx = 0
-    max_idx = len(obj_ftr)-1
+    obj_ftr_idx_max = len(obj_ftr)-1
+
     for idx in range(len(bins)):
         bin_result = []
-        if obj_ftr_idx == max_idx:
+
+        if obj_ftr_idx == obj_ftr_idx_max+1:
             result.append(bin_result)
             continue
 
@@ -42,7 +45,7 @@ def binning_objects(objects, features, bin_array):
             bin_left = bins[idx-1]
             bin_right = bins[idx]
 
-        while obj_ftr_idx <= max_idx:
+        while obj_ftr_idx <= obj_ftr_idx_max:
             if (obj_ftr[obj_ftr_idx][1] >= bin_left) and (obj_ftr[obj_ftr_idx][1] < bin_right):
                 bin_result.append(obj_ftr[obj_ftr_idx][0])
                 obj_ftr_idx += 1
