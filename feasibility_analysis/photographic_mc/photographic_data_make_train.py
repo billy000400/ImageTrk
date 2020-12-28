@@ -1,3 +1,6 @@
+"""
+This script prepares input photos and output truths without random masking.
+"""
 # feasibility test
 # detect outliner by CNN
 
@@ -16,13 +19,13 @@ from sqlalchemy import *
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from extractor_config import Config
+from Config import extractor_config as Config
 from abstract import binning_objects
 from TrackDB_Classes import *
 from mu2e_output import *
 
 
-def make_data_from_distribution(track_dir, mean, std, windowNum):
+def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 9
@@ -51,20 +54,10 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
     input_file = photographic_train_dir.joinpath('inputs.npy')
     output_file = photographic_train_dir.joinpath('outputs.npy')
 
-    pinfo('Importing the photographic grid')
     ### pixel truth labels
-    is_blank = np.array([1,0,0], dtype=bool)
-    is_bg = np.array([0,1,0], dtype=bool)
-    is_major = np.array([0,0,1], dtype=bool)
-
-    ### Construct the photographic grid
-    blank_photo = np.zeros(shape=(800,800),dtype=np.int8)
-    step = 1620/800
-    xbins = [ -810+i*step for i in range(801) ]
-    ybins = deepcopy(xbins)
-
-    blank_truth = np.zeros(shape=(800,800,3),dtype=bool)
-    blank_truth[:,:,0]=True
+    is_blank = np.array([1,0,0], dtype=np.int8)
+    is_bg = np.array([0,1,0], dtype=np.int8)
+    is_major = np.array([0,0,1], dtype=np.int8)
 
     ### initialize sqlite session
     # Connect to the database
@@ -153,25 +146,52 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
             pos_selected_by_y = binning_objects(mcs_pos_flatten, ys_flatten, y_bins)[2]
             selected_mcs_pos = list(set(pos_selected_by_x).intersection(pos_selected_by_y))
+            selected_mcs_x = [ x for [x,y,z] in selected_mcs_pos ]
+            sorted_selected_mcs_x = deepcopy(selected_mcs_x)
+            sorted_selected_mcs_x.sort()
             selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
+            sorted_selected_mcs_y = deepcopy(selected_mcs_y)
+            sorted_selected_mcs_y.sort()
+
+            # create the blank input photo by resolution and the xy ratio
+            xmin = sorted_selected_mcs_x[0]
+            xmax = sorted_selected_mcs_x[-1]
+            ymin = sorted_selected_mcs_y[0]
+            ymax = sorted_selected_mcs_y[-1]
+            x_delta = xmax - xmin
+            y_delta = ymax - ymin
+            ratio = y_delta/x_delta
+            if ratio >= 1:
+                xpixel = int(np.ceil(resolution/ratio))
+                ypixel = resolution
+                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.int8 )
+                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.int8)
+                output_truth[:,:,0] = 1
+            else:
+                xpixel = resolution
+                ypixel = int(np.ceil(resolution*ratio))
+                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.int8)
+                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.int8)
+                output_truth[:,:,0] = 1
+
+            # setup the x and y grids that are for sorting particles
+            xstep = x_delta/xpixel
+            ystep = y_delta/ypixel
+            xbins = [xmin + i*xstep for i in range(xpixel-1)]
+            xbins[-1] = xbins[-1]+1
+            ybins = [ymin + i*ystep for i in range(ypixel-1)]
+            ybins[-1] = ybins[-1]+1
 
             ### fill the density in the blank photo and truth
-            input_photo = np.zeros(shape=(800,800),dtype=np.int8)
-            output_truth =  np.zeros(shape=(800,800,3),dtype=bool)
-            output_truth[:,:,0] = True
-
             # first index is row
             bins_by_row = binning_objects(selected_mcs_pos, selected_mcs_y, ybins)[1:]
-            if len(bins_by_row)!=800:
-                perr(f'Number of bins by row is not equal to 800, value is{len(bins_by_row)}')
-                sys.exit()
 
             for row, bin in enumerate(bins_by_row):
                 x_bin_flatten = [ x for (x,y,z) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
                     density = len(square)#number density
-                    input_photo[799-row][col] = density
+                    input_photo[ypixel-row-1][col] = density
                     if density != 0 :
                         has_major = False
                         for pos in square:
@@ -179,9 +199,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
                                 has_major = True
                                 break
                         if has_major == True:
-                            output_truth[799-row][col] = is_major
+                            output_truth[ypixel-row-1][col] = is_major
                         else:
-                            output_truth[799-row][col] = is_bg
+                            output_truth[ypixel-row-1][col] = is_bg
 
             if len(np.where(input_photo!=0)[0]) == 0:
                 pdebug(bins_by_row)
@@ -205,9 +225,6 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
             inputs.append(input_photo)
             outputs.append(output_truth)
 
-    inputs = np.array(inputs,dtype=np.int8)
-    outputs = np.array(outputs,dtype=bool)
-
     np.save(input_file, inputs)
     np.save(output_file, outputs)
 
@@ -215,6 +232,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum):
 
 
 def make_data(C, mode):
+    """
+    This function helps determine which mode should be used when preparing training data.
+    If mode is "normal", track number would fit a Gaussian distribution whose parameters were specificed in the configuration object before called.
+    If mode is " " [Unfinished]
+    """
     pstage("Making training data")
 
 
@@ -223,7 +245,7 @@ def make_data(C, mode):
         mean = C.trackNum_mean
         std = C.trackNum_std
         windowNum = C.window
-        train_dir, X_file, Y_file = make_data_from_distribution(track_dir, mean, std, windowNum)
+        train_dir, X_file, Y_file = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
 
     C.set_inputs(train_dir, X_file, Y_file)
     cwd = Path.cwd()
@@ -242,15 +264,17 @@ if __name__ == "__main__":
     C = Config(track_dir)
 
     mode = 'normal'
-    window = 200 # unit: number of windows
-    mean = 10
-    std = 3
+    window = 100 # unit: number of windows
+    mean = 5
+    std = 2
+    resolution = 100
 
     track_dir = Path(track_str)
     C = Config(track_dir)
 
     C.set_distribution(mean, std)
     C.set_window(window)
+    C.set_resolution(resolution)
 
     start = timeit.default_timer()
     make_data(C, mode)
