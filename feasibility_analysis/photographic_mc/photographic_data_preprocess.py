@@ -3,8 +3,10 @@ import csv
 from pathlib import Path
 import random
 import pickle
-
+from copy import deepcopy
 import numpy as np
+
+from PIL import Image
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -16,57 +18,85 @@ def preprocess(C):
 
     # load lists
     pinfo("Loading raw numpy arrays")
-    X = np.load(C.X_file)
-    Y = np.load(C.Y_file)
+    X = np.load(C.X_file, allow_pickle=True)
+    Y = np.load(C.Y_file, allow_pickle=True)
+
+    # calculate scaled dimensions
+    res = C.resolution
+    scale_want = (res, int(res/4*3)) # notice that this is the scale for IMAGES!
+    scale_alter = (int(res/4*3), res)
 
     ### pixel truth labels
-    is_blank = np.array([1,0,0], dtype=bool)
-    is_bg = np.array([0,1,0], dtype=bool)
-    is_major = np.array([0,0,1], dtype=bool)
+    is_blank = np.array([1,0,0], dtype=np.float16)
+    is_bg = np.array([0,1,0], dtype=np.float16)
+    is_major = np.array([0,0,1], dtype=np.float16)
 
     ### mask entries to make numbers of True and False equivalent
     pinfo("Masking entries for unbiased training")
 
-    mY = np.zeros(shape=Y.shape, dtype=bool)
-
-    bboxNum = Y.shape[0]
+    bboxNum = len(Y)
+    sX_shape = (bboxNum, scale_want[1], scale_want[0])
+    sX = np.zeros(shape=sX_shape, dtype=np.float16)
+    mY_shape = (bboxNum, scale_want[1], scale_want[0], 3)
+    mY = np.zeros(shape=mY_shape, dtype=np.float16)
     for i in range(bboxNum):
         sys.stdout.write(t_info(f'Masking hits in bbox {i+1}/{bboxNum}', '\r'))
         if (i+1)==bboxNum:
             sys.stdout.write('\n')
         sys.stdout.flush()
 
-        y = Y[i]
-        my = np.zeros(shape=y.shape, dtype=np.bool)
+        # scale the input and output
+        xo=deepcopy(X[i]).astype(np.uint8) # convert to int8 for PIL's RGB interperation
+        yo=deepcopy(Y[i]).astype(np.uint8)
+
+        ratio = xo.shape[0]/xo.shape[1]
+        im_in = Image.fromarray(xo)
+        im_out = Image.fromarray(yo, mode='RGB')
+
+        if ratio < 1:
+            x = im_in.resize(scale_want)
+            y = im_out.resize(scale_want)
+        else:
+            x = im_in.resize(scale_alter)
+            y = im_out.resize(scale_alter)
+            x = x.rotate(angle=90, expand=True)
+            y = y.rotate(angle=90, expand=True)
+
+        x = np.array(x, dtype=np.float16)# back to float to be masked by nan
+        y = np.array(y, dtype=np.float16)
+
+        # prepare masked data
+        my = np.zeros(shape=y.shape, dtype=np.float16)
         my[:] = np.nan
 
-        blank_indices = np.where(y[:,:,0]==True)
-        bg_indices = np.where(y[:,:,1]==True)
-        major_indices = np.where(y[:,:,2]==True)
+        blank_indices = np.where(y[:,:,0]==1)
+        bg_indices = np.where(y[:,:,1]==1)
+        major_indices = np.where(y[:,:,2]==1)
 
-        my[y[:,:,2]==True] = is_major
+        my[y[:,:,2]==1] = is_major
 
-        posNum = major_indices[0].size
-        negNum = bg_indices[0].size
+        majorNum = major_indices[0].size
+        bgNum = bg_indices[0].size
+        blankNum = blank_indices[0].size
 
-        if posNum<negNum:
-            negWant = posNum
+        if majorNum<bgNum:
+            bgWant = majorNum
 
-            range_list = list(range(negWant))
-            neg_index_selected_list = random.sample(range_list,negWant)
+            range_list = list(range(bgNum))
+            bg_index_selected_list = random.sample(range_list,bgWant)
 
-            neg_index_selected_arr = np.array(neg_index_selected_list)
-            row_selected_arr = bg_indices[0][neg_index_selected_arr]
-            col_selected_arr = bg_indices[1][neg_index_selected_arr]
-            bg_indices = (row_selected_arr, col_selected_arr)
+            bg_index_selected_arr = np.array(bg_index_selected_list)
+            bg_row_selected_arr = bg_indices[0][bg_index_selected_arr]
+            bg_col_selected_arr = bg_indices[1][bg_index_selected_arr]
+            bg_indices = (bg_row_selected_arr, bg_col_selected_arr)
 
 
 
         my[bg_indices] = is_bg
 
-        blankWant = posNum
+        blankWant = majorNum
 
-        blank_range_list = list(range(blankWant))
+        blank_range_list = list(range(blankNum))
         blank_index_selected_list = random.sample(blank_range_list,blankWant)
 
         blank_index_selected_arr = np.array(blank_index_selected_list)
@@ -80,6 +110,7 @@ def preprocess(C):
 
         my[blank_indices] = is_blank
 
+        sX[i]=x
         mY[i]=my
 
     ### save numpy arrays to tmp
@@ -89,14 +120,14 @@ def preprocess(C):
     tmp_dir.mkdir(parents=True, exist_ok=True)
     np_dir = tmp_dir
 
-    X_npy = np_dir.joinpath('photographic_train_X.npy')
+    sX_npy = np_dir.joinpath('photographic_train_X.npy')
     mY_npy = np_dir.joinpath('photographic_train_masked_Y.npy')
 
-    np.save(X_npy, X)
+    np.save(sX_npy, sX)
     np.save(mY_npy, mY)
 
     # setup configuration
-    C.set_input_array(X_npy, mY_npy)
+    C.set_input_array(sX_npy, mY_npy)
 
     pickle_train_path = Path.cwd().joinpath('photographic.train.config.pickle')
     pickle.dump(C, open(pickle_train_path, 'wb'))
