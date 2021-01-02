@@ -8,7 +8,13 @@ import numpy.ma as ma
 
 import tensorflow as tf
 from tensorflow.math import log
-from tensorflow.keras.losses import BinaryCrossentropy, Huber, MeanSquaredError, Reduction
+from tensorflow.keras.losses import (
+    BinaryCrossentropy,
+    CategoricalCrossentropy,
+    Huber,
+    MeanSquaredError,
+    Reduction
+)
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -90,6 +96,21 @@ def define_rpn_loss(regs):
         return loss_class_val+loss_regr_val
 
     return rpn_loss
+
+def unmasked_cce(y_real, y_predict):
+    # sl = simple layer = the 1st layer
+    y_real_sl = y_real[:,:,:,0]
+    mask = ~tf.math.is_nan(y_real_sl)
+
+    # my: masked y
+    my_real = tf.boolean_mask(y_real, mask)
+    my_predict = tf.boolean_mask(y_predict, mask)
+    cce = CategoricalCrossentropy(reduction=Reduction.SUM)
+    score = cce(my_real, my_predict)
+    N = tf.size(my_real)
+    N = tf.cast(N, tf.float32)
+    # tf.keras.backend.print_tensor(y_real_sl)
+    return score/N
 
 # test benches
 def test_rpn_class_loss():

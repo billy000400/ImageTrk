@@ -3,7 +3,10 @@ from pathlib import Path
 
 import tensorflow as tf
 from tensorflow.math import exp
-from tensorflow.keras.metrics import binary_accuracy
+from tensorflow.keras.metrics import (
+    binary_accuracy,
+    categorical_accuracy
+)
 from tensorflow.keras.backend import print_tensor
 
 
@@ -27,13 +30,27 @@ def iou(rec_a, rec_b):
     return overlap/sum
 
 
-def unmasked_accuracy(p_r, p_p):
+def unmasked_binary_accuracy(p_r, p_p):
     mask = ~tf.math.is_nan(p_r)
 
     mp_r = tf.boolean_mask(p_r, mask=mask)
     mp_p = tf.boolean_mask(p_p, mask=mask)
 
     score_ew = binary_accuracy(mp_r, mp_p)
+    score = tf.math.reduce_sum(score_ew)
+
+    N_cls = tf.size(score_ew)
+    N_cls = tf.cast(N_cls, tf.float32)
+
+    return score/N_cls*100.0
+
+def unmasked_categorical_accuracy(p_r, p_p):
+    p_real_sl = p_r[:,:,:,0]
+    mask = ~tf.math.is_nan(p_real_sl)
+
+    mp_r = tf.boolean_mask(p_r, mask=mask)
+    mp_p = tf.boolean_mask(p_p, mask=mask)
+    score_ew = categorical_accuracy(mp_r, mp_p)
     score = tf.math.reduce_sum(score_ew)
 
     N_cls = tf.size(score_ew)
