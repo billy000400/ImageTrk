@@ -1,3 +1,8 @@
+## @package Config
+# Hello this is me
+#
+# more details
+
 # Default Configure Setup
 import sys
 from pathlib import Path
@@ -9,13 +14,20 @@ sys.path.insert(1, str(util_dir))
 from mu2e_output import *
 
 class frcnn_config:
+
     def __init__(self, track_sql_dir):
 
         assert Path.exists(track_sql_dir), \
             t_error('The directory for track SQLits database does not exist')
 
         # data product source and tracking window info
+
+        ## @var track_dir
+        # the directory where the track databases are located
         self.track_dir = track_sql_dir
+
+
+
         self.source = None
         self.window = None
         self.resolution = None
