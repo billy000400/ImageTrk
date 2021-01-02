@@ -8,9 +8,10 @@ import numpy as np
 
 from PIL import Image
 
+import matplotlib.pyplot as plt
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from extractor_config import Config
+from Config import extractor_config as Config
 from mu2e_output import *
 
 def preprocess(C):
@@ -23,22 +24,22 @@ def preprocess(C):
 
     # calculate scaled dimensions
     res = C.resolution
-    scale_want = (res, int(res/4*3)) # notice that this is the scale for IMAGES!
-    scale_alter = (int(res/4*3), res)
+    scale_want = (res, int(res/3*2)) # notice that this is the scale for IMAGES!
+    scale_alter = (int(res/3*2), res)
 
     ### pixel truth labels
-    is_blank = np.array([1,0,0], dtype=np.float16)
-    is_bg = np.array([0,1,0], dtype=np.float16)
-    is_major = np.array([0,0,1], dtype=np.float16)
+    is_blank = np.array([1,0,0], dtype=np.float32)
+    is_bg = np.array([0,1,0], dtype=np.float32)
+    is_major = np.array([0,0,1], dtype=np.float32)
 
     ### mask entries to make numbers of True and False equivalent
     pinfo("Masking entries for unbiased training")
 
     bboxNum = len(Y)
     sX_shape = (bboxNum, scale_want[1], scale_want[0])
-    sX = np.zeros(shape=sX_shape, dtype=np.float16)
+    sX = np.zeros(shape=sX_shape, dtype=np.float32)
     mY_shape = (bboxNum, scale_want[1], scale_want[0], 3)
-    mY = np.zeros(shape=mY_shape, dtype=np.float16)
+    mY = np.zeros(shape=mY_shape, dtype=np.float32)
     for i in range(bboxNum):
         sys.stdout.write(t_info(f'Masking hits in bbox {i+1}/{bboxNum}', '\r'))
         if (i+1)==bboxNum:
@@ -62,11 +63,11 @@ def preprocess(C):
             x = x.rotate(angle=90, expand=True)
             y = y.rotate(angle=90, expand=True)
 
-        x = np.array(x, dtype=np.float16)# back to float to be masked by nan
-        y = np.array(y, dtype=np.float16)
+        x = np.array(x, dtype=np.float32)# back to float to be masked by nan
+        y = np.array(y, dtype=np.float32)
 
         # prepare masked data
-        my = np.zeros(shape=y.shape, dtype=np.float16)
+        my = np.zeros(shape=y.shape, dtype=np.float32)
         my[:] = np.nan
 
         blank_indices = np.where(y[:,:,0]==1)
@@ -86,7 +87,12 @@ def preprocess(C):
             bg_index_selected_list = random.sample(range_list,bgWant)
 
             bg_index_selected_arr = np.array(bg_index_selected_list)
-            bg_row_selected_arr = bg_indices[0][bg_index_selected_arr]
+            try:
+                bg_row_selected_arr = bg_indices[0][bg_index_selected_arr]
+            except:
+                plt.imshow(x)
+                plt.show()
+                sys.exit()
             bg_col_selected_arr = bg_indices[1][bg_index_selected_arr]
             bg_indices = (bg_row_selected_arr, bg_col_selected_arr)
 

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from extractor_config import Config
+from Config import extractor_config as Config
 from mu2e_output import *
 
 

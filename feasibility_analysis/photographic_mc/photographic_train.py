@@ -21,16 +21,19 @@ from tensorflow.keras.layers import(
     MaxPool2D,Dropout,
     Flatten,
     TimeDistributed,
-    Embedding
+    Embedding,
+    Reshape,
+    Softmax
 )
 from tensorflow.keras.optimizers import Adam
 
+import unet
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from extractor_config import Config
+from Config import extractor_config as Config
 from mu2e_output import *
-from loss import *
+from loss import unmasked_cce
 from metric import *
 ### import ends
 
@@ -42,12 +45,14 @@ def photographic_train(C):
     X = np.load(C.X_npy)
     Y = np.load(C.Y_npy)
 
-    pinfo('Standarlizing the input array')
-    X = (X-X.mean())/X.std()
+    pinfo('Standarlizing input arrays')
+    mean = X.mean()
+    std = X.std()
+    std_inv = 1/std
+    X = (X-mean)*std_inv
 
-    pinfo('Flattening the output array')
 
-    
+
     ### outputs
     pinfo('Configuring output paths')
     cwd = Path.cwd()
@@ -58,33 +63,62 @@ def photographic_train(C):
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     ### build the model
-    input_layer = Input(shape=(X.shape[1], X.shape[2], 1))
-    x = Conv2D(128, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(input_layer)
-    x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
-    x = Dropout(0.3)(x)
+    # input_layer = Input(shape=(X.shape[1],X.shape[2],1))
+    # x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(input_layer)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
 
-
-    x = Conv2D(256, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
-    x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
-    x = Dropout(0.3)(x)
-
-
-    x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
-    x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
-    x = Dropout(0.3)(x)
-
-    x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
-    x = BatchNormalization()(x)
-    x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
-    x = Dropout(0.3)(x)
-
-    x = Flatten()(x)
-
-    output_layer = Dense(Y.shape[1], activation='sigmoid')(x)
-    model = Model(inputs=input_layer, outputs=output_layer)
+    #
+    # x = Conv2D(128, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    #
+    # x = Conv2D(256, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    #
+    # x = Conv2D(512, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    #
+    # x = Conv2D(256, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    #
+    # x = Conv2D(128, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    # #
+    # #
+    # x = Conv2D(64, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    # #
+    # x = Conv2D(3, (3, 3), padding='same', activation='relu', kernel_initializer=initializers.RandomNormal(stddev=0.01), kernel_regularizer=regularizers.l2(1e-8))(x)
+    # x = BatchNormalization()(x)
+    # #x = MaxPool2D(pool_size=(2, 2), padding='same')(x)
+    # x = Dropout(0.3)(x)
+    #
+    #
+    #
+    # output_layer = Softmax()(x)
+    # model = Model(inputs=input_layer, outputs=output_layer)
+    input_shape = (X.shape[1], X.shape[2], 1)
+    model = unet.get_architecture(input_shape,3)
+    print(model.summary())
 
     # setup loss
-    unmasked_bce = define_rpn_class_loss(1)
+    cce = unmasked_cce
+
+    # setup metric
+    ca = unmasked_categorical_accuracy
 
     # setup optimizer
     adam = Adam(1e-3)
@@ -97,13 +131,13 @@ def photographic_train(C):
     )
     # print(cnn.summary())
     model.compile(optimizer=adam,\
-                loss=unmasked_bce,\
-                metrics=[unmasked_accuracy, positive_number])
+                metrics = ca,\
+                loss=cce)
 
     model.fit(x=X, y=Y,\
             validation_split=0.2,\
             shuffle=True,\
-            batch_size=32, epochs=1000,\
+            batch_size=64, epochs=600,\
             callbacks = [CsvCallback, LRCallback])
 
     model.save(model_weights)
@@ -124,8 +158,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_00"
-    record_name = "photographic_record_00"
+    model_name = "photographic_01"
+    record_name = "photographic_record_01"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

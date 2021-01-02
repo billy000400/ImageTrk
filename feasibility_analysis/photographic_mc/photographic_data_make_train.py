@@ -55,9 +55,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     output_file = photographic_train_dir.joinpath('outputs.npy')
 
     ### pixel truth labels
-    is_blank = np.array([1,0,0], dtype=np.float16)
-    is_bg = np.array([0,1,0], dtype=np.float16)
-    is_major = np.array([0,0,1], dtype=np.float16)
+    is_blank = np.array([1,0,0], dtype=np.float32)
+    is_bg = np.array([0,1,0], dtype=np.float32)
+    is_major = np.array([0,0,1], dtype=np.float32)
 
     ### initialize sqlite session
     # Connect to the database
@@ -164,14 +164,14 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             if ratio >= 1:
                 xpixel = int(np.ceil(resolution/ratio))
                 ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.float16 )
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.float16)
+                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.float32 )
+                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.float32)
                 output_truth[:,:,0] = 1
             else:
                 xpixel = resolution
                 ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.float16)
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.float16)
+                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.float32)
+                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.float32)
                 output_truth[:,:,0] = 1
 
             # setup the x and y grids that are for sorting particles
@@ -264,10 +264,10 @@ if __name__ == "__main__":
     C = Config(track_dir)
 
     mode = 'normal'
-    window = 100 # unit: number of windows
+    window = 1000 # unit: number of windows
     mean = 5
     std = 2
-    resolution = 100
+    resolution = 240
 
     track_dir = Path(track_str)
     C = Config(track_dir)
