@@ -1,3 +1,7 @@
+## @package abstract
+#
+# Abstract methods for processing and sorting data
+
 from pathlib import Path
 import sys
 import math
@@ -6,22 +10,31 @@ import numpy as np
 import pandas as pd
 from geometry import *
 
-# binning objects
+
+
+## Bin objects into bin_array by features.
+#
+# \pr{objects, array like, Objects to be binned.}
+# \pr{features, array like, Features by which objects will be binned. Every feature corresponds to an object at the same index.}
+# \pr{bin_array, array like, A bin array that every element specifies a left or right boundary or a bin.}
+# \rt{result, nested list, Every sub-list is a list of objects laying in the corresponding bin.}
+#  Explicitly, objects whose features satisfies bin_left \f$\le\f$ feature < bin_right.
+#  The first bin contains objects whose features are \f$-\infty\f$ < feature < first_bin_left.
 def binning_objects(objects, features, bin_array):
 
-    assert len(objects)==len(features), \
-        t_error('The lengths of object and feature are not equal')
+    try:
+        objects = objects.to_list()
+        features = features.to_list()
+        bin_array = bin_array.to_list()
+    except:
+        pass
 
     objs = objects
     ftrs = features
     bins = sorted(bin_array)
 
-    try:
-        objs = objs.to_list()
-        ftrs = ftrs.to_list()
-        bins = bins.to_list()
-    except:
-        pass
+    assert len(objs)==len(ftrs), \
+        t_error('The lengths of object and feature are not equal')
 
     obj_ftr_raw  = dict(zip(objs,ftrs))
     obj_ftr = sorted( obj_ftr_raw.items(), key=lambda item: item[1])
@@ -53,42 +66,35 @@ def binning_objects(objects, features, bin_array):
 
     return result
 
-# anchor related
+## Normalize anchors' parameters from pixel presentations to [0,1] presentations.
+#
+# @param input_shape :<SPAN>&nbsp;&nbsp;&nbsp;&nbsp;list</SPAN> \n successful
+# \pr{anchor, list, Unormalized list}
+# [xmin, xmax, ymin, ymax].
+# \pr{input_shape, list, [}
+# row number, col number].
+# \rt{normalized_anchor, list, A list of }
+# [xmin, xmax, ymin, ymax] that every element is in [0,1]
 def normalize_anchor(anchor, input_shape):
-    """
-    Arguments:
-        anchor: unnormalized list [xmin, xmax, ymin, ymax]
-        input_shape: list [row number, col number]
-    Return:
-        normalized list [xmin, xmax, ymin, ymax]
-    """
+
     width = input_shape[1]
     height = input_shape[0]
     xmin = anchor[0]/width
     xmax = anchor[1]/width
     ymin = anchor[2]/height
     ymax = anchor[3]/height
-
     return [xmin, xmax, ymin, ymax]
 
+## Make an anchor pyramid at a given position
+#
+# @param anchor_scales list: Normalized anchor scales.
+# @param anchor_ratios nested list: Normalzied anchor_ratios, every list is like [a, b], in which a*b=1.
+# @param pos_center list or tuple: Normalzied position of the pyramid's center.
+# @returns nested list: The returned anchor pyramid is a nested list,
+# in which every sub-list is an anchor represented by normalized
+# [xmin, xmax, ymin, ymax]
 def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
-    """Make a set of anchors for every combination of scale and ratio at this position.
 
-    Parameters
-    ----------
-        anchor_scales : list
-            Normalized anchor scales
-        anchor_ratios: list of lists
-            Normalzied anchor_ratios, every list is like [a, b], in which a*b=1
-        pos_center: list or tuple
-            Normalzied position of the pyramid's center
-
-    Returns
-    -------
-        pyramid : list of lists
-            A list of anchors at this position
-            Each anchor is a list of normalized [xmin, xmax, ymin, ymax]
-    """
     x = pos_center[0]
     y = pos_center[1]
     num_ratios = len(anchor_ratios)
@@ -113,24 +119,21 @@ def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
 
     return pyramid
 
+## Make all anchors given an image
+#
+# \pr{input_shape, list or tuple, (img_height}
+# , img_width).
+# \pr{ratio, int, Average pixel distance between two adjacent anchors.}
+# \pr{anchor_scales, list or tuple, Every element of anchor_scales is the number}
+# of pixels for a unit in anchor_ratios.
+# \pr{anchor_ratios, nested list or tuple, Every sublist of anchor_ratios is}
+# a 2-element list of the form [height, width], in which height and width satisfy
+# height\f$ \times \f$width = 1.
+# \rt{anchors, nested list, The first 2 indices represent the column and}
+# row number of the anchor pyramid. The last index indicates a specific
+# anchor in the anchor pyramid every anchor is a list of normalized
+# [xmin, xmax, ymin, ymax]
 def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
-    """
-    Arguments:
-        Configuration object
-    Return:
-        3d list, first 2 indices represents the column and row number of the anchor pyramid
-        the last index indicates a specific anchor in the anchor pyramid
-        every anchor is a list of normalized [xmin, xmax, ymin, ymax]
-    """
-
-    # Check if the baseNet is set
-    # This is necessary for determining how many pixels
-    # an anchor represents
-
-
-    # check if anchor scales and ratios are set
-
-    # load parameters from configuration
 
     # Calculate the shape of the anchor map
     num_anchors = len(anchor_scales) * len(anchor_ratios)
@@ -156,6 +159,10 @@ def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
 
     return anchors
 
+## Make score-bbox reference map
+#
+# \pr{anchors, nested-list, ssss}
+# \rt{score_bbox_map, nested-list, ssss}
 def make_score_bbox_map(anchors):
     anchor_3d_shape = anchors.shape[:3]
     (iNum, jNum, kNum) = anchor_3d_shape
@@ -169,6 +176,12 @@ def make_score_bbox_map(anchors):
 
     return score_bbox_map
 
+## return an updated score_bbox_map without changing the original map
+#
+# \pr{score_bbox_map, nested_list, sss}
+# \pr{bbox, list, sss}
+# \pr{anchors, nested-list, sss}
+# \rt{score_bbox_map_result, nested-list, The updated score-bbox map}
 def update_score_bbox_map(score_bbox_map, bbox, anchors):
     score_bbox_map_result = score_bbox_map
     (iNum, jNum, kNum) = score_bbox_map.shape[:3]
@@ -295,7 +308,9 @@ def make_delta_map(score_bbox_map, lim_up, anchors):
 
     return delta_map
 
-### bbox related
+## bbox related
+#
+# 
 def make_img_bbox_dict(img_dir, bbox_file):
     """ Make a dictionary in which keys are img names and items are bboxes in the img
 

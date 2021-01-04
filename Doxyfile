@@ -270,6 +270,9 @@ TAB_SIZE               = 4
 # a double escape (\\{ and \\})
 
 ALIASES                =
+ALIASES += pr{3}="@param \1 :<SPAN>&nbsp;&nbsp;&nbsp;&nbsp;\2</SPAN> \n \3"
+ALIASES += sp12="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+ALIASES += rt{3}="@returns <SPAN>\b \1 &nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;<SPAN> \2 \n \sp12 \3"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
