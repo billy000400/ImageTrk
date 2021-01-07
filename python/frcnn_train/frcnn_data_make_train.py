@@ -323,7 +323,7 @@ if __name__ == "__main__":
     pmode('Training')
 
     # initialize parameters
-    track_str = '/home/Billy/Mu2e/analysis/MLTracks/tracks'
+    track_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
     # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
     # window = 20 # unit: ns
     window = 200 # unit: number of windows

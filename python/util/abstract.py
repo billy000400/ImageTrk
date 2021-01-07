@@ -87,11 +87,13 @@ def normalize_anchor(anchor, input_shape):
 
 ## Make an anchor pyramid at a given position
 #
-# @param anchor_scales list: Normalized anchor scales.
-# @param anchor_ratios nested list: Normalzied anchor_ratios, every list is like [a, b], in which a*b=1.
-# @param pos_center list or tuple: Normalzied position of the pyramid's center.
-# @returns nested list: The returned anchor pyramid is a nested list,
-# in which every sub-list is an anchor represented by normalized
+# \pr{anchor_ratios, nested list, Normalized anchor ratios. Every sublist}
+# is of the form [width, height] where all elements are between 0 and 1.
+# \pr{anchor_scales, list, Normalized anchor scales. Elements are between 0}
+# and 1
+# \pr{pos_center, list, Normalzied position of the pyramid's center.}
+# \rt{pyramid, nested list, The returned anchor pyramid is a nested list}
+# , in which every sub-list is an anchor represented by normalized
 # [xmin, xmax, ymin, ymax]
 def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
 
@@ -124,14 +126,14 @@ def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
 # \pr{input_shape, list or tuple, (img_height}
 # , img_width).
 # \pr{ratio, int, Average pixel distance between two adjacent anchors.}
-# \pr{anchor_scales, list or tuple, Every element of anchor_scales is the number}
-# of pixels for a unit in anchor_ratios.
+# \pr{anchor_scales, list or tuple, Every element of anchor_scales is in [0}
+# , 1], which represents the relative size to image's side length.
 # \pr{anchor_ratios, nested list or tuple, Every sublist of anchor_ratios is}
-# a 2-element list of the form [height, width], in which height and width satisfy
+# a 2-element list of the form [width, height], in which width and height satisfy
 # height\f$ \times \f$width = 1.
 # \rt{anchors, nested list, The first 2 indices represent the column and}
 # row number of the anchor pyramid. The last index indicates a specific
-# anchor in the anchor pyramid every anchor is a list of normalized
+# anchor in the anchor pyrami. Every anchor is a list of normalized
 # [xmin, xmax, ymin, ymax]
 def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
 
@@ -159,10 +161,11 @@ def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
 
     return anchors
 
-## Make score-bbox reference map
+## Create an empty score-bbox reference map
 #
-# \pr{anchors, nested-list, ssss}
-# \rt{score_bbox_map, nested-list, ssss}
+# \pr{anchors, nested-list, All anchors of an image.}
+# \rt{score_bbox_map, nested-list, An empty score-bbox reference map. Every}
+# anchor's index corresponds to an empty score-bbox reference, [0.0, [] ].
 def make_score_bbox_map(anchors):
     anchor_3d_shape = anchors.shape[:3]
     (iNum, jNum, kNum) = anchor_3d_shape
@@ -176,13 +179,15 @@ def make_score_bbox_map(anchors):
 
     return score_bbox_map
 
-## return an updated score_bbox_map without changing the original map
+## Update a score-bbox reference map given a bbox and all anchors
 #
-# \pr{score_bbox_map, nested_list, sss}
-# \pr{bbox, list, sss}
-# \pr{anchors, nested-list, sss}
+# \pr{score_bbox_map, nested_list, A created or previously updated score-bbox map.}
+# \pr{bbox, list, A normalzied bounding box where elements are between 0 and 1.}
+# \pr{anchors, nested-list, Normalized anchors where elements' absolute}
+# values are between 0 amd 1.
 # \rt{score_bbox_map_result, nested-list, The updated score-bbox map}
 def update_score_bbox_map(score_bbox_map, bbox, anchors):
+    s
     score_bbox_map_result = score_bbox_map
     (iNum, jNum, kNum) = score_bbox_map.shape[:3]
     for i in range(iNum):
@@ -199,6 +204,17 @@ def update_score_bbox_map(score_bbox_map, bbox, anchors):
                     score_bbox_map_result[i][j][k][1] = bbox
     return score_bbox_map_result
 
+## Return a anchor label by IoU score and input limits
+#
+# if score < lim_lo, the anchor would be labeled as negative
+# (False in classification).
+# \n if score > lim_up, the anchor would be labeled as positive
+# (True in classification)
+# \n if lim_lo \f$\le\f$ score \f$\le\f$ lim_up, the anchor would be masked
+# by nan and won't be used for training.
+# \pr{score, float, The IoU score of an anchor.}
+# \pr{lim_lo, float, }
+# \pr{lim_up, float, }
 def label_anchor(score, lim_lo, lim_up):
     if score < lim_lo:
         #pdebug('Hello from labelling neg anchors')
@@ -310,7 +326,7 @@ def make_delta_map(score_bbox_map, lim_up, anchors):
 
 ## bbox related
 #
-# 
+#
 def make_img_bbox_dict(img_dir, bbox_file):
     """ Make a dictionary in which keys are img names and items are bboxes in the img
 
