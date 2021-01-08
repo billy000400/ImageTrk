@@ -22,29 +22,32 @@ from geometry import *
 #  The first bin contains objects whose features are \f$-\infty\f$ < feature < first_bin_left.
 def binning_objects(objects, features, bin_array):
 
-    try:
-        objects = objects.to_list()
-        features = features.to_list()
-        bin_array = bin_array.to_list()
-    except:
-        pass
-
     objs = objects
     ftrs = features
     bins = sorted(bin_array)
 
-    assert len(objs)==len(ftrs), \
+    try:
+        objs = objs.to_list()
+        ftrs = ftrs.to_list()
+        bins = bins.to_list()
+    except:
+        pass
+
+    assert len(objects)==len(features), \
         t_error('The lengths of object and feature are not equal')
 
     obj_ftr_raw  = dict(zip(objs,ftrs))
     obj_ftr = sorted( obj_ftr_raw.items(), key=lambda item: item[1])
+    obj_ftr_it = iter(obj_ftr)
 
     result = []
     obj_ftr_idx = 0
-    max_idx = len(obj_ftr)-1
+    obj_ftr_idx_max = len(obj_ftr)-1
+
     for idx in range(len(bins)):
         bin_result = []
-        if obj_ftr_idx == max_idx:
+
+        if obj_ftr_idx == obj_ftr_idx_max+1:
             result.append(bin_result)
             continue
 
@@ -55,7 +58,7 @@ def binning_objects(objects, features, bin_array):
             bin_left = bins[idx-1]
             bin_right = bins[idx]
 
-        while obj_ftr_idx <= max_idx:
+        while obj_ftr_idx <= obj_ftr_idx_max:
             if (obj_ftr[obj_ftr_idx][1] >= bin_left) and (obj_ftr[obj_ftr_idx][1] < bin_right):
                 bin_result.append(obj_ftr[obj_ftr_idx][0])
                 obj_ftr_idx += 1
@@ -65,6 +68,7 @@ def binning_objects(objects, features, bin_array):
         result.append(bin_result)
 
     return result
+
 
 ## Normalize anchors' parameters from pixel presentations to [0,1] presentations.
 #
@@ -163,8 +167,8 @@ def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
 
 ## Create an empty score-bbox reference map
 #
-# \pr{anchors, nested-list, All anchors of an image.}
-# \rt{score_bbox_map, nested-list, An empty score-bbox reference map. Every}
+# \pr{anchors, nested list, All anchors of an image.}
+# \rt{score_bbox_map, nested list, An empty score-bbox reference map. Every}
 # anchor's index corresponds to an empty score-bbox reference, [0.0, [] ].
 def make_score_bbox_map(anchors):
     anchor_3d_shape = anchors.shape[:3]
@@ -183,9 +187,9 @@ def make_score_bbox_map(anchors):
 #
 # \pr{score_bbox_map, nested_list, A created or previously updated score-bbox map.}
 # \pr{bbox, list, A normalzied bounding box where elements are between 0 and 1.}
-# \pr{anchors, nested-list, Normalized anchors where elements' absolute}
+# \pr{anchors, nested list, Normalized anchors where elements' absolute}
 # values are between 0 amd 1.
-# \rt{score_bbox_map_result, nested-list, The updated score-bbox map}
+# \rt{score_bbox_map_result, nested list, The updated score-bbox map}
 def update_score_bbox_map(score_bbox_map, bbox, anchors):
     s
     score_bbox_map_result = score_bbox_map
@@ -213,7 +217,7 @@ def update_score_bbox_map(score_bbox_map, bbox, anchors):
 # \n if lim_lo \f$\le\f$ score \f$\le\f$ lim_up, the anchor would be masked
 # by nan and won't be used for training.
 # \pr{score, float, The IoU score of an anchor.}
-# \pr{lim_lo, float, }
+# \pr{lim_lo, float, The upper limit of the score range in which anchors should be masked.}
 # \pr{lim_up, float, }
 def label_anchor(score, lim_lo, lim_up):
     if score < lim_lo:
@@ -225,6 +229,7 @@ def label_anchor(score, lim_lo, lim_up):
     else:
         return np.nan
 
+## make a
 def make_label_map(score_bbox_map, lim_lo, lim_up):
     shape = score_bbox_map.shape[:3]
     (iNum, jNum, kNum) = shape
