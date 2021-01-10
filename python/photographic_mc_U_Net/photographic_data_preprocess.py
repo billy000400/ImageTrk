@@ -38,8 +38,8 @@ def preprocess(C):
     bboxNum = len(Y)
     sX_shape = (bboxNum, scale_want[1], scale_want[0])
     sX = np.zeros(shape=sX_shape, dtype=np.float32)
-    mY_shape = (bboxNum, scale_want[1], scale_want[0], 3)
-    mY = np.zeros(shape=mY_shape, dtype=np.float32)
+    sY_shape = (bboxNum, scale_want[1], scale_want[0], 3)
+    sY = np.zeros(shape=sY_shape, dtype=np.float32)
     for i in range(bboxNum):
         sys.stdout.write(t_info(f'Masking hits in bbox {i+1}/{bboxNum}', '\r'))
         if (i+1)==bboxNum:
@@ -66,7 +66,7 @@ def preprocess(C):
 
 
         sX[i]=x
-        mY[i]=my
+        sY[i]=y
 
     ### save numpy arrays to tmp
     pinfo("Saving numpy arrays to local")
@@ -76,13 +76,13 @@ def preprocess(C):
     np_dir = tmp_dir
 
     sX_npy = np_dir.joinpath('photographic_train_X.npy')
-    mY_npy = np_dir.joinpath('photographic_train_masked_Y.npy')
+    sY_npy = np_dir.joinpath('photographic_train_masked_Y.npy')
 
     np.save(sX_npy, sX)
-    np.save(mY_npy, mY)
+    np.save(sY_npy, sY)
 
     # setup configuration
-    C.set_input_array(sX_npy, mY_npy)
+    C.set_input_array(sX_npy, sY_npy)
 
     pickle_train_path = Path.cwd().joinpath('photographic.train.config.pickle')
     pickle.dump(C, open(pickle_train_path, 'wb'))

@@ -10,6 +10,7 @@ import random
 import pickle
 
 import numpy as np
+from sklearn.utils.class_weight import compute_class_weight
 
 import tensorflow as tf
 from tensorflow.keras import Model, initializers, regularizers
@@ -33,7 +34,7 @@ util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Config import extractor_config as Config
 from mu2e_output import *
-from Loss import unmasked_cce
+from Loss import *
 from Metric import *
 ### import ends
 
@@ -70,10 +71,10 @@ def photographic_train(C):
     print(model.summary())
 
     # setup loss
-    cce = unmasked_cce
+    cce = weighted_cce
 
     # setup metric
-    ca = unmasked_categorical_accuracy
+    ca = top2_categorical_accuracy
 
     # setup optimizer
     adam = Adam(1e-4)
@@ -92,7 +93,7 @@ def photographic_train(C):
     model.fit(x=X, y=Y,\
             validation_split=0.2,\
             shuffle=True,\
-            batch_size=1, epochs=20,\
+            batch_size=1, epochs=100,\
             callbacks = [CsvCallback, LRCallback])
 
     model.save(model_weights)
@@ -113,8 +114,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_UNet_00"
-    record_name = "photographic_UNet_00"
+    model_name = "photographic_UNet_00_weighted"
+    record_name = "photographic_UNet_00_weighted"
 
     # setup parameters
     C.set_outputs(model_name, record_name)
