@@ -25,9 +25,6 @@ class frcnn_config:
         ## @var track_dir
         # the directory where the track databases are located
         self.track_dir = track_sql_dir
-
-
-
         self.source = None
         self.window = None
         self.resolution = None

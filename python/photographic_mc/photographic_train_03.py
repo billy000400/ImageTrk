@@ -27,14 +27,14 @@ from tensorflow.keras.layers import(
 )
 from tensorflow.keras.optimizers import Adam
 
-import unet
+import unet03 as unet
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Config import extractor_config as Config
 from mu2e_output import *
-from loss import unmasked_cce
-from metric import *
+from Loss import unmasked_cce
+from Metric import *
 ### import ends
 
 def photographic_train(C):
@@ -121,7 +121,7 @@ def photographic_train(C):
     ca = unmasked_categorical_accuracy
 
     # setup optimizer
-    adam = Adam(1e-3)
+    adam = Adam(1e-4)
 
     # setup callback
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
@@ -137,7 +137,7 @@ def photographic_train(C):
     model.fit(x=X, y=Y,\
             validation_split=0.2,\
             shuffle=True,\
-            batch_size=64, epochs=600,\
+            batch_size=64, epochs=200,\
             callbacks = [CsvCallback, LRCallback])
 
     model.save(model_weights)
@@ -158,8 +158,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_01"
-    record_name = "photographic_record_01"
+    model_name = "photographic_03"
+    record_name = "photographic_record_03"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

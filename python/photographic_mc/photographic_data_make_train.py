@@ -20,7 +20,7 @@ from sqlalchemy import *
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Config import extractor_config as Config
-from abstract import binning_objects
+from Abstract import binning_objects
 from TrackDB_Classes import *
 from mu2e_output import *
 
