@@ -112,6 +112,54 @@ def unmasked_cce(y_real, y_predict):
     # tf.keras.backend.print_tensor(y_real_sl)
     return score/N
 
+def weighted_cce(y_real, y_predict):
+
+    major_mask = y_real[:,:,:,2]==1
+    bg_mask = y_real[:,:,:,1]==1
+    blank_mask = y_real[:,:,:,0]==1
+
+    major_indices = tf.where(major_mask)
+    bg_indices = tf.where(bg_mask)
+    blank_indices = tf.where(blank_mask)
+
+    majorNum = tf.size(major_indices)
+    bgNum = tf.size(bg_indices)
+    blankNum = tf.size(blank_indices)
+
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+    y_real_blank = tf.boolean_mask(y_real, blank_mask)
+    y_predict_blank = tf.boolean_mask(y_predict, blank_mask)
+
+    numArr = [majorNum, bgNum, blankNum]
+    sum = majorNum+bgNum+blankNum
+    numArr = tf.where(tf.equal(numArr,0), sum, numArr)
+    weights = sum/numArr
+    weights = tf.cast(weights, tf.float32)
+    # tf.keras.backend.print_tensor(weights)
+
+    cce = CategoricalCrossentropy(reduction=Reduction.SUM)
+
+    score_major = cce(y_real_major, y_predict_major) *  weights[0]
+    score_bg = cce(y_real_bg, y_predict_bg) * weights[1]
+    score_blank = cce(y_real_blank, y_predict_blank) * weights[2]
+    score = score_major+score_bg+score_blank
+    N = tf.size(y_real[0])
+    N = tf.cast(N, tf.float32)
+
+    return score/N
+
+def top2_cce(y_real, y_predict):
+    return
+
+def WeightedCCE(Y):
+    num_class = Y.shape[-1]
+
+    return
 # test benches
 def test_rpn_class_loss():
     # test tensorship is (1,3,3,1)

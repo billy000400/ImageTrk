@@ -58,6 +58,32 @@ def unmasked_categorical_accuracy(p_r, p_p):
 
     return score/N_cls*100.0
 
+def top2_categorical_accuracy(y_real, y_predict):
+
+    major_mask = y_real[:,:,:,2]==1
+    bg_mask = y_real[:,:,:,1]==1
+
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+    score_major_ew = categorical_accuracy(y_real_major, y_predict_major)
+    score_bg_ew = categorical_accuracy(y_real_bg, y_predict_bg)
+
+    score_major = tf.math.reduce_sum(score_major_ew)
+    score_bg = tf.math.reduce_sum(score_bg_ew)
+
+    N_major = tf.size(score_major_ew)
+    N_major = tf.cast(N_major, tf.float32)
+    N_bg = tf.size(score_bg_ew)
+    N_bg = tf.cast(N_bg, tf.float32)
+
+    sum = N_major + N_bg
+
+    return (score_major+score_bg)/sum*100
+
 def unmasked_IoU(t_r, t_p):
     mask = ~tf.math.is_nan(t_r)
 
