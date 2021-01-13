@@ -8,6 +8,7 @@ import numpy.ma as ma
 
 import tensorflow as tf
 from tensorflow.math import log
+import tensorflow.keras.backend as K
 from tensorflow.keras.losses import (
     BinaryCrossentropy,
     CategoricalCrossentropy,
@@ -153,13 +154,91 @@ def weighted_cce(y_real, y_predict):
 
     return score/N
 
-def top2_cce(y_real, y_predict):
-    return
+def top2_weighted_cce(y_real, y_predict):
+
+    major_mask = y_real[:,:,:,2]==1
+    bg_mask = y_real[:,:,:,1]==1
+
+    major_indices = tf.where(major_mask)
+    bg_indices = tf.where(bg_mask)
+
+    majorNum = tf.cast(tf.size(major_indices), tf.float32)
+    bgNum = tf.cast(tf.size(bg_indices), tf.float32)
+
+    numArr = [majorNum, bgNum]
+    sum = majorNum+bgNum
+    numArr = tf.where(tf.equal(numArr,0), sum, numArr)
+    weights = tf.reduce_min(numArr)/numArr
+    weights = tf.cast(weights, tf.float32)
+
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+    cce = CategoricalCrossentropy(reduction=Reduction.SUM)
+
+    score_major = cce(y_real_major, y_predict_major) *  weights[0]
+    score_bg = cce(y_real_bg, y_predict_bg) * weights[1]
+
+    score = (score_major+score_bg)/(majorNum+bgNum)
+
+    return score
 
 def WeightedCCE(Y):
     num_class = Y.shape[-1]
 
     return
+
+def categorical_focal_loss(alpha, gamma=2.):
+
+    alpha = np.array(alpha, dtype=np.float32)
+
+    def categorical_focal_loss_fixed(y_real, y_predict):
+
+        # Clip the prediction value to prevent NaN's and Inf's
+        epsilon = 1e-6
+        y_predict = tf.clip_by_value(y_predict, epsilon, 1. - epsilon)
+
+        major_mask = y_real[:,:,:,2]==1
+        bg_mask = y_real[:,:,:,1]==1
+        blank_mask = y_real[:,:,:,0]==1
+
+        y_real_major = tf.boolean_mask(y_real, major_mask)
+        y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+        y_real_bg = tf.boolean_mask(y_real, bg_mask)
+        y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+        y_real_blank = tf.boolean_mask(y_real, blank_mask)
+        y_predict_blank = tf.boolean_mask(y_predict, blank_mask)
+
+        cce = CategoricalCrossentropy(reduction=Reduction.NONE)
+
+        score_major = cce(y_real_major, y_predict_major)
+        # x shape is different from the y shape
+        score_major = score_major * tf.math.pow(1-y_predict_major[:,2], gamma)
+        score_major = score_major *  alpha[0]
+        score_major = tf.math.reduce_sum(score_major)
+
+        score_bg = cce(y_real_bg, y_predict_bg)
+        score_bg = score_bg * tf.math.pow(1-y_predict_bg[:,1], gamma)
+        score_bg = score_bg * alpha[1]
+        score_bg = tf.math.reduce_sum(score_bg)
+
+        score_blank = cce(y_real_blank, y_predict_blank)
+        scoire_blank = score_blank * tf.math.pow(1-y_predict_blank[:,0], gamma)
+        score_blank = score_blank * alpha[2]
+        score_blank = tf.math.reduce_sum(score_blank)
+
+        score = score_major+score_bg+score_blank
+        N = tf.size(y_real[0])
+        N = tf.cast(N, tf.float32)
+
+        return score/N
+
+    return categorical_focal_loss_fixed
 # test benches
 def test_rpn_class_loss():
     # test tensorship is (1,3,3,1)
