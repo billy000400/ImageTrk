@@ -275,7 +275,7 @@ class U_Net_4:
         conv5 = BatchNormalization()(conv5)
         conv5 = Activation('relu')(conv5)
 
-        upconv2 = Conv2DTranspose(128, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv4)
+        upconv2 = Conv2DTranspose(128, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv5)
         upconv2 = BatchNormalization()(upconv2)
         upconv2 = Activation('relu')(upconv2)
         merge2 = concatenate([upconv2, conv2], axis=3)
@@ -287,7 +287,7 @@ class U_Net_4:
         conv6 = BatchNormalization()(conv6)
         conv6 = Activation('relu')(conv6)
 
-        upconv3 = Conv2DTranspose(64, kernel_size=(2,2), stride=(2,2), padding='valid', kernel_initializer=init)(conv5)
+        upconv3 = Conv2DTranspose(64, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv6)
         upconv3 = BatchNormalization()(upconv3)
         upconv3 = Activation('relu')(upconv3)
         merge3 = concatenate([upconv3, conv1], axis=3)

@@ -31,9 +31,13 @@ class U_ResNet:
         init = initializers.RandomNormal(stddev=0.01)
         input = Input(self.input_shape)
 
-        conv1 = Conv2D(64, 7, strides=2, padding='same', kernel_initializer=init)(input)
+        conv1 = Conv2D(64, 7, strides=1, padding='same', kernel_initializer=init)(input)
         conv1 = BatchNormalization()(conv1)
         conv1 = Activation("relu")(conv1)
+        conv1 = Conv2D(64, 3, strides=1, padding='same', kernel_initializer=init)(conv1)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation("relu")(conv1)
+
         pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
 
         conv2 = Conv2D(64, 3, strides=1, padding="same", kernel_initializer=init)(pool1)
