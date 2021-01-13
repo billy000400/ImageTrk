@@ -40,128 +40,45 @@ class U_ResNet:
 
         pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
 
-        conv2 = Conv2D(64, 3, strides=1, padding="same", kernel_initializer=init)(pool1)
+        conv2 = Conv2D(128, 3, strides=1, padding="same", kernel_initializer=init)(pool1)
         conv2 = BatchNormalization()(conv2)
         conv2 = Activation("relu")(conv2)
-        conv2 = Conv2D(64, 3, strides=1, padding="same", kernel_initializer=init)(conv2)
+        conv2 = Conv2D(128, 3, strides=1, padding="same", kernel_initializer=init)(conv2)
         conv2 = BatchNormalization()(conv2)
         conv2 = Activation("relu")(conv2)
 
         short_merge1 = Add([pool1,conv2])
 
-        conv3 = Conv2D(64, 3, strides=1, padding="same", kernel_initializer=init)(short_merge1)
+        pool2 = MaxPooling2D(pool_size=(2,2))(short_merge1)
+
+        conv3 = Conv2D(256, 3, strides=1, padding="same", kernel_initializer=init)(pool2)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation("relu")(conv3)
+        conv3 = Conv2D(256, 3, strides=1, padding="same", kernel_initializer=init)(conv3)
         conv3 = BatchNormalization()(conv3)
         conv3 = Activation("relu")(conv3)
 
-        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(pool1)
-        conv2 = BatchNormalization()(conv2)
-        conv2 = Activation('relu')(conv2)
-        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv2)
-        conv2 = BatchNormalization()(conv2)
-        conv2 = Activation('relu')(conv2)
+        short_merge2 = Add([pool2, conv3])
 
-        short_merge1 = concatenate([conv1, conv2], axis=3)
-        pool2 = MaxPooling2D(pool_size=(2,2))(short_merge1)
+        pool3 = MaxPooling2D(pool_size=(2,2))(short_merge2)
 
-
-
-
-        previous_block_activation = x  # Set aside residual
-
-        # Blocks 1, 2, 3 are identical apart from the feature depth.
-        for filters in [128, 256, 512, 1024]:
-            x = layers.Activation("relu")(x)
-            x = layers.Conv2D(filters, 3, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(x)
-            x = layers.BatchNormalization()(x)
-
-            x = layers.Activation("relu")(x)
-            x = layers.Conv2D(filters, 3, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(x)
-            x = layers.BatchNormalization()(x)
-
-            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-
-            # Project residual
-            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(
-                previous_block_activation
-            )
-            x = layers.add([x, residual])  # Add back residual
-            previous_block_activation = x  # Set aside next residual
-
-        ### [Second half of the network: upsampling inputs] ###
-
-        for filters in [1024, 512, 256, 128, 64]:
-            x = layers.Activation("relu")(x)
-            x = layers.Conv2DTranspose(filters, kernel_size=2, strides=2, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(x)
-            x = layers.BatchNormalization()(x)
-
-            x = layers.Activation("relu")(x)
-            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(x)
-            x = layers.BatchNormalization()(x)
-
-            x = layers.UpSampling2D(2)(x)
-
-            # Project residual
-            residual = layers.UpSampling2D(2)(previous_block_activation)
-            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(residual)
-            x = layers.add([x, residual])  # Add back residual
-            previous_block_activation = x  # Set aside next residual
-
-        # Add a per-pixel classification layer
-        outputs = layers.Conv2D(num_classes, 3, activation="softmax", padding="same", kernel_initializer=initializers.RandomNormal(stddev=0.01))(x)
-
-        # Define the model
-        model = keras.Model(inputs, outputs)
-        return model
-
-
-    def get_model(self):
-
-        init = initializers.RandomNormal(stddev=0.01)
-
-        input = Input(self.input_shape)
-
-        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(input)
-        conv1 = BatchNormalization()(conv1)
-        conv1 = Activation('relu')(conv1)
-        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(conv1)
-        conv1 = BatchNormalization()(conv1)
-        conv1 = Activation('relu')(conv1)
-
-        pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
-
-        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(pool1)
-        conv2 = BatchNormalization()(conv2)
-        conv2 = Activation('relu')(conv2)
-        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv2)
-        conv2 = BatchNormalization()(conv2)
-        conv2 = Activation('relu')(conv2)
-
-        pool2 = MaxPooling2D(pool_size=(2,2))(conv2)
-
-        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(pool2)
-        conv3 = BatchNormalization()(conv3)
-        conv3 = Activation('relu')(conv3)
-        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(conv3)
-        conv3 = BatchNormalization()(conv3)
-        conv3 = Activation('relu')(conv3)
-
-        pool3 = MaxPooling2D(pool_size=(2,2))(conv3)
-
-        conv4 = Conv2D(512, 3, padding='same', kernel_initializer=init)(pool3)
+        conv4 = Conv2D(512, 3, padding="same", kernel_initializer=init)(pool3)
         conv4 = BatchNormalization()(conv4)
-        conv4 = Activation('relu')(conv4)
-        conv4 = Conv2D(512, 3, padding='same', kernel_initializer=init)(conv4)
+        conv4 = Activation("relu")(conv4)
+        conv4 = Conv2D(512, 3, padding="same", kernel_initializer=init)(conv4)
         conv4 = BatchNormalization()(conv4)
-        conv4 = Activation('relu')(conv4)
+        conv4 = Activation("relu")(conv4)
 
-        pool4 = MaxPooling2D(pool_size=(2,2))(conv4)
+        short_merge3 = Add([pool3, conv4])
 
-        conv5 = Conv2D(1024, 3, padding='same', kernel_initializer=init)(pool4)
+        pool4 = MaxPooling2D(pool_size=(2,2))(short_merge3)
+
+        conv5 = Conv2D(1024, 3, padding="same", kernel_initializer=init)(pool4)
         conv5 = BatchNormalization()(conv5)
-        conv5 = Activation('relu')(conv5)
-        conv5 = Conv2D(1024, 3, padding='same', kernel_initializer=init)(conv5)
+        conv5 = Activation("relu")(conv5)
+        conv5 = Conv2D(1024, 3, padding="same", kernel_initializer=init)(conv5)
         conv5 = BatchNormalization()(conv5)
-        conv5 = Activation('relu')(conv5)
+        conv5 = Activation("relu")(conv5)
 
         upconv1 = Conv2DTranspose(512, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv5)
         upconv1 = BatchNormalization()(upconv1)
