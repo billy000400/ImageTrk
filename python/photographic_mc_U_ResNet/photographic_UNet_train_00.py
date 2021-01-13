@@ -28,7 +28,7 @@ from tensorflow.keras.layers import(
 )
 from tensorflow.keras.optimizers import Adam
 
-import MyUnet
+import U_ResNet
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -66,12 +66,12 @@ def photographic_train(C):
     ### prepare model
 
     input_shape = (X.shape[1], X.shape[2], 1)
-    architecture = MyUnet.U_Net(input_shape=input_shape, num_class=3)
+    architecture = MyUnet.U_ResNet(input_shape=input_shape, num_class=3)
     model = architecture.get_model()
     print(model.summary())
 
     # setup loss
-    cce = weighted_cce
+    cce = categorical_focal_loss
 
     # setup metric
     ca = top2_categorical_accuracy
@@ -114,8 +114,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_UNet_00_weighted"
-    record_name = "photographic_UNet_00_weighted"
+    model_name = "photographic_U_ResNet_00_weighted"
+    record_name = "photographic_U_ResNet_00_weighted"
 
     # setup parameters
     C.set_outputs(model_name, record_name)
