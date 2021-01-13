@@ -128,3 +128,178 @@ class U_Net:
 
         model = Model(input, output)
         return model
+
+
+class U_Net_3:
+    def __init__(self, input_shape, num_class, shrink_times=3):
+        if len(input_shape) == 2:
+            try:
+                self.input_shape = input_shape + (1,)
+            except:
+                self.input_shape = input_shape + [1]
+        elif len(input_shape) == 3:
+            self.input_shape = input_shape
+        else:
+            perr("Invalid Input Shape")
+
+        self.num_class = num_class
+        self.shrink_times = shrink_times
+
+
+    def get_model(self):
+
+        init = initializers.RandomNormal(stddev=0.01)
+
+        input = Input(self.input_shape)
+
+        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(input)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation('relu')(conv1)
+        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(conv1)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation('relu')(conv1)
+
+        pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
+
+        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(pool1)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation('relu')(conv2)
+        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv2)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation('relu')(conv2)
+
+        pool2 = MaxPooling2D(pool_size=(2,2))(conv2)
+
+        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(pool2)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(conv3)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+
+        upconv1 = Conv2DTranspose(128, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv3)
+        upconv1 = BatchNormalization()(upconv1)
+        upconv1 = Activation('relu')(upconv1)
+        merge1 = concatenate([upconv1, conv2], axis=3)
+
+        conv4 = Conv2D(128, 3, padding='same', kernel_initializer=init)(merge1)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation('relu')(conv4)
+        conv4 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv4)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation('relu')(conv4)
+
+        upconv2 = Conv2DTranspose(64, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv4)
+        upconv2 = BatchNormalization()(upconv2)
+        upconv2 = Activation('relu')(upconv2)
+        merge2 = concatenate([upconv2, conv1], axis=3)
+
+        conv5 = Conv2D(64, 3, padding='same', kernel_initializer=init)(merge2)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation('relu')(conv5)
+        conv5 = Conv2D(64, 3, padding='same', kernel_initializer=init)(conv5)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation('relu')(conv5)
+
+        output = Conv2D(self.num_class, 1, activation='softmax', padding='same', kernel_initializer=init)(conv5)
+
+        model = Model(input, output)
+        return model
+
+
+class U_Net_4:
+    def __init__(self, input_shape, num_class, shrink_times=3):
+        if len(input_shape) == 2:
+            try:
+                self.input_shape = input_shape + (1,)
+            except:
+                self.input_shape = input_shape + [1]
+        elif len(input_shape) == 3:
+            self.input_shape = input_shape
+        else:
+            perr("Invalid Input Shape")
+
+        self.num_class = num_class
+        self.shrink_times = shrink_times
+
+
+    def get_model(self):
+
+        init = initializers.RandomNormal(stddev=0.01)
+
+        input = Input(self.input_shape)
+
+        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(input)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation('relu')(conv1)
+        conv1 = Conv2D(64, 3, padding='same', kernel_initializer=init)(conv1)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation('relu')(conv1)
+
+        pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
+
+        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(pool1)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation('relu')(conv2)
+        conv2 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv2)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation('relu')(conv2)
+
+        pool2 = MaxPooling2D(pool_size=(2,2))(conv2)
+
+        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(pool2)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+        conv3 = Conv2D(256, 3, padding='same', kernel_initializer=init)(conv3)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+
+        pool3 = MaxPooling2D(pool_size=(2,2))(conv3)
+
+        conv4 = Conv2D(512, 3, padding='same', kernel_initializer=init)(pool3)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation('relu')(conv4)
+        conv4 = Conv2D(512, 3, padding='same', kernel_initializer=init)(conv4)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation('relu')(conv4)
+
+        upconv1 = Conv2DTranspose(256, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv4)
+        upconv1 = BatchNormalization()(upconv1)
+        upconv1 = Activation('relu')(upconv1)
+        merge1 = concatenate([upconv1, conv3], axis=3)
+
+        conv5 = Conv2D(256, 3, padding='same', kernel_initializer=init)(merge1)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation('relu')(conv5)
+        conv5 = Conv2D(256, 3, padding='same', kernel_initializer=init)(conv5)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation('relu')(conv5)
+
+        upconv2 = Conv2DTranspose(128, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv5)
+        upconv2 = BatchNormalization()(upconv2)
+        upconv2 = Activation('relu')(upconv2)
+        merge2 = concatenate([upconv2, conv2], axis=3)
+
+        conv6 = Conv2D(128, 3, padding='same', kernel_initializer=init)(merge2)
+        conv6 = BatchNormalization()(conv6)
+        conv6 = Activation('relu')(conv6)
+        conv6 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv6)
+        conv6 = BatchNormalization()(conv6)
+        conv6 = Activation('relu')(conv6)
+
+        upconv3 = Conv2DTranspose(64, kernel_size=(2,2), strides=(2,2), padding='valid', kernel_initializer=init)(conv6)
+        upconv3 = BatchNormalization()(upconv3)
+        upconv3 = Activation('relu')(upconv3)
+        merge3 = concatenate([upconv3, conv1], axis=3)
+
+        conv7 = Conv2D(128, 3, padding='same', kernel_initializer=init)(merge3)
+        conv7 = BatchNormalization()(conv7)
+        conv7 = Activation('relu')(conv7)
+        conv7 = Conv2D(128, 3, padding='same', kernel_initializer=init)(conv7)
+        conv7 = BatchNormalization()(conv7)
+        conv7 = Activation('relu')(conv7)
+
+        output = Conv2D(self.num_class, 1, activation='softmax', padding='same', kernel_initializer=init)(conv7)
+
+        model = Model(input, output)
+        return model
