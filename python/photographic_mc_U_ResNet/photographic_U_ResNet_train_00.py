@@ -52,7 +52,15 @@ def photographic_train(C):
     std_inv = 1/std
     X = (X-mean)*std_inv
 
-
+    pinfo('Calculating class weights by median frequency')
+    blankNum = np.count_nonzero( (Y==np.array([1,0,0])).all(axis=3) )
+    bgNum = np.count_nonzero( (Y==np.array([0,1,0])).all(axis=3) )
+    majorNum = np.count_nonzero( (Y==np.array([0,0,1])).all(axis=3) )
+    pinfo(f'Frequency: major {majorNum}, bg {bgNum}, blank {blankNum}')
+    numArr = np.array([majorNum, bgNum, blankNum])
+    md = np.median(numArr)
+    weights = md/numArr
+    pinfo(f'Weight array = {weights}')
 
     ### outputs
     pinfo('Configuring output paths')
@@ -66,12 +74,12 @@ def photographic_train(C):
     ### prepare model
 
     input_shape = (X.shape[1], X.shape[2], 1)
-    architecture = MyUnet.U_ResNet(input_shape=input_shape, num_class=3)
+    architecture = U_ResNet.U_ResNet(input_shape=input_shape, num_class=3)
     model = architecture.get_model()
     print(model.summary())
 
     # setup loss
-    cce = categorical_focal_loss
+    cce = categorical_focal_loss(weights, 2)
 
     # setup metric
     ca = top2_categorical_accuracy
