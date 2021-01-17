@@ -27,7 +27,7 @@ from tensorflow.keras.layers import(
 )
 from tensorflow.keras.optimizers import Adam
 
-import unet
+import unet_like
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -111,7 +111,7 @@ def photographic_train(C):
     # output_layer = Softmax()(x)
     # model = Model(inputs=input_layer, outputs=output_layer)
     input_shape = (X.shape[1], X.shape[2], 1)
-    model = unet.get_architecture(input_shape,3)
+    model = unet_like.get_architecture(input_shape,3)
     print(model.summary())
 
     # setup loss

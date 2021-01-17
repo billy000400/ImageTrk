@@ -35,23 +35,17 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     hitNumCut = 9
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
     cwd = Path.cwd()
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
-    photographic_train_x_dir = data_dir.joinpath('photographic_train_large_X')
-    photographic_train_y_dir = data_dir.joinpath('photographic_train_large_Y')
+    photographic_train_x_dir = data_dir.joinpath('photographic_val_large_X')
+    photographic_train_y_dir = data_dir.joinpath('photographic_val_large_Y')
     shutil.rmtree(photographic_train_x_dir, ignore_errors=True)
     shutil.rmtree(photographic_train_y_dir, ignore_errors=True)
     photographic_train_x_dir.mkdir(parents=True, exist_ok=True)
@@ -261,7 +255,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     return photographic_train_x_dir, photographic_train_y_dir
 
 
-def make_data(C, mode):
+def make_data(C):
     """
     This function helps determine which mode should be used when preparing training data.
     If mode is "normal", track number would fit a Gaussian distribution whose parameters were specificed in the configuration object before called.
@@ -270,14 +264,15 @@ def make_data(C, mode):
     pstage("Making training data")
 
 
-    if mode == "normal":
-        track_dir = C.track_dir
-        mean = C.trackNum_mean
-        std = C.trackNum_std
-        windowNum = C.window
-        train_x_dir, train_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
 
-    C.set_train_dir(train_x_dir, train_y_dir)
+    track_dir = C.track_dir
+    mean = C.trackNum_mean
+    std = C.trackNum_std
+    windowNum = int(C.window/7*2)
+    resolution = C.resolution
+    val_x_dir, val_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
+
+    C.set_val_dir(val_x_dir, val_y_dir)
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('photographic.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
@@ -289,25 +284,13 @@ if __name__ == "__main__":
     pmode('Testing Feasibility')
     pinfo('Input DType for testing: StrawDigiMC')
 
-    track_str = '../../tracks'
-    track_dir = Path(track_str)
-    C = Config(track_dir)
-
-    mode = 'normal'
-    window = 7000 # unit: number of windows
-    mean = 5
-    std = 2
-    resolution = 240
-
-    track_dir = Path(track_str)
-    C = Config(track_dir)
-
-    C.set_distribution(mean, std)
-    C.set_window(window)
-    C.set_resolution(resolution)
+    # load pickle
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('photographic.train.config.pickle')
+    C = pickle.load(open(pickle_path,'rb'))
 
     start = timeit.default_timer()
-    make_data(C, mode)
+    make_data(C)
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')

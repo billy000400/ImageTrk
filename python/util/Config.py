@@ -190,12 +190,20 @@ class extractor_config:
         self.X_file = None
         self.Y_file = None
 
+        # alternate input member for large data
+        self.X_train_dir = None
+        self.Y_train_dir = None
+        self.X_val_dir = None
+        self.Y_val_dir = None
+
         # max length for input_arrays
         self.sequence_max_length = None
 
         # input numpy array for training
         self.X_npy = None
         self.Y_npy = None
+
+        self.weights = None
 
         # model and record_name
         self.model_name = None
@@ -229,12 +237,23 @@ class extractor_config:
         self.X_file = X_file
         self.Y_file = Y_file
 
+    def set_train_dir(self, train_x_dir, train_y_dir):
+        self.X_train_dir = train_x_dir
+        self.Y_train_dir = train_y_dir
+
+    def set_val_dir(self, val_x_dir, val_y_dir):
+        self.X_val_dir = val_x_dir
+        self.Y_val_dir = val_y_dir
+
     def set_max_length(self, length):
         self.sequence_max_length = length
 
     def set_input_array(self, X_npy, Y_npy):
         self.X_npy = X_npy
         self.Y_npy = Y_npy
+
+    def set_weights(self, weights):
+        self.weights = weights
 
     def set_outputs(self, model_name, record_name):
         self.model_name = model_name

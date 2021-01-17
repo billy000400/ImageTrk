@@ -133,6 +133,59 @@ class U_ResNet:
         model = Model(input, output)
         return model
 
+class U_small:
+    def __init__(self, input_shape, num_class, shrink_times=3):
+        if len(input_shape) == 2:
+            try:
+                self.input_shape = input_shape + (1,)
+            except:
+                self.input_shape = input_shape + [1]
+        elif len(input_shape) == 3:
+            self.input_shape = input_shape
+        else:
+            perr("Invalid Input Shape")
+
+        self.num_class = num_class
+        self.shrink_times = shrink_times
+
+    def get_model(self):
+
+        init = initializers.RandomNormal(stddev=0.01)
+        input = Input(self.input_shape)
+
+        conv1 = Conv2D(16, 3, strides=1, padding='same', kernel_initializer=init)(input)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation("relu")(conv1)
+        conv1 = Conv2D(16, 3, strides=1, padding='same', kernel_initializer=init)(conv1)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation("relu")(conv1)
+
+        pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
+
+        conv2 = Conv2D(32, 3, strides=1, padding="same", kernel_initializer=init)(pool1)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation("relu")(conv2)
+        conv2 = Conv2D(32, 3, strides=1, padding="same", kernel_initializer=init)(conv2)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation("relu")(conv2)
+
+        upconv1 = Conv2DTranspose(16, kernel_size=3, strides=2, padding='same', kernel_initializer=init)(conv2)
+        upconv1 = BatchNormalization()(upconv1)
+        upconv1 = Activation('relu')(upconv1)
+        merge1 = concatenate([upconv1, conv1], axis=3)
+
+        conv3 = Conv2D(16, 3, padding='same', kernel_initializer=init)(merge1)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+        conv3 = Conv2D(16, 3, padding='same', kernel_initializer=init)(conv3)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation('relu')(conv3)
+
+        output = Conv2D(self.num_class, 1, activation='softmax', padding='same', kernel_initializer=init)(conv3)
+
+        model = Model(input, output)
+        return model
+
 class U_ResNet_00:
     def __init__(self, input_shape, num_class, shrink_times=3):
         if len(input_shape) == 2:
