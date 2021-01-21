@@ -144,8 +144,8 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
         for i, bbox in enumerate(bboxes):
             # make x bins and y bins for binning objects
-            x_bins = [-810, bbox[0], bbox[1], 810]
-            y_bins = [-810, bbox[2], bbox[3], 810]
+            x_bins = [-810, bbox[0]-1, bbox[1]+1, 810]
+            y_bins = [-810, bbox[2]-1, bbox[3]+1, 810]
 
             # get position tuples in the bounding box
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
@@ -182,9 +182,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             # setup the x and y grids that are for sorting particles
             xstep = x_delta/xpixel
             ystep = y_delta/ypixel
-            xbins = [xmin + i*xstep for i in range(xpixel-1)]
+            xbins = [xmin + i*xstep for i in range(xpixel+1)]
             xbins[-1] = xbins[-1]+1
-            ybins = [ymin + i*ystep for i in range(ypixel-1)]
+            ybins = [ymin + i*ystep for i in range(ypixel+1)]
             ybins[-1] = ybins[-1]+1
 
             ### fill the density in the blank photo and truth
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     C = Config(track_dir)
 
     mode = 'normal'
-    window = 7000 # unit: number of windows
+    window = 2000 # unit: number of windows
     mean = 5
     std = 2
     resolution = 240

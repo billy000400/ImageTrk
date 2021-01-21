@@ -1,7 +1,9 @@
 data/
 tmp/
 weights/
+python/util/__pycache__
 python/frcnn_train/frcnn.train.config.pickle
 python/photographic_mc_U_Net/photographic.train.config.pickle
 python/photographic_mc_U_Net_like/photographic.train.config.pickle
 python/photographic_mc_U_ResNet/photographic.train.config.pickle
+python/photographic_mc_overfitting/photographic.train.config.pickle

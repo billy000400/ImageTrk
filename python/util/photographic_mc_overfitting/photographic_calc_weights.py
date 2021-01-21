@@ -56,4 +56,3 @@ if __name__ == "__main__":
 
     weights = calc_weights(C)
     C.set_weights(weights)
-    pickle.dump(C, open(pickle_path, 'wb'))
