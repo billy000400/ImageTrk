@@ -7,3 +7,5 @@ python/photographic_mc_U_Net/photographic.train.config.pickle
 python/photographic_mc_U_Net_like/photographic.train.config.pickle
 python/photographic_mc_U_ResNet/photographic.train.config.pickle
 python/photographic_mc_overfitting/photographic.train.config.pickle
+html/
+latex/
