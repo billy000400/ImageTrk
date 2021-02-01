@@ -1,4 +1,7 @@
-data/
+data/*
+!data/plot_learningcurve.py
+!data/plot_window.py
+
 tmp/
 weights/
 python/util/__pycache__
