@@ -4,7 +4,77 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.layers import *
 
-class U_Net_Like:
+# U_Net_like
+class U_Net_Like_1024:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64, 128, 256, 512, 1024]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [1024, 512, 256, 128, 64, 32]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_256:
 
     def __init__(self, in_shape, num_classes):
         self.input_shape = in_shape
@@ -73,7 +143,76 @@ class U_Net_Like:
         model = keras.Model(inputs, outputs)
         return model
 
-class U_Net_Like_L2:
+class U_Net_Like_256_Dropout:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64, 128, 256]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/400)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/400)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [256, 128, 64, 32]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/400)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/400)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_256_L2:
     def __init__(self, in_shape, num_classes):
         self.input_shape = in_shape
         self.num_classes = num_classes
@@ -141,6 +280,492 @@ class U_Net_Like_L2:
         model = keras.Model(inputs, outputs)
         return model
 
+class U_Net_Like_128:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64, 128]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [128, 64, 32]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_128_Dropout:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64, 128]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/256)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/256)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [128, 64, 32]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/256)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/256)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_64:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [64, 32]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_32:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(16, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [32]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [32, 16]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_32_Dropout:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(16, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [32]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(0.3)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(0.3)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [32, 16]:
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/16*0.1+0.2)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SpatialDropout2D(filters/16*0.1+0.1)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_32_l2:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(1e-6)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(16, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [32]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init, kernel_regularizer=reg)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init, kernel_regularizer=reg)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init, kernel_regularizer=reg)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [32, 16]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init, kernel_regularizer=reg)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init, kernel_regularizer=reg)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init, kernel_regularizer=reg)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+class U_Net_Like_16:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(8, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [16]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [16, 8]:
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            #x = layers.SpatialDropout2D(filters/450)(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
+
+
+
+# U_Net
 class U_Net:
     def __init__(self, input_shape, num_class, shrink_times=3):
         if len(input_shape) == 2:
@@ -366,6 +991,7 @@ class U_Net_Upsampling:
         model = Model(input, output)
         return model
 
+# U_ResNet
 class U_ResNet:
     def __init__(self, input_shape, num_class, shrink_times=3):
         if len(input_shape) == 2:
@@ -478,4 +1104,71 @@ class U_ResNet:
         output = Conv2D(self.num_class, 1, activation='softmax', padding='same', kernel_initializer=init)(conv7)
 
         model = Model(input, output)
+        return model
+
+
+# Dense Nets
+class Dense:
+
+    def __init__(self, in_shape, num_classes):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+
+    def get_model(self):
+        inputs = keras.Input(shape=self.input_shape)
+        reg = l2(0.01)
+        init = RandomNormal(stddev=0.01)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        # Entry block
+        x = layers.Conv2D(32, 3, strides=2, padding="same", kernel_initializer=init)(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+
+        previous_block_activation = x  # Set aside residual
+
+        # Blocks 1, 2, 3 are identical apart from the feature depth.
+        for filters in [64, 128, 256]:
+            x = layers.Activation("relu")(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+
+            # Project residual
+            residual = layers.Conv2D(filters, 1, strides=2, padding="same", kernel_initializer=init)(
+                previous_block_activation
+            )
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        ### [Second half of the network: upsampling inputs] ###
+
+        for filters in [256, 128, 64, 32]:
+            x = layers.Activation("relu")(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.Conv2DTranspose(filters, 3, padding="same", kernel_initializer=init)(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            residual = layers.UpSampling2D(2)(previous_block_activation)
+            residual = layers.Conv2D(filters, 1, padding="same", kernel_initializer=init)(residual)
+            x = layers.add([x, residual])  # Add back residual
+            previous_block_activation = x  # Set aside next residual
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 3, activation="softmax", padding="same", kernel_initializer=init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
         return model
