@@ -7,15 +7,15 @@ experiment.
 ## Approach
 Given a cluster of digitized detector signals, we project their reconstructed positions onto the XY plane.
 
-![A plot of raw data](/home/Billy/Mu2e/analysis/DLTracking/pictures/FRCNN_raw.png)
+![A plot of raw data](pictures/FRCNN_raw.png)
 
 Next, we apply the Faster R-CNN to localize and draw a bounding box around every track. Every bounding box contains a smaller cluster of signals, which includes both signals of the main track in the bounding box and the signals of other bounding boxes' main tracks.
 
-![FRCNN](/home/Billy/Mu2e/analysis/DLTracking/pictures/FRCNN.png)
+![FRCNN](pictures/FRCNN.png)
 
 After the Faster R-CNN, we resize every bounding boxes to a 256x256 image and utilize a semantic image segmentation model to extract the main track's signals from the smaller cluster. As shown below, our image segmentation model assigns each pixel in a grayscale image to a RGB vector. The grayscale image on the left side represents the signal's number density in pixels, and the RGB image on the right side represents the predicted categories of pixels.Red pixels belong to the bounding box's major track, while blue cells belong to other bounding boxes' major tracks.
 
-![Extractor](/home/Billy/Mu2e/analysis/DLTracking/pictures/Extractor.png)
+![Extractor](pictures/Extractor.png)
 
 In short, we call red pixels "major" and call blue pixels "background." The white pixels are called "blank" because they do not contain any signals.
 
@@ -46,7 +46,7 @@ We can use an analogy to explain this. Suppose we have a linear signal plus a sm
 
 Thus, the goal of finding the optimal dropout rate is to find the best balance between not treating variant signals as noise and not remembering the 'textbook' to improve scores. Below is the learning curve of a ResNet decoder-encoder that has about 20,000,000 parameters, trained with a 0.64 dropout rate.
 
-![](/home/Billy/Mu2e/analysis/DLTracking/pictures/0.64.png)
+![0.64](pictures/0.64.png)
 
 ## Mu2e @ Minnesota
 
