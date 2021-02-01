@@ -11,7 +11,8 @@ cwd = Path.cwd()
 files = sorted(Path('.').glob('*.csv'))
 fileNames = [file.name for file in files]
 print("[INFO] Please type in a record name among below:")
-print(fileNames)
+for n in fileNames:
+    print(n)
 ans = input('-->')
 
 if cwd.joinpath(ans).exists():
@@ -38,6 +39,7 @@ ax1.legend()
 ax2.plot(epoch, acc, label='tra_acc')
 ax2.plot(epoch, val_acc, label='val_acc')
 ax2.set(xlabel='epoch', ylabel='accuracy (%)', title='Accuracy vs. Epoch Plot')
+ax2.legend()
 
 plt.show()
 plt.close()
