@@ -46,11 +46,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    photographic_val_x_dir = data_dir.joinpath('photographic_val_large_X')
-    photographic_val_y_dir = data_dir.joinpath('photographic_val_large_Y')
+    photographic_val_x_dir = data_dir.joinpath('photographic_morphology_val_X')
+    photographic_val_y_dir = data_dir.joinpath('photographic_morphology_val_Y')
 
-    photo_val_in_dir = data_dir.joinpath('photographic_val_input_photo')
-    photo_val_out_dir = data_dir.joinpath('photographic_val_output_truth')
+    photo_val_in_dir = data_dir.joinpath('photographic_morphology_val_input_photo_candidates')
+    photo_val_out_dir = data_dir.joinpath('photographic_morphology_val_output_truth_candidates')
 
     shutil.rmtree(photographic_val_x_dir, ignore_errors=True)
     shutil.rmtree(photographic_val_y_dir, ignore_errors=True)

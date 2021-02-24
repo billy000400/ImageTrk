@@ -8,6 +8,7 @@ from pathlib import Path
 import csv
 import random
 import pickle
+from datetime import datetime
 
 import numpy as np
 
@@ -32,7 +33,7 @@ util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Config import extractor_config as Config
 from DataGenerator import DataGenerator as Generator
-from Architecture import U_Net_Like_128
+from Architecture import FC_DenseNet
 from mu2e_output import *
 from Loss import *
 from Metric import *
@@ -51,7 +52,7 @@ def photographic_train(C):
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     input_shape = (C.resolution, C.resolution, 1)
-    architecture = U_Net_Like_128(input_shape, 3)
+    architecture = FC_DenseNet(input_shape, 3, dr=0.2)
     model = architecture.get_model()
     model.summary()
 
@@ -71,33 +72,26 @@ def photographic_train(C):
 
     # setup callback
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+    logdir="logs/fit/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 
     # print(cnn.summary())
     model.compile(optimizer=adam,\
                 metrics = ca,\
                 loss=cce)
 
-    cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
-    morph_dir = data_dir.joinpath('photographic_morphology')
-    train_dir = morph_dir.joinpath('Arc_train')
-    val_dir = morph_dir.joinpath('Arc_val')
-    X_train_dir = train_dir.joinpath('X')
-    Y_train_dir = train_dir.joinpath('Y')
-    X_val_dir = val_dir.joinpath('X')
-    Y_val_dir = val_dir.joinpath('Y')
 
 
-    train_generator = Generator(X_train_dir, Y_train_dir, batch_size=1)
-    val_generator = Generator(X_val_dir, Y_val_dir, batch_size=1)
+    train_generator = Generator(C.X_train_dir, C.Y_train_dir, batch_size=1)
+    val_generator = Generator(C.X_val_dir, C.Y_val_dir, batch_size=1)
 
     model.fit(x=train_generator,\
             shuffle=True,\
             validation_data=val_generator,\
-            callbacks = [CsvCallback],\
+            callbacks = [CsvCallback, tensorboard_callback],\
             use_multiprocessing=True,\
             workers=4,\
-            epochs=300)
+            epochs=50)
     model.save(model_weights)
 
     pcheck_point('Finished Training')
@@ -116,8 +110,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_mc_arc_128_Dropout_0.3"
-    record_name = "photographic_record_mc_arc_128_Dropout_0.3"
+    model_name = "photographic_mc_arc_FCDense_Dropout_0.3"
+    record_name = "photographic_record_mc_arc_FCDense_Dropout_0.3"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

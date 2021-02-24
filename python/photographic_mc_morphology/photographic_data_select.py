@@ -3,10 +3,10 @@ import shutil
 import csv
 
 data_dir = Path.cwd().parent.parent.joinpath('data')
-X_train_dir = data_dir.joinpath('photographic_train_large_X')
-Y_train_dir = data_dir.joinpath('photographic_train_large_Y')
-X_val_dir = data_dir.joinpath('photographic_val_large_X')
-Y_val_dir = data_dir.joinpath('photographic_val_large_Y')
+X_train_dir = data_dir.joinpath('photographic_morphology_train_X')
+Y_train_dir = data_dir.joinpath('photographic_morphology_train_Y')
+X_val_dir = data_dir.joinpath('photographic_morphology_val_X')
+Y_val_dir = data_dir.joinpath('photographic_morphology_val_Y')
 morph_dir = data_dir.joinpath('photographic_morphology')
 
 spiral_train_file = Path.cwd().joinpath('spiral_train0.txt')

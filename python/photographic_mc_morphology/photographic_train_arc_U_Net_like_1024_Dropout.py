@@ -32,7 +32,7 @@ util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Config import extractor_config as Config
 from DataGenerator import DataGenerator as Generator
-from Architecture import U_Net_Like_1024
+from Architecture import U_Net_Like_1024_Dropout
 from mu2e_output import *
 from Loss import *
 from Metric import *
@@ -51,7 +51,7 @@ def photographic_train(C):
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     input_shape = (C.resolution, C.resolution, 1)
-    architecture = U_Net_Like_1024(input_shape, 3)
+    architecture = U_Net_Like_1024_Dropout(input_shape, 3)
     model = architecture.get_model()
     model.summary()
 
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_mc_arc_1024"
-    record_name = "photographic_record_mc_arc_1024"
+    model_name = "photographic_mc_arc_1024_Dropout_0.3"
+    record_name = "photographic_record_mc_arc_1024_Dropout_0.3"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

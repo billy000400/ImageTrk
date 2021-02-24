@@ -53,12 +53,12 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir.mkdir(parents=True, exist_ok=True)
 
     ### directories for numpy data
-    photographic_train_x_dir = data_dir.joinpath('photographic_train_large_X')
-    photographic_train_y_dir = data_dir.joinpath('photographic_train_large_Y')
+    photographic_train_x_dir = data_dir.joinpath('photographic_morphology_train_X')
+    photographic_train_y_dir = data_dir.joinpath('photographic_morphology_train_Y')
 
     ### directories for jpg data
-    photo_train_in_dir = data_dir.joinpath('photographic_train_input_photo')
-    photo_train_out_dir = data_dir.joinpath('photographic_train_output_truth')
+    photo_train_in_dir = data_dir.joinpath('photographic_morphology_train_input_photo_candidates')
+    photo_train_out_dir = data_dir.joinpath('photographic_morphology_train_output_truth_candidates')
 
     shutil.rmtree(photographic_train_x_dir, ignore_errors=True)
     shutil.rmtree(photographic_train_y_dir, ignore_errors=True)

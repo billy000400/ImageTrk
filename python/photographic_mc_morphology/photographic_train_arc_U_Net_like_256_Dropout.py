@@ -116,8 +116,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_mc_arc_256_Dropout_0.64"
-    record_name = "photographic_record_mc_arc_256_Dropout_0.64"
+    model_name = "photographic_mc_arc_256_Dropout_0.2"
+    record_name = "photographic_record_mc_arc_256_Dropout_0.2"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

@@ -8,10 +8,14 @@ python/util/__pycache__
 python/frcnn_mc_train/frcnn.train.config.pickle
 python/frcnn_train/frcnn.train.config.pickle
 python/photographic_mc_morphology/photographic.train.config.pickle
+python/photographic_mc_morphology/logs/
 python/photographic_mc_small/photographic.train.config.pickle
 python/photographic_mc_U_Net/photographic.train.config.pickle
 python/photographic_mc_U_Net_like/photographic.train.config.pickle
 python/photographic_mc_U_ResNet/photographic.train.config.pickle
 python/photographic_mc_overfitting/photographic.train.config.pickle
+python/photographic_mc_FCDenseNet/photographic.train.config.pickle
+python/photographic_mc_FCDenseNet/logs/
 html/
 latex/
+pictures/
