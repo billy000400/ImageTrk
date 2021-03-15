@@ -341,7 +341,7 @@ if __name__ == "__main__":
     C = Config(track_dir)
 
     mode = 'normal'
-    window = 4800 # unit: number of windows
+    window = 300 # unit: number of windows
     mean = 5
     std = 2
     resolution = 256

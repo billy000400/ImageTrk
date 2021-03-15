@@ -16,9 +16,11 @@ from copy import deepcopy
 import numpy as np
 np.random.seed(0)
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from sqlalchemy import *
 
+import PIL
 from PIL import Image
 
 util_dir = Path.cwd().parent.joinpath('util')
@@ -28,17 +30,21 @@ from Abstract import binning_objects
 from TrackDB_Classes import *
 from mu2e_output import *
 
-
-
 def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -46,20 +52,22 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    photographic_val_x_dir = data_dir.joinpath('photographic_large_val_X')
-    photographic_val_y_dir = data_dir.joinpath('photographic_large_val_Y')
+    ### directories for numpy data
+    photographic_train_x_dir = data_dir.joinpath('photographic_zEncoded_train_X')
+    photographic_train_y_dir = data_dir.joinpath('photographic_zEncoded_train_Y')
 
-    photo_val_in_dir = data_dir.joinpath('photographic_large_val_input_photo')
-    photo_val_out_dir = data_dir.joinpath('photographic_large_val_output_truth')
+    ### directories for jpg data
+    photo_train_in_dir = data_dir.joinpath('photographic_zEncoded_train_input_photo')
+    photo_train_out_dir = data_dir.joinpath('photographic_zEncoded_train_output_truth')
 
-    shutil.rmtree(photographic_val_x_dir, ignore_errors=True)
-    shutil.rmtree(photographic_val_y_dir, ignore_errors=True)
-    shutil.rmtree(photo_val_in_dir, ignore_errors=True)
-    shutil.rmtree(photo_val_out_dir, ignore_errors=True)
-    photographic_val_x_dir.mkdir(parents=True, exist_ok=True)
-    photographic_val_y_dir.mkdir(parents=True, exist_ok=True)
-    photo_val_in_dir.mkdir(parents=True, exist_ok=True)
-    photo_val_out_dir.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(photographic_train_x_dir, ignore_errors=True)
+    shutil.rmtree(photographic_train_y_dir, ignore_errors=True)
+    shutil.rmtree(photo_train_in_dir, ignore_errors=True)
+    shutil.rmtree(photo_train_out_dir, ignore_errors=True)
+    photographic_train_x_dir.mkdir(parents=True, exist_ok=True)
+    photographic_train_y_dir.mkdir(parents=True, exist_ok=True)
+    photo_train_in_dir.mkdir(parents=True, exist_ok=True)
+    photo_train_out_dir.mkdir(parents=True, exist_ok=True)
 
     ### pixel truth labels
     is_blank = np.array([1,0,0], dtype=np.float32)
@@ -115,7 +123,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 track_box = [ptcl]
                 track_found_number = 1
 
-            strawHit_qrl = session.query(StrawHit).filter(StrawHit.particle==ptcl.id)
+            strawHit_qrl = session.query(StrawDigiMC).filter(StrawDigiMC.particle==ptcl.id)
             hitNum = strawHit_qrl.count()
             if hitNum < hitNumCut:
                 continue
@@ -126,6 +134,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
         # draw bbox for each track
         mcs = [ session.query(StrawDigiMC).filter(StrawDigiMC.particle==ptcl.id).all() for ptcl in track_box ]
 
+        for mc in mcs:
+            if len(mc) < hitNumCut:
+                pdebug(f'Less than {hitNumCut}')
         # xs, ys, zs are 2-D lists.
         # Every list inside corresponds to a particle
         # They are going to be the reference for drawing bounding boxes
@@ -158,25 +169,31 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
             sorted_selected_mcs_y = deepcopy(selected_mcs_y)
             sorted_selected_mcs_y.sort()
+            selected_mcs_z = [ z for [x,y,z] in selected_mcs_pos ]
+            sorted_selected_mcs_z = deepcopy(selected_mcs_z)
+            sorted_selected_mcs_z.sort()
 
             # create the blank input photo by resolution and the xy ratio
             xmin = sorted_selected_mcs_x[0]
             xmax = sorted_selected_mcs_x[-1]
             ymin = sorted_selected_mcs_y[0]
             ymax = sorted_selected_mcs_y[-1]
+            zmin = sorted_selected_mcs_z[0]
+            zmax = sorted_selected_mcs_z[-1]
             x_delta = xmax - xmin
             y_delta = ymax - ymin
+            z_delta = zmax - zmin
             ratio = y_delta/x_delta
             if ratio >= 1:
                 xpixel = int(np.ceil(resolution/ratio))
                 ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
             else:
                 xpixel = resolution
                 ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
 
@@ -192,22 +209,36 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             # first index is row
             bins_by_row = binning_objects(selected_mcs_pos, selected_mcs_y, ybins)[1:]
 
+            majorDetected = 0
             for row, bin in enumerate(bins_by_row):
                 x_bin_flatten = [ x for (x,y,z) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
-                    density = len(square)#number density
-                    input_photo[ypixel-row-1][col] = density
+                    density = len(square) # number density
                     if density != 0 :
                         has_major = False
+                        # calculate the average z
+                        z_list = [z for [x,y,z] in square]
+                        z_avg = sum(z_list)/len(z_list)
+                        # calculate RGB
+                        R = density
+                        G = (z_avg - zmin)/z_delta*255
+                        B = 0
+                        # fill data
+                        input_photo[ypixel-row-1][col][0] = R
+                        input_photo[ypixel-row-1][col][1] = G
+                        input_photo[ypixel-row-1][col][2] = B
                         for pos in square:
                             if pos in mcs_pos[i]:
                                 has_major = True
+                                majorDetected+=1
                                 break
                         if has_major == True:
                             output_truth[ypixel-row-1][col] = is_major
+
                         else:
                             output_truth[ypixel-row-1][col] = is_bg
+
 
             if len(np.where(input_photo!=0)[0]) == 0:
                 pdebug(bins_by_row)
@@ -232,6 +263,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
 
 
+            # if index == 240:
+            #     pdebug(np.where((output_truth==is_major).all(axis=2)))
+
 
             ### scale tensors
 
@@ -242,15 +276,15 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             xo = input_photo
             yo = output_truth
             ratio = xo.shape[0]/xo.shape[1]
-            im_in = Image.fromarray(xo)
+            im_in = Image.fromarray(xo, mode='RGB')
             im_out = Image.fromarray(yo, mode='RGB')
 
             for degree in [0, 90, 180, 270]:
 
-                input_file = photographic_val_x_dir.joinpath(f'input_{str(index).zfill(6)}')
-                output_file = photographic_val_y_dir.joinpath(f'output_{str(index).zfill(6)}')
-                input_photo_file = photo_val_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
-                output_truth_file = photo_val_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
+                input_file = photographic_train_x_dir.joinpath(f'input_{str(index).zfill(6)}')
+                output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
+                input_photo_file = photo_train_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
+                output_truth_file = photo_train_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
 
                 x = im_in.resize(scale_want)
                 y = im_out.resize(scale_want)
@@ -258,16 +292,22 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 x = x.rotate(degree)
                 y = y.rotate(degree)
 
+                x[:,:,1] = x[:,:,1]/255.0
+
                 x = np.array(x, dtype=np.float32)
                 y = np.array(y, dtype=np.float32)
+
 
                 np.save(input_file, x)
                 np.save(output_file, y)
 
-                x_max = int(x.max())
-                ratio = 255/x_max
-                for n in range(x_max+1):
-                    x[x==n] = np.uint8(255-n*ratio)
+                # x_max = int(x.max())
+                # ratio = 255/x_max
+                # for n in range(x_max+1):
+                #     x[x==n] = np.uint8(255-n*ratio)
+
+                x[:,:,1] = x[:,:,1]*255
+                x[:,:,2] = 255-x[:,:,1]
 
                 y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
                 y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
@@ -276,7 +316,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 x = np.array(x, dtype=np.uint8)
                 y = np.array(y, dtype=np.uint8)
 
-                x = Image.fromarray(x)
+                x = Image.fromarray(x, mode='RGB')
                 y = Image.fromarray(y, mode='RGB')
                 x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
                 y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
@@ -286,10 +326,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
                 index += 1
 
-    return photographic_val_x_dir, photographic_val_y_dir
+
+    return photographic_train_x_dir, photographic_train_y_dir
 
 
-def make_data(C):
+def make_data(C, mode):
     """
     This function helps determine which mode should be used when preparing training data.
     If mode is "normal", track number would fit a Gaussian distribution whose parameters were specificed in the configuration object before called.
@@ -298,15 +339,14 @@ def make_data(C):
     pstage("Making training data")
 
 
+    if mode == "normal":
+        track_dir = C.track_dir
+        mean = C.trackNum_mean
+        std = C.trackNum_std
+        windowNum = C.window
+        train_x_dir, train_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
 
-    track_dir = C.track_dir
-    mean = C.trackNum_mean
-    std = C.trackNum_std
-    windowNum = int(C.window/7*2)
-    resolution = C.resolution
-    val_x_dir, val_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
-
-    C.set_val_dir(val_x_dir, val_y_dir)
+    C.set_train_dir(train_x_dir, train_y_dir)
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('photographic.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
@@ -314,17 +354,29 @@ def make_data(C):
 
 if __name__ == "__main__":
     pbanner()
-    psystem('Photographic track extractor')
+    psystem('Photographic track extractor: zEncoded')
     pmode('Testing Feasibility')
     pinfo('Input DType for testing: StrawDigiMC')
 
-    # load pickle
-    cwd = Path.cwd()
-    pickle_path = cwd.joinpath('photographic.train.config.pickle')
-    C = pickle.load(open(pickle_path,'rb'))
+    track_str = '../../tracks'
+    track_dir = Path(track_str)
+    C = Config(track_dir)
+
+    mode = 'normal'
+    window = 300 # unit: number of windows
+    mean = 5
+    std = 2
+    resolution = 256
+
+    track_dir = Path(track_str)
+    C = Config(track_dir)
+
+    C.set_distribution(mean, std)
+    C.set_window(window)
+    C.set_resolution(resolution)
 
     start = timeit.default_timer()
-    make_data(C)
+    make_data(C, mode)
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')

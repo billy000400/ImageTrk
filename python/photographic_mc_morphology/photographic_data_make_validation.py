@@ -255,6 +255,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 x = im_in.resize(scale_want)
                 y = im_out.resize(scale_want)
 
+                x = x.rotate(degree)
+                y = y.rotate(degree)
+
                 x = np.array(x, dtype=np.float32)
                 y = np.array(y, dtype=np.float32)
 

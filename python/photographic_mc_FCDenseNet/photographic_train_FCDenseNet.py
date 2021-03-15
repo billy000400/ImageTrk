@@ -52,7 +52,7 @@ def photographic_train(C):
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     input_shape = (C.resolution, C.resolution, 1)
-    architecture = FC_DenseNet(input_shape, 3, dr=0.2)
+    architecture = FC_DenseNet(input_shape, 3, dr=0.0)
     model = architecture.get_model()
     model.summary()
 
@@ -72,7 +72,7 @@ def photographic_train(C):
 
     # setup callback
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
-    logdir="logs/fit/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    logdir="logs/fit/" + "mc_FCDenseNet_dr=0.0_" + datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 
     # print(cnn.summary())
@@ -91,7 +91,7 @@ def photographic_train(C):
             callbacks = [CsvCallback, tensorboard_callback],\
             use_multiprocessing=True,\
             workers=4,\
-            epochs=50)
+            epochs=150)
     model.save(model_weights)
 
     pcheck_point('Finished Training')
@@ -110,8 +110,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_mc_arc_FCDense_Dropout_0.3"
-    record_name = "photographic_record_mc_arc_FCDense_Dropout_0.3"
+    model_name = "photographic_mc_arc_FCDense_Dropout_0.0"
+    record_name = "photographic_record_mc_arc_FCDense_Dropout_0.0"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

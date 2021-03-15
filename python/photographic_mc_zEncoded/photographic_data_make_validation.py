@@ -46,11 +46,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    photographic_val_x_dir = data_dir.joinpath('photographic_large_val_X')
-    photographic_val_y_dir = data_dir.joinpath('photographic_large_val_Y')
+    photographic_val_x_dir = data_dir.joinpath('photographic_zEncoded_val_X')
+    photographic_val_y_dir = data_dir.joinpath('photographic_zEncoded_val_Y')
 
-    photo_val_in_dir = data_dir.joinpath('photographic_large_val_input_photo')
-    photo_val_out_dir = data_dir.joinpath('photographic_large_val_output_truth')
+    photo_val_in_dir = data_dir.joinpath('photographic_zEncoded_val_input_photo')
+    photo_val_out_dir = data_dir.joinpath('photographic_zEncoded_val_output_truth')
 
     shutil.rmtree(photographic_val_x_dir, ignore_errors=True)
     shutil.rmtree(photographic_val_y_dir, ignore_errors=True)
@@ -158,25 +158,31 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
             sorted_selected_mcs_y = deepcopy(selected_mcs_y)
             sorted_selected_mcs_y.sort()
+            selected_mcs_z = [ z for [x,y,z] in selected_mcs_pos ]
+            sorted_selected_mcs_z = deepcopy(selected_mcs_z)
+            sorted_selected_mcs_z.sort()
 
             # create the blank input photo by resolution and the xy ratio
             xmin = sorted_selected_mcs_x[0]
             xmax = sorted_selected_mcs_x[-1]
             ymin = sorted_selected_mcs_y[0]
             ymax = sorted_selected_mcs_y[-1]
+            zmin = sorted_selected_mcs_z[0]
+            zmax = sorted_selected_mcs_z[-1]
             x_delta = xmax - xmin
             y_delta = ymax - ymin
+            z_delta = zmax - zmin
             ratio = y_delta/x_delta
             if ratio >= 1:
                 xpixel = int(np.ceil(resolution/ratio))
                 ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
             else:
                 xpixel = resolution
                 ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
 
@@ -197,9 +203,19 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
                     density = len(square)#number density
-                    input_photo[ypixel-row-1][col] = density
                     if density != 0 :
                         has_major = False
+                        # calculate the average z
+                        z_list = [z for [x,y,z] in square]
+                        z_avg = sum(z_list)/len(z_list)
+                        # calculate RGB
+                        R = density
+                        G = (z_avg - zmin)/z_delta*255
+                        B = 0
+                        # fill data
+                        input_photo[ypixel-row-1][col][0] = R
+                        input_photo[ypixel-row-1][col][1] = G
+                        input_photo[ypixel-row-1][col][2] = B
                         for pos in square:
                             if pos in mcs_pos[i]:
                                 has_major = True
@@ -242,7 +258,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             xo = input_photo
             yo = output_truth
             ratio = xo.shape[0]/xo.shape[1]
-            im_in = Image.fromarray(xo)
+            im_in = Image.fromarray(xo, mode='RGB')
             im_out = Image.fromarray(yo, mode='RGB')
 
             for degree in [0, 90, 180, 270]:
@@ -258,16 +274,23 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 x = x.rotate(degree)
                 y = y.rotate(degree)
 
+
+
                 x = np.array(x, dtype=np.float32)
                 y = np.array(y, dtype=np.float32)
+
+                x[:,:,1] = x[:,:,1]/255.0
 
                 np.save(input_file, x)
                 np.save(output_file, y)
 
-                x_max = int(x.max())
-                ratio = 255/x_max
-                for n in range(x_max+1):
-                    x[x==n] = np.uint8(255-n*ratio)
+                # x_max = int(x.max())
+                # ratio = 255/x_max
+                # for n in range(x_max+1):
+                #     x[x==n] = np.uint8(255-n*ratio)
+
+                x[:,:,1] = x[:,:,1]*255
+                x[:,:,2] = 255-x[:,:,1]
 
                 y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
                 y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
@@ -276,7 +299,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
                 x = np.array(x, dtype=np.uint8)
                 y = np.array(y, dtype=np.uint8)
 
-                x = Image.fromarray(x)
+                x = Image.fromarray(x, mode='RGB')
                 y = Image.fromarray(y, mode='RGB')
                 x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
                 y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
