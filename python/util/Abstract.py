@@ -191,7 +191,6 @@ def make_score_bbox_map(anchors):
 # values are between 0 amd 1.
 # \rt{score_bbox_map_result, nested list, The updated score-bbox map}
 def update_score_bbox_map(score_bbox_map, bbox, anchors):
-    s
     score_bbox_map_result = score_bbox_map
     (iNum, jNum, kNum) = score_bbox_map.shape[:3]
     for i in range(iNum):
@@ -206,6 +205,9 @@ def update_score_bbox_map(score_bbox_map, bbox, anchors):
                 if score > score_bbox_map[i][j][k][0]:
                     score_bbox_map_result[i][j][k][0] = score
                     score_bbox_map_result[i][j][k][1] = bbox
+                # if score>0.7:
+                #     #print('anchor',anchor)
+                #     #print('bbox',bbox)
     return score_bbox_map_result
 
 ## Return an anchor label by IoU score and input limits
@@ -374,6 +376,9 @@ def make_delta_map(score_bbox_map, lim_up, anchors):
     return delta_map
 
 ## Make a dictionary in which keys are img names and items are bboxes in the img.
+# If an image is skipped (exists in img_dir but not in returned img_bbox_dict),
+# there is no track in the image, which is possible due
+# to the input probability distribution.
 #
 # \pr{img_dir, Path object, A directory that has training images.}
 # \pr{bbox_file, Path object, A csv file that each line represents a bbox.}

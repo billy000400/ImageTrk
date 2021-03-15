@@ -65,6 +65,9 @@ class frcnn_config:
         self.model_name = None
         self.record_name = None
 
+        # prediction on trained data for trainings of Fast RCNN
+        self.bbox_prediction_file = None
+
         # test data
         self.test_source = None
 
@@ -167,8 +170,8 @@ class frcnn_config:
         self.test_img_dir = test_img_dir
         self.test_bbox_table_reference = test_bbox_table_reference
 
-    def set_prediction(self, test_bbox_table_result):
-        self.test_bbox_table_prediction = test_bbox_table_result
+    def set_prediction(self, bbox_table_prediction_file):
+        self.bbox_prediction_file = bbox_table_prediction_file
 
 class extractor_config:
     def __init__(self, track_sql_dir):

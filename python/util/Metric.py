@@ -143,8 +143,10 @@ def positive_number(p_r, p_p):
     mask = ~tf.math.is_nan(p_r)
     mp_r = tf.boolean_mask(p_r, mask=mask)
 
+    # print_tensor(tf.reduce_sum(tf.cast(tf.math.greater(p_r,0.5), tf.float32)), message='pos')
+    # print_tensor(tf.reduce_sum(tf.cast(tf.math.less(p_r,0.5), tf.float32)), message='neg')
     # print_tensor(batch_size, 'batch_size: ')
     # print_tensor(tf.reduce_sum(mp_r)/batch_size, 'sampled positive: ')
-    # print_tensor(pos_num/batch_size, 'predicted positive: ')
+    # print_tensor(pos_num, 'total positive number: ')
 
     return pos_num/batch_size # denominator is batch size
