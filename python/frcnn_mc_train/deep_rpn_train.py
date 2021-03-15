@@ -119,6 +119,9 @@ def rpn_train(C):
     pickle_train_path = Path.cwd().joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_train_path, 'wb'))
 
+    pickle_test_path = Path.cwd().parent.joinpath('frcnn_test').joinpath('frcnn.test.config.pickle')
+    pickle.dump(C, open(pickle_test_path, 'wb'))
+
     pcheck_point('Finished Training')
     return C
 
@@ -135,9 +138,9 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    lambdas = [1, 100]
-    model_name = 'rpn_mc_00'
-    record_name = 'rpn_mc_record_00'
+    lambdas = [1, 10]
+    model_name = 'deep_rpn_mc_00'
+    record_name = 'deep_rpn_mc_record_00'
 
     C.set_outputs(model_name, record_name)
     C.set_lambda(lambdas)

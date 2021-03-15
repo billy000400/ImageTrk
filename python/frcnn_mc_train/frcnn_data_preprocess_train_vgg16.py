@@ -8,8 +8,8 @@ from math import sqrt
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from frcnn_config import Config
-from abstract import*
+from Config import frcnn_config as Config
+from Abstract import*
 from mu2e_output import*
 
 
@@ -77,15 +77,19 @@ def preprocess(C):
             delta_maps.append(delta_map)
         else:
             pwarn(f'{img_name} is discarded as it has untrainable data', special = '\n')
+            pwarn(f'Detalis: labels_trainable:{labels_trainable}, deltas_trainable:{deltas_trainable}')
+            df = pd.read_csv(C.bbox_file, index_col=0)
+            df = df[df['FileName']!=img_name]
+            df.to_csv(C.bbox_file)
 
     # Save numpy arrays to local
     inputs = np.asarray(inputs)
     label_maps = np.asarray(label_maps)
     delta_maps = np.asarray(delta_maps)
 
-    inputs_npy = np_dir.joinpath('inputs.npy')
-    labels_npy = np_dir.joinpath('label_maps.npy')
-    deltas_npy = np_dir.joinpath('delta_maps.npy')
+    inputs_npy = np_dir.joinpath('mc_inputs.npy')
+    labels_npy = np_dir.joinpath('mc_label_maps.npy')
+    deltas_npy = np_dir.joinpath('mc_delta_maps.npy')
 
     np.save(inputs_npy, inputs)
     np.save(labels_npy, label_maps)
@@ -116,8 +120,8 @@ if __name__ == "__main__":
     lower_limit = 0.3
     upper_limit = 0.7
 
-    posCut = 128
-    nWant = 256
+    posCut = 6
+    nWant = 12
 
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')

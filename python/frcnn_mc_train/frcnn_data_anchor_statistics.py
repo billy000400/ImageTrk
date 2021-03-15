@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from abstract import *
+from Abstract import *
 from mu2e_output import *
-from frcnn_config import Config
+from Config import frcnn_config as Config
 
 def anchor_statistics(C):
 
@@ -31,7 +31,7 @@ def anchor_statistics(C):
     all_positive_anchor_number = []
     all_negative_anchor_number = []
 
-
+    index = 0
     for img_name, bbox_list in img_bbox_list:
 
         all_track_number.append(len(bbox_list))
@@ -47,25 +47,29 @@ def anchor_statistics(C):
 
         score_map = [pyramid[0] for row in score_bbox_map for column in row for pyramid in column]
         score_map = np.array(score_map)
-        positive_anchor_number = np.count_nonzero(score_map>=0.5)
-        negative_anchor_number = score_map.size-positive_anchor_number
+        positive_anchor_number = np.count_nonzero(score_map>=C.label_limit_upper)
+        negative_anchor_number = np.count_nonzero(score_map<=C.label_limit_lower)
         all_positive_anchor_number.append(positive_anchor_number)
         all_negative_anchor_number.append(negative_anchor_number)
 
     all_img_name = [idx for idx, name in enumerate(all_img_name)]
     fig, ax1 = plt.subplots()
-    ax1.plot(all_img_name, all_track_number, label='bbox number')
-    ax1.plot(all_img_name, all_positive_anchor_number, label='raw positive anchor number')
-    ax1.plot(all_img_name, all_negative_anchor_number, label='raw negative anchor number')
 
-    if cwd.parent.parent.joinpath('tmp').joinpath('label_maps.npy').is_file():
-        sampled_label_maps = np.load(cwd.parent.parent.joinpath('tmp').joinpath('label_maps.npy'))
+    ax1.plot(all_img_name, all_track_number, label='bbox number', lw=6)
+    ax1.plot(all_img_name, all_positive_anchor_number, label='raw positive anchor number', lw=5)
+    ax1.plot(all_img_name, all_negative_anchor_number, label='raw negative anchor number', lw=4)
+
+    if cwd.parent.parent.joinpath('tmp').joinpath('mc_label_maps.npy').is_file():
+        # img_input = np.load(C.inputs_npy)
+        # all_img_name = list(range(img_input.shape[0]))
+        sampled_label_maps = np.load(C.labels_npy)
         sampled_pos_anchor_num = [np.count_nonzero(label_map[~np.isnan(label_map)]==1) for label_map in sampled_label_maps]
         sampled_neg_anchor_num = [np.count_nonzero(label_map[~np.isnan(label_map)]==0) for label_map in sampled_label_maps]
         sampled_pos_anchor_num = np.array(sampled_pos_anchor_num)
         sampled_neg_anchor_num = np.array(sampled_neg_anchor_num)
-        ax1.plot(all_img_name, sampled_pos_anchor_num, label='sampled positive anchor number')
-        ax1.plot(all_img_name, sampled_neg_anchor_num, label='sampled negative anchor number')
+        # bug
+        ax1.plot(all_img_name, sampled_pos_anchor_num, label='sampled positive anchor number', lw=3)
+        ax1.plot(all_img_name, sampled_neg_anchor_num, label='sampled negative anchor number', lw=2)
 
     ax1.set_title('Anchor Number and BBox Number of Images')
     ax1.set(xlabel='Image index', ylabel='Number')

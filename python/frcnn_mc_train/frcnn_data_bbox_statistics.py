@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from mu2e_output import *
-from frcnn_config import Config
+from Config import frcnn_config as Config
 
 def bbox_statistics(C):
     input_shape = C.input_shape

@@ -185,11 +185,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = cwd.parent.parent.joinpath('data')
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('imgs_train')
+    img_dir = data_dir.joinpath('mc_imgs_train')
     shutil.rmtree(img_dir, ignore_errors=True)
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_name = "bbox_proposal_train.csv"
+    csv_name = "mc_bbox_proposal_train.csv"
     bbox_file = data_dir.joinpath(csv_name)
 
     ### initialize sqlite session
@@ -338,8 +338,8 @@ if __name__ == "__main__":
     track_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
     # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
     # window = 20 # unit: ns
-    window = 200 # unit: number of windows
-    resolution = 800
+    window = 300 # unit: number of windows
+    resolution = 512
     mode = 'normal'
     mean = 5
     std = 2
