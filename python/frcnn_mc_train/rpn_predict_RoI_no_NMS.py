@@ -82,7 +82,7 @@ def rpn_test(C):
         sys.stdout.flush()
 
         # select all bbox whose objective score is >= 0.5 and put them in a list
-        score_bbox_pairs = propose_score_bbox_list(anchors, input_shape, score_map, delta_map)
+        score_bbox_pairs = propose_score_bbox_list(anchors, score_map, delta_map)
 
         scores, bbox_raws = [], []
         for score_bbox in score_bbox_pairs:

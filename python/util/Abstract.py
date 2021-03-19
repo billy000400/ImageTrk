@@ -441,7 +441,7 @@ def translate_delta(anchor, delta):
 # \rt{score_bbox_list, nested list, Every sublist contains a bbox and its score.}
 # Explicitly, score_bbox_list[i] = [score, bbox].
 
-def propose_score_bbox_list(anchors, input_shape, score_map, delta_map):
+def propose_score_bbox_list(anchors, score_map, delta_map):
 
     (iNum, jNum, kNum) = score_map.shape
 
