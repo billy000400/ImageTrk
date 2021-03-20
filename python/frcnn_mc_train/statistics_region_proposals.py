@@ -8,6 +8,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -22,3 +23,13 @@ C = pickle.load(open(pickle_path,'rb'))
 
 df_r = pd.read_csv(C.bbox_file, index_col=0) # r=real
 df_p = pd.read_csv(C.bbox_prediction_file, index_col=0) # p=proposed
+
+imgNames = df_r['FileName'].unique().tolist()
+proposalNum = []
+for img in imgNames:
+    proposalNum.append(len(df_p[df_p['FileName']==img].index))
+
+proposalNum = np.array(proposalNum)
+plt.hist(proposalNum)
+plt.show()
+print(proposalNum.min())
