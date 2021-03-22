@@ -79,6 +79,7 @@ class frcnn_config:
         self.test_bbox_table_prediction = None
 
         # detector training data
+        self.rois = None
         self.detector_train_Y_classifier = None
         self.detector_train_Y_regressor = None
 
@@ -181,7 +182,8 @@ class frcnn_config:
     def set_prediction(self, bbox_table_prediction_file):
         self.bbox_prediction_file = bbox_table_prediction_file
 
-    def set_detector_training_data(self, classifier, regressor):
+    def set_detector_training_data(self, rois, classifier, regressor):
+        self.rois = rois
         self.detector_train_Y_classifier = classifier
         self.detector_train_Y_regressor = regressor
 

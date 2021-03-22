@@ -15,7 +15,7 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.optimizers import Adam
 from tensorflow.distribute import MirroredStrategy
 
@@ -23,6 +23,7 @@ util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from mu2e_output import *
 from Config import frcnn_config as Config
+from Layers import RoIPooling2D
 from Loss import *
 from Metric import *
 ### imports ends
@@ -32,6 +33,7 @@ def detector_train(C):
 
     # prepare the tensorflow.data.DataSet object
     inputs = np.load(C.inputs_npy)
+    rois = np.load(C.rois)
     classifiers = np.load(C.detector_train_Y_classifier)
     regressors = np.load(C.detector_train_Y_regressor)
 
@@ -45,9 +47,17 @@ def detector_train(C):
 
     pinfo('I/O Path is configured')
 
-    # build the model
+
     img_input = Input(shape=C.input_shape)
-    RoI_input = Input(shape=C.input_shape)
+    RoI_input = Input(shape=roi.shape[1:])
+    x = C.base_net.nn(img_input)
+    x = RoIPooling2D()([x, RoI_input])
+    x = Dense(4096, activation='relu')(x)
+    x = Dense(4096, activation='relu')(x)
+    x = Flatten()(x)
+    x1 = Dense()(x)
+    x2 = Dense()(x)
+
 
 
 

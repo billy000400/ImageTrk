@@ -87,26 +87,28 @@ def make_data(C, roiNum, negativeRate):
                  for i, r in df_r_slice.iterrows()]
         proposals = [ [r['XMin'], r['XMax'], r['YMin'], r['YMax']] for i, r in df_p_slice.iterrows()]
 
-        positives = []
-        negatives = []
+        pos_tuples = []
+        neg_tuples = []
 
         # iterate over proposed bboxes to sort them into positives and negatives
         for proposal in proposals:
             iou_highest=0
             label = None
+            ref_bbox = None
             for bbox, pdgId in bbox_pdgId_pairs:
                 iou_tmp = iou(bbox, proposal)
                 if iou_tmp > iou_highest:
                     iou_highest = iou_tmp
                     label = pdgId
+                    ref_bbox = bbox
             if iou_highest > 0.5:
-                positives.append([proposal, label])
+                pos_tuples.append((proposal, label, ref_bbox))
             elif iou_highest > 0.1:
-                negatives.append([proposal, 'bg'])
+                neg_tuples.append((proposal, 'bg', ref_bbox))
 
         # calculate the number of positive example and negative example
-        posNum = len(positives)
-        negNum = len(negatives)
+        posNum = len(pos_tuples)
+        negNum = len(neg_tuples)
         totNum = posNum + negNum
 
         assert totNum >= roiNum,\
@@ -124,25 +126,35 @@ def make_data(C, roiNum, negativeRate):
             negWant = roiNum - posWant
 
         # randomly select RoIs for training
-        pos_selected = random.sample(positives, posWant)
-        neg_selected = random.sample(negatives, negWant)
+        pos_selected = random.sample(pos_tuples, posWant)
+        neg_selected = random.sample(neg_tuples, negWant)
 
         # combine negative examples and positive examples and shuffle
-        proposal_selected = pos_selected + neg_selected
-        random.shuffle(proposal_selected)
+        tuples_selected = pos_selected + neg_selected
+        random.shuffle(tuples_selected)
 
         # copy the result to the registered memory
-        for i, proposal in enumerate(proposal_selected):
-            bbox_p, label = proposal
+        for i, tuple in enumerate(tuples_selected):
+            proposal, label, ref_bbox = tuple
+            # proposal t = (x, y, w, h) as indicated in the original paper
+            # (x,y) is the left upper corner
+            t = [ proposal[0], proposal[3],\
+                        (proposal[1]-proposal[0]), (proposal[3]-proposal[2]) ]
+            rois[img_idx][i] = np.array(t, dtype=np.float32)
             outputs_classifier[img_idx][i] = oneHotEncoder[label]
-            outputs_regressor[img_idx][i] = np.array(bbox_p, dtype=np.float32)
+            # refernece bbox v = (x,y,w,h) as indicated in the original paper
+            # (x,y) is the left upper corner
+            v = [ ref_bbox[0], ref_bbox[3],\
+                        (ref_bbox[1]-ref_bbox[0]), (ref_bbox[3]-ref_bbox[2]) ]
+            outputs_regressor[img_idx][i] = np.array(v, dtype=np.float32)
 
     # save data to disk
+    np.save(roi_file, rois)
     np.save(Y_classifier_file, outputs_classifier)
     np.save(Y_regressor_file, outputs_regressor)
 
     # save file path to config and dump it
-    C.set_detector_training_data(Y_classifier_file, Y_regressor_file)
+    C.set_detector_training_data(roi_file, Y_classifier_file, Y_regressor_file)
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
 
