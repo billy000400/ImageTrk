@@ -78,6 +78,14 @@ class frcnn_config:
         self.test_bbox_table_reference = None
         self.test_bbox_table_prediction = None
 
+        # detector training data
+        self.detector_train_Y_classifier = None
+        self.detector_train_Y_regressor = None
+
+        # detector trianing record
+        self.detector_model_name = None
+        self.detector_record_name = None
+
     def set_source(self, source):
         for file in source:
             assert Path.exists(self.track_dir.joinpath(file+'.db')), \
@@ -172,6 +180,14 @@ class frcnn_config:
 
     def set_prediction(self, bbox_table_prediction_file):
         self.bbox_prediction_file = bbox_table_prediction_file
+
+    def set_detector_training_data(self, classifier, regressor):
+        self.detector_train_Y_classifier = classifier
+        self.detector_train_Y_regressor = regressor
+
+    def set_detector_record(self, model_name, record_name):
+        self.detector_model_name = model_name
+        self.detector_record_name = record_name
 
 class extractor_config:
     def __init__(self, track_sql_dir):
