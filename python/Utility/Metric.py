@@ -45,8 +45,9 @@ def unmasked_binary_accuracy(p_r, p_p):
     return score/N_cls*100.0
 
 def unmasked_categorical_accuracy(p_r, p_p):
-    p_real_sl = p_r[:,:,:,0]
-    mask = ~tf.math.is_nan(p_real_sl)
+    # p_real_sl = p_r[:,:,:,0]
+    # mask = ~tf.math.is_nan(p_real_sl)
+    mask = ~tf.math.is_nan(p_r)
 
     mp_r = tf.boolean_mask(p_r, mask=mask)
     mp_p = tf.boolean_mask(p_p, mask=mask)

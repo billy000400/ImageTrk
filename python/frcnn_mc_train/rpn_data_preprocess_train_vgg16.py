@@ -6,11 +6,12 @@ import cv2
 import timeit
 from math import sqrt
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import frcnn_config as Config
+from Configuration import frcnn_config
 from Abstract import*
-from mu2e_output import*
+from Architectures import VGG16
+from Information import*
 
 
 def preprocess(C):
@@ -30,7 +31,8 @@ def preprocess(C):
 
     # setup save path for preprocessed data
     cwd = Path.cwd()
-    tmp_dir = cwd.parent.parent.joinpath('tmp')
+    tmp_dir = C.data_dir.parent.joinpath('tmp')
+    C.tmp_dir = tmp_dir
     tmp_dir.mkdir(parents=True, exist_ok=True)
     np_dir = tmp_dir
 
@@ -39,14 +41,14 @@ def preprocess(C):
 
     # Get bbox dicts. A bbox dict is {img_name: bboxes_list}
     pinfo('Making the image-bbox dictionary')
-    img_bbox_dict = make_img_bbox_dict(C.img_dir, C.bbox_file)
+    img_bbox_dict = make_img_bbox_dict(C.img_dir, C.bbox_reference_file)
 
     # loop through img_bbox list
     inputs = []
     label_maps = []
     delta_maps = []
     img_bbox_list = [ [img_name, bbox_list] for img_name, bbox_list in img_bbox_dict.items() ]
-    bbox_Num = len(pd.read_csv(C.bbox_file, index_col=0).index)
+    bbox_Num = len(pd.read_csv(C.bbox_reference_file, index_col=0).index)
     bbox_idx = 0
     for img_name, bbox_list in img_bbox_list:
         # get input
@@ -78,9 +80,9 @@ def preprocess(C):
         else:
             pwarn(f'{img_name} is discarded as it has untrainable data', special = '\n')
             pwarn(f'Detalis: labels_trainable:{labels_trainable}, deltas_trainable:{deltas_trainable}')
-            df = pd.read_csv(C.bbox_file, index_col=0)
+            df = pd.read_csv(C.bbox_reference_file, index_col=0)
             df = df[df['FileName']!=img_name]
-            df.to_csv(C.bbox_file)
+            df.to_csv(C.bbox_reference_file)
 
     # Save numpy arrays to local
     inputs = np.asarray(inputs)
@@ -96,7 +98,7 @@ def preprocess(C):
     np.save(deltas_npy, delta_maps)
 
     # setup configuration
-    C.set_input_array(inputs_npy, labels_npy, deltas_npy)
+    C.set_rpn_training_data(inputs_npy, labels_npy, deltas_npy)
 
     pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
@@ -126,10 +128,13 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
-    C.set_base(base_nn_name)
+    vgg16  = VGG16()
+    C.set_base_net(vgg16)
     C.set_anchor(anchor_scales, anchor_ratios)
     C.set_label_limit(lower_limit, upper_limit)
     C.set_sample_parameters(posCut, nWant)
+
+
 
     start = timeit.default_timer()
     preprocess(C)

@@ -4,6 +4,49 @@ from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.layers import *
 
+### feature extraction networks
+class VGG16:
+    def __init__(self):
+        # same padding, so size only shrinks when pooling
+        # pooling by 2 for 4 times: ratio = 2^4 = 16
+        self.type = 'VGG16'
+        self.ratio = 16
+        self.final_chanel = 512
+
+    def get_base_net(self, input_layer, trainable=True):
+
+        # Block 1
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=trainable)(input_layer)
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=trainable)(x)
+        x = MaxPooling2D((2,2), strides=(2, 2), name='block1_pool')(x)
+
+        # Block 2
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=trainable)(x)
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
+        # Block 3
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1', trainable=trainable)(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2', trainable=trainable)(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+        # Block 4
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1', trainable=trainable)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2', trainable=trainable)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+        # Block 5
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1', trainable=trainable)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2', trainable=trainable)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3', trainable=trainable)(x)
+
+        return x
+
+    def get_model(self, in_shape, num_classes):
+        return
+
 # U_Net_like
 class U_Net_Like_1024:
 
@@ -969,8 +1012,6 @@ class U_Net_Like_16:
         # Define the model
         model = keras.Model(inputs, outputs)
         return model
-
-
 
 # U_Net
 class U_Net:

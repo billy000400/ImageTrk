@@ -6,11 +6,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
-from mu2e_output import *
-from Config import frcnn_config as Config
+from Information import *
+from Configuration import frcnn_config
 
 def anchor_statistics(C):
 

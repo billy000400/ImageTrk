@@ -6,27 +6,28 @@ import shutil
 import timeit
 import pickle
 import random
+from copy import copy
 
 import numpy as np
 np.random.seed(0)
 import pandas as pd
 import matplotlib.pyplot as plt
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from TrackDB_Classes import *
-from Config import frcnn_config as Config
+from Database import *
+from Configuration import frcnn_config
 from Abstract import binning_objects
 from Geometry import iou
-from mu2e_output import *
+from Information import *
 
 import tensorflow as tf
 
-def make_data(C, roiNum, negativeRate):
+def make_data(C,):
 
     # initialize path objects
     cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
+    data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
     roi_dir = data_dir.joinpath('detector_train_X_RoIs')
@@ -45,31 +46,34 @@ def make_data(C, roiNum, negativeRate):
     Y_regressor_file = Y_regressor_dir.joinpath('detector_train_Y_regressor.npy')
 
     # load reference and prediction dataframes
-    df_r = pd.read_csv(C.bbox_file, index_col=0)
-    df_p = pd.read_csv(C.bbox_prediction_file, index_col=0)
+    df_r = pd.read_csv(C.bbox_reference_file, index_col=0)
+    df_p = pd.read_csv(C.bbox_proposal_file, index_col=0)
 
     # one-hot encoder
     categories = df_r['ClassName'].unique().tolist()
     oneHotEncoder = {}
     # The first entry indicates if it is a negative example (background)
+    categories = [11]
     oneHotEncoder['bg'] = np.identity(len(categories)+1)[0]
     for i, pdgId in enumerate(categories):
         oneHotEncoder[pdgId] = np.identity(len(categories)+1)[i+1]
 
-
     # register memory for input and output data
-    inputs = np.load(C.inputs_npy)
+    inputs = np.load(C.img_inputs_npy)
     imgNum = inputs.shape[0]
-    rois = np.zeros(shape=(imgNum, roiNum, 4))
-    outputs_classifier = np.zeros(shape=(imgNum, roiNum, len(categories)+1), dtype=np.float32)
-    outputs_regressor = np.zeros(shape=(imgNum, roiNum, 4), dtype=np.float32)
+    rois = np.zeros(shape=(imgNum, C.roiNum, 4))
+    rois[:] = np.nan
+    outputs_classifier = np.zeros(shape=(imgNum, C.roiNum, len(oneHotEncoder)), dtype=np.float32)
+    outputs_classifier[:] = np.nan
+    outputs_regressor = np.zeros(shape=(imgNum, C.roiNum, len(oneHotEncoder)*4), dtype=np.float32)
+    outputs_regressor[:] = np.nan
 
     imgNames = df_r['FileName'].unique().tolist()
     assert imgNames==df_p['FileName'].unique().tolist(),\
         perr('bbox_file\'s images do not agree with bbox_prediction_file\'s images')
 
     # calculate how many negative examples we want
-    negThreshold = np.int(roiNum*negativeRate)
+    negThreshold = np.int(C.roiNum*C.negativeRate)
 
     for img_idx, img in enumerate(imgNames):
 
@@ -101,6 +105,8 @@ def make_data(C, roiNum, negativeRate):
                     iou_highest = iou_tmp
                     label = pdgId
                     ref_bbox = bbox
+            if label == '-11':
+                continue
             if iou_highest > 0.5:
                 pos_tuples.append((proposal, label, ref_bbox))
             elif iou_highest > 0.1:
@@ -111,26 +117,48 @@ def make_data(C, roiNum, negativeRate):
         negNum = len(neg_tuples)
         totNum = posNum + negNum
 
-        assert totNum >= roiNum,\
-            perr(f'Your RoI Number per image is {roiNum}, '
-             f'but img {img_idx} only has {totNum} trainable RoIs.')
+        roiNum = C.roiNum
 
-        if negNum < negThreshold:
-            negWant = negNum
-            posWant = roiNum - negWant
-        elif (negThreshold + posNum) >= roiNum:
-            negWant = negThreshold
-            posWant = roiNum - negThreshold
+        if totNum < roiNum:
+            tuples_combined = pos_tuples+neg_tuples # The original/whole sample
+            sampleNum = len(tuples_combined)
+
+            tuples_selected = copy(tuples_combined)
+            totNum = len(tuples_selected)
+            roiNeedNum = roiNum-totNum
+
+            while roiNeedNum != 0:
+
+                if sampleNum < roiNeedNum:
+                    tuples_selected += tuples_combined
+                    totNum = len(tuples_selected)
+                    roiNeedNum = roiNum - totNum
+                else:
+                    tuples_selected += random.sample(tuples_combined, roiNeedNum)
+                    totNum = len(tuples_selected)
+                    roiNeedNum = roiNum - totNum
+
+            assert len(tuples_selected)==roiNum, pdebug(len(tuples_selected))
+
         else:
-            posWant = posNum
-            negWant = roiNum - posWant
 
-        # randomly select RoIs for training
-        pos_selected = random.sample(pos_tuples, posWant)
-        neg_selected = random.sample(neg_tuples, negWant)
+            if negNum < negThreshold:
+                negWant = negNum
+                posWant = roiNum - negWant
+            elif (negThreshold + posNum) >= roiNum:
+                negWant = negThreshold
+                posWant = roiNum - negThreshold
+            else:
+                posWant = posNum
+                negWant = roiNum - posWant
 
-        # combine negative examples and positive examples and shuffle
-        tuples_selected = pos_selected + neg_selected
+            # randomly select RoIs for training
+            pos_selected = random.sample(pos_tuples, posWant)
+            neg_selected = random.sample(neg_tuples, negWant)
+
+            # combine negative examples and positive examples and shuffle
+            tuples_selected = pos_selected + neg_selected
+
         random.shuffle(tuples_selected)
 
         # copy the result to the registered memory
@@ -141,19 +169,26 @@ def make_data(C, roiNum, negativeRate):
             t = [ proposal[0], proposal[3],\
                         (proposal[1]-proposal[0]), (proposal[3]-proposal[2]) ]
             rois[img_idx][i] = np.array(t, dtype=np.float32)
-            outputs_classifier[img_idx][i] = oneHotEncoder[label]
+
+            oneHotVector = oneHotEncoder[label]
+            outputs_classifier[img_idx][i] = oneHotVector
+
             # refernece bbox v = (x,y,w,h) as indicated in the original paper
             # (x,y) is the left upper corner
             v = [ ref_bbox[0], ref_bbox[3],\
                         (ref_bbox[1]-ref_bbox[0]), (ref_bbox[3]-ref_bbox[2]) ]
-            outputs_regressor[img_idx][i] = np.array(v, dtype=np.float32)
+            record_start = np.where(oneHotVector==1)[0][0] *4
+            record_end = record_start + 4
+            outputs_regressor[img_idx][i][record_start:record_end] = v
 
     # save data to disk
     np.save(roi_file, rois)
     np.save(Y_classifier_file, outputs_classifier)
     np.save(Y_regressor_file, outputs_regressor)
 
+
     # save file path to config and dump it
+    C.set_oneHotEncoder(oneHotEncoder)
     C.set_detector_training_data(roi_file, Y_classifier_file, Y_regressor_file)
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
@@ -169,7 +204,9 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path, 'rb'))
 
-    roiNum = 49
+    roiNum = 256
     negativeRate = 0.75
 
-    make_data(C, roiNum, negativeRate)
+    C.set_roi_parameters(roiNum, negativeRate)
+
+    C = make_data(C)

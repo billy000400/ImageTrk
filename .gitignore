@@ -4,7 +4,7 @@ data/*
 
 tmp/
 weights/
-python/util/__pycache__
+python/Utility/__pycache__
 python/frcnn_mc_train/frcnn.train.config.pickle
 python/frcnn_mc_train/__pycache__
 python/frcnn_train/frcnn.train.config.pickle

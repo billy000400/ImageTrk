@@ -14,13 +14,12 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate
 from tensorflow.keras.optimizers import Adam
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import frcnn_config as Config
+from Configuration import frcnn_config
 from Abstract import make_anchors, normalize_anchor, propose_score_bbox_list
-from Layers import RPN_to_RoI
-from frcnn_rpn import rpn
-from mu2e_output import *
+from Layers import rpn
+from Information import *
 ### import ends
 
 def rpn_predict_RoI(C, nms=True):
@@ -36,17 +35,15 @@ def rpn_predict_RoI(C, nms=True):
     pinfo('Assembling model')
     # reconstruct model file
     cwd = Path.cwd()
-    weights_dir = cwd.parent.parent.joinpath('weights')
-    model_weights = weights_dir.joinpath(C.model_name+'.h5')
-    pdebug(model_weights)
+    weights_dir = C.weight_dir
+    model_weights = weights_dir.joinpath(C.rpn_model_name+'.h5')
 
     # load model
-    rpn = C.set_rpn()
-
     input_layer = Input(shape=C.input_shape)
-    x = C.base_net.nn(input_layer)
-    classifier = rpn.classifier(x)
-    regressor = rpn.regression(x)
+    x = C.base_net.get_base_net(input_layer)
+    rpn_layer = rpn(C.anchor_scales, C.anchor_ratios)
+    classifier = rpn_layer.classifier(x)
+    regressor = rpn_layer.regression(x)
 
     model = Model(inputs=input_layer, outputs = [classifier, regressor])
 
@@ -56,7 +53,7 @@ def rpn_predict_RoI(C, nms=True):
 
     ### preparing input data
     pinfo('Loading the original input array')
-    inputs = np.load(C.inputs_npy)
+    inputs = np.load(C.img_inputs_npy)
 
     ### predicting by model
     pinfo('RPN is scoring anchors and proposing delta suggestions')
@@ -71,7 +68,7 @@ def rpn_predict_RoI(C, nms=True):
     imgNum = inputs.shape[0]
     dict_for_df={}
 
-    bbox_df = pd.read_csv(C.bbox_file, index_col=0)
+    bbox_df = pd.read_csv(C.bbox_reference_file, index_col=0)
     img_names = bbox_df['FileName'].unique().tolist()
 
     if len(img_names) != len(score_maps):
@@ -115,8 +112,8 @@ def rpn_predict_RoI(C, nms=True):
             bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
             selected_indices, selected_scores =\
                 non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
-                        max_output_size=100,\
-                        iou_threshold=0.9, score_threshold=0.9,\
+                        max_output_size=300,\
+                        iou_threshold=0.7, score_threshold=0.0,\
                         soft_nms_sigma=0.0)
 
             selected_indices_list = selected_indices.numpy().tolist()
@@ -143,10 +140,10 @@ def rpn_predict_RoI(C, nms=True):
     output_file = C.img_dir.parent.joinpath("mc_RoI_prediction_NMS.csv")
     output_df.to_csv(output_file)
 
-    C.set_prediction(output_file)
+    C.set_proposal(output_file)
 
     cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.test.config.pickle')
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
 
     pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')

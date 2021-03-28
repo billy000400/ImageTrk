@@ -10,11 +10,11 @@ import tensorflow as tf
 from tensorflow.image import non_max_suppression_with_scores
 import matplotlib.pyplot as plt
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
-from mu2e_output import *
-from Config import frcnn_config as Config
+from Information import *
+from Configuration import frcnn_config
 ### import ends
 
 ### This function analysis the result of NMS given a SINGLE set of parameters
@@ -23,9 +23,9 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
 
     ### load reference and prediction bbox table to pandas framework
     # construct file object
-    data_dir = C.img_dir.parent
-    reference_file = data_dir.joinpath(C.bbox_file)
-    prediction_file = data_dir.joinpath(C.bbox_prediction_file)
+    data_dir = C.data_dir
+    reference_file = data_dir.joinpath(C.bbox_reference_file)
+    prediction_file = data_dir.joinpath(C.bbox_proposal_file)
 
 
     # read csv to df

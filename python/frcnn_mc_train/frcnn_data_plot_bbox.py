@@ -8,14 +8,14 @@ import cv2
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from mu2e_output import *
-from Config import frcnn_config as Config
+from Information import *
+from Configuration import frcnn_config
 
 def plot_bboxes(C):
 
-    df = pd.read_csv(C.bbox_file, index_col=0)
+    df = pd.read_csv(C.bbox_reference_file, index_col=0)
     df = df[['FileName','XMin','XMax','YMin','YMax','ClassName']]
 
     img_names = df['FileName'].unique()

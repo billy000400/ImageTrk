@@ -10,12 +10,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.image import non_max_suppression_with_scores
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import frcnn_config as Config
+from Configuration import frcnn_config
 from Abstract import make_anchors, normalize_anchor, propose_score_bbox_list
-from frcnn_rpn import rpn
-from mu2e_output import *
+from Layers import rpn
+from Information import *
 
 from NMS_pr_analysis import region_proposal_analysis
 ### imports end
@@ -25,18 +25,18 @@ psystem('Faster R-CNN Object Detection System')
 pmode('Testing')
 
 cwd = Path.cwd()
-pickle_path = cwd.joinpath('frcnn.test.config.pickle')
+pickle_path = cwd.joinpath('frcnn.train.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
 max_output_size = 100
-ITs = np.linspace(0.5,1,6).tolist()
-STs = np.linspace(0.5,1,6).tolist()
+ITs = np.linspace(0.5,1.0,6).tolist()
+STs = np.linspace(0.5,0.9,5).tolist()
 Sigmas = np.linspace(0,1,11).tolist()
 IoU_cuts = [0.5]
 
 
 data_dir = C.img_dir.parent
-csv_file = data_dir.joinpath("mc_NMS_grid_search_result.csv")
+csv_file = data_dir.joinpath("mc_NMS_grid_search_result_when_rpn_regr=relu.csv")
 
 df = pd.DataFrame(columns=["IoU_threshold", "Score_threshold", "Sigma", "Precision", "Recall", "Degeneracy"])
 

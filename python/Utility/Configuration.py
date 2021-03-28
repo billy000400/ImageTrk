@@ -7,86 +7,119 @@
 import sys
 from pathlib import Path
 
-from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Input, Conv2D
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from mu2e_output import *
+from Information import *
 
 class frcnn_config:
 
-    def __init__(self, track_sql_dir):
+    def __init__(self, track_sql_dir, data_dir):
 
         assert Path.exists(track_sql_dir), \
             t_error('The directory for track SQLits database does not exist')
 
-        # data product source and tracking window info
+        data_dir.mkdir(parents=True, exist_ok=True)
 
-        ## @var track_dir
-        # the directory where the track databases are located
+        ############### rpn training parameters starts ###############
+        #### make rpn training data
+
+        ## the directory where the track databases are located
         self.track_dir = track_sql_dir
-        self.source = None
-        self.window = None
-        self.resolution = None
+        self.data_dir = data_dir
+        self.sub_data_dir = None
+        self.tmp_dir = None
+        self.weight_dir = None
 
-        # alternative source: distribution
+        ## raw data generation information
+        # mode 1: constant sampling window
+        self.source = None
+        # mode 2: draw tracks from a Gaussian distribution
         self.trackNum_mean = None
         self.trackNum_std = None
+        # parameters shared by both modes
+        self.window = None # =sampling time in mode 1; trackNum in mode 2
+        self.resolution = None
 
-        # input
+        ## raw data location information
         self.img_dir = None
-        self.bbox_file = None
+        self.bbox_reference_file = None
         self.input_shape = None
 
-        # set base network
-        self.base_net = None
+        #### preprocess rpn training data
 
-        # Anchor box scales
+        ## set basenet class
+        self.base_net = None # you need to use get_base_net() to get the base_net
+
+        ## Anchor box scales
         self.anchor_scales = None
         self.anchor_ratios = None
 
-        # rpn score limits for labeling
+        ## rpn score limits for labeling
         self.label_limit_lower = None
         self.label_limit_upper = None
 
-        # rpn label number limits for bias prevention in training
+        ## rpn label number limits for bias prevention in training
         self.pos_lo_limit = None
         self.tot_lo_limit = None
 
-        # set preprocessed data directory
-        self.inputs_npy = None
+        ## set preprocessed data directory
+        self.img_inputs_npy = None # also used in the detector training
         self.labels_npy = None
         self.deltas_npy = None
 
-        # regularizations
-        self.lambdas = None
+        #### rpn training parameters
 
-        # model and record_name
-        self.model_name = None
-        self.record_name = None
+        ## regularizations
+        self.rpn_lambdas = None
 
-        # prediction on trained data for trainings of Fast RCNN
-        self.bbox_prediction_file = None
+        ## RPN model and training record_name
+        self.rpn_model_name = None
+        self.rpn_record_name = None
 
-        # test data
-        self.test_source = None
+        ############### rpn training parameters ends ###############
+        ############### rpn to roi parameters starts ###############
 
-        self.test_trackNum_mean = None
-        self.test_trackNum_std = None
+        ## prediction on trained data for detector training
+        self.bbox_proposal_file = None
 
-        self.test_img_dir = None
-        self.test_bbox_table_reference = None
-        self.test_bbox_table_prediction = None
+        ############### rpn to roi parameters ends ###############
+        ############### detector training parameters starts ###############
+
+        # RoI parameters
+        self.roiNum = None
+        self.negativeRate = None
+
+        # oneHotEncoder reference
+        self.oneHotEncoder = None
 
         # detector training data
         self.rois = None
         self.detector_train_Y_classifier = None
         self.detector_train_Y_regressor = None
 
+        # detector training regulation
+        self.detector_lambda = None
+
         # detector trianing record
         self.detector_model_name = None
         self.detector_record_name = None
 
+        ############### detector training parameters ends ###############
+        ############### alternative training parameters starts ###############
+        self.frcnn_model_name = None
+        self.frcnn_record_name = None
+        ############### alternative training parameters ends ###############
+        ############### testing parameters starts ###############
+        self.test_img_dir = None
+        self.test_inputs_npy = None
+        self.test_bbox_reference_file = None
+        self.test_bbox_prediction_file = None
+        ############### testing data parameters starts ###############
+
+
+    ### RPN training: make raw data
     def set_source(self, source):
         for file in source:
             assert Path.exists(self.track_dir.joinpath(file+'.db')), \
@@ -103,7 +136,7 @@ class frcnn_config:
     def set_resolution(self, resolution):
         self.resolution = resolution
 
-    def set_inputs(self, bbox_file, img_dir):
+    def set_raw_training_data(self, bbox_file, img_dir):
         import pandas as pd
         import cv2
         df = pd.read_csv(bbox_file,index_col=0)
@@ -117,23 +150,19 @@ class frcnn_config:
                 print("[ERROR] Training images' shapes are not consistent")
                 raise ValueError
         self.input_shape = shape
-        self.bbox_file = bbox_file
+        self.bbox_reference_file = bbox_file
         self.img_dir = img_dir
         return shape
 
-    def set_base(self, nn_name):
+    ### RPN training: preprocess data
+    def set_base_net(self, base_net_class):
         try:
-            nn_name = nn_name.lower()
+            base_net = base_net_class.get_base_net(Input(shape=self.input_shape))
+            self.base_net = base_net_class
         except:
-            print("[ERROR]: The base net name should be a string")
-
-        try:
-            exec(f"from base_net import {nn_name}")
-            exec(f"self.base_net = {nn_name}()")
-            pinfo(f'Base net is configured as {nn_name}')
-            return self.base_net
-        except:
-            print("[ERROR]: Invalid base net")
+            perr(f"Invalid base net {base_net_class}")
+            sys.exit()
+        return
 
     def set_anchor(self, scales, ratios):
         self.anchor_scales = scales
@@ -147,24 +176,61 @@ class frcnn_config:
         self.pos_lo_limit = pos_lo_limit
         self.tot_lo_limit = tot_lo_limit
 
-    def set_input_array(self, inputs_npy, labels_npy, deltas_npy):
-        self.inputs_npy = inputs_npy
+    def set_rpn_training_data(self, inputs_npy, labels_npy, deltas_npy):
+        self.img_inputs_npy = inputs_npy
         self.labels_npy = labels_npy
         self.deltas_npy = deltas_npy
 
-    def set_rpn(self):
-        from frcnn_rpn import rpn
-        result = rpn(self.anchor_scales, self.anchor_ratios)
-        pinfo('RPN is configured')
-        return result
+    ### RPN training: training
+    def set_rpn_lambda(self, lambdas):
+        self.rpn_lambdas = lambdas
 
-    def set_lambda(self, lambdas):
-        self.lambdas = lambdas
+    def set_rpn_record(self, model_name, record_name):
+        self.rpn_model_name = model_name
+        self.rpn_record_name = record_name
 
-    def set_outputs(self, model_name, record_name):
-        self.model_name = model_name
-        self.record_name = record_name
+    ### RPN to RoI start
+    def set_proposal(self, bbox_proposal_file):
+        self.bbox_proposal_file = bbox_proposal_file
 
+    ### Detector training: make data
+    def set_roi_parameters(self, roiNum, negativeRate):
+        self.roiNum = roiNum
+        self.negativeRate = negativeRate
+
+    def set_oneHotEncoder(self, oneHotEncoder):
+        self.oneHotEncoder = oneHotEncoder
+
+    def set_detector_training_data(self, rois, classifier, regressor):
+        self.rois = rois
+        self.detector_train_Y_classifier = classifier
+        self.detector_train_Y_regressor = regressor
+
+    ### Detector training: training
+    def set_detector_lambda(self, lambdas):
+        self.detector_lambda = lambdas
+        return
+
+    def set_detector_record(self, model_name, record_name):
+        self.detector_model_name = model_name
+        self.detector_record_name = record_name
+
+    ### Alternative training
+    def set_frcnn_record(self, model_name, record_name):
+        self.frcnn_model_name = model_name
+        self.frcnn_record_name = record_name
+        return
+
+    ### testing: make data
+    def set_testing_data(self, img_dir, inputs_npy, bbox_file):
+        self.test_inputs_npy = inputs_npy
+        self.test_img_dir = img_dir
+        self.test_bbox_reference_file = bbox_file
+
+    def set_prediction(self, prediction):
+        self.test_bbox_prediction_file = prediction
+
+    ### (deprecated) test data
     def set_test_source(self, source):
         for file in source:
             assert Path.exists(self.track_dir.joinpath(file+'.db')), \
@@ -175,21 +241,6 @@ class frcnn_config:
         self.test_trackNum_mean = mean
         self.test_trackNum_std = std
 
-    def set_test_data(self, test_img_dir, test_bbox_table_reference):
-        self.test_img_dir = test_img_dir
-        self.test_bbox_table_reference = test_bbox_table_reference
-
-    def set_prediction(self, bbox_table_prediction_file):
-        self.bbox_prediction_file = bbox_table_prediction_file
-
-    def set_detector_training_data(self, rois, classifier, regressor):
-        self.rois = rois
-        self.detector_train_Y_classifier = classifier
-        self.detector_train_Y_regressor = regressor
-
-    def set_detector_record(self, model_name, record_name):
-        self.detector_model_name = model_name
-        self.detector_record_name = record_name
 
 class extractor_config:
     def __init__(self, track_sql_dir):

@@ -19,7 +19,7 @@ from tensorflow.keras.losses import (
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from mu2e_output import*
+from Information import*
 
 
 def log_loss(y, p):
@@ -97,6 +97,56 @@ def define_rpn_loss(regs):
         return loss_class_val+loss_regr_val
 
     return rpn_loss
+
+def define_detector_class_loss(reg):
+
+    def class_loss(cls_r, cls_p):
+
+        cce = CategoricalCrossentropy(reduction=Reduction.SUM)
+        score = cce(cls_r, cls_p)
+        N = tf.size(cls_r)
+        N = tf.cast(N, tf.float32)
+        loss =  score/N*reg
+
+        return loss
+
+    return class_loss
+
+def define_detector_regr_loss(reg):
+
+    def regr_loss(bbox_r, bbox_p):
+        mask = ~tf.math.is_nan(bbox_r)
+
+        mb_r = tf.boolean_mask(bbox_r, mask=mask)
+        mb_p = tf.boolean_mask(bbox_p, mask=mask)
+
+        h = Huber(reduction=Reduction.SUM)
+        score = h(mb_r, mb_p)
+
+        N_reg = tf.size(mb_r)
+        N_reg = tf.cast(N_reg, tf.float32)
+
+        return score/N_reg*reg
+        return loss
+
+    return regr_loss
+
+def define_detector_loss(regs):
+    reg_1, reg_2 = regs
+
+    loss_class = define_detector_class_loss(reg_1)
+    loss_regr = define_detector_regr_loss(reg_2)
+
+    def detector_loss(y_real, y_predict):
+        cls_r, box_r = y_real
+        cls_p, box_p = y_predicts
+
+        loss_class_val = loss_class(cls_r, cls_p)
+        loss_regr_val = loss_regr(cls_r, box_r, box_p)
+
+        return loss_class_val+loss_regr_val
+
+    return detector_loss
 
 def unmasked_cce(y_real, y_predict):
     # sl = simple layer = the 1st layer

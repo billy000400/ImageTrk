@@ -15,50 +15,96 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Dense, Flatten
+from tensorflow.keras.layers import Input, Dense, Conv2D, Dropout, Flatten, Reshape, Softmax
 from tensorflow.keras.optimizers import Adam
 from tensorflow.distribute import MirroredStrategy
+from tensorflow.keras.metrics import CategoricalAccuracy
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from mu2e_output import *
-from Config import frcnn_config as Config
-from Layers import RoIPooling2D
+from Information import *
+from Configuration import frcnn_config
+from Layers import RoIPooling
 from Loss import *
 from Metric import *
 ### imports ends
 
-def detector_train(C):
+def detector_train(C, alternative=False):
     pstage("Start Training")
 
+    # load the oneHotEncoder
+    oneHotEncoder = C.oneHotEncoder
+    classNum = len(oneHotEncoder)
+
     # prepare the tensorflow.data.DataSet object
-    inputs = np.load(C.inputs_npy)
+    inputs = np.load(C.img_inputs_npy)
     rois = np.load(C.rois)
-    classifiers = np.load(C.detector_train_Y_classifier)
-    regressors = np.load(C.detector_train_Y_regressor)
+    Y_labels = np.load(C.detector_train_Y_classifier)
+    Y_bboxes = np.load(C.detector_train_Y_regressor)
 
     # outputs
     cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
-    weights_dir = cwd.parent.parent.joinpath('weights')
+    data_dir = C.sub_data_dir
+    weights_dir = C.weight_dir
 
-    model_weights = weights_dir.joinpath(C.model_name+'.h5')
-    record_file = data_dir.joinpath(C.record_name+'.csv')
+    rpn_model_weight_file = weights_dir.joinpath(C.rpn_model_name+'.h5')
+    detector_model_weight_file = weights_dir.joinpath(C.detector_model_name+'.h5')
+    record_file = data_dir.joinpath(C.detector_record_name+'.csv')
 
     pinfo('I/O Path is configured')
 
-
+    # construct model
     img_input = Input(shape=C.input_shape)
-    RoI_input = Input(shape=roi.shape[1:])
-    x = C.base_net.nn(img_input)
-    x = RoIPooling2D()([x, RoI_input])
+    RoI_input = Input(shape=rois.shape[1:])
+    x = C.base_net.get_base_net(img_input, trainable=False)
+    x = RoIPooling(6,6)([x, RoI_input])
     x = Dense(4096, activation='relu')(x)
     x = Dense(4096, activation='relu')(x)
-    x = Flatten()(x)
-    x1 = Dense()(x)
-    x2 = Dense()(x)
+    x = Reshape((C.roiNum,6*6*4096))(x)
+    x1 = Dense(classNum)(x)
+    output_classifier = Softmax(axis=2, name='detector_out_class')(x1)
+    output_regressor = Dense(classNum*4, activation='linear', name='detector_out_regr')(x)
 
+    model = Model(inputs=[img_input, RoI_input], outputs = [output_classifier, output_regressor])
+    model.summary()
 
+    # load weights trianed by RPN
+    model.load_weights(rpn_model_weight_file, by_name=True)
+
+    # setup loss functions
+    detector_class_loss = define_detector_class_loss(C.detector_lambda[0])
+    detector_regr_loss = define_detector_regr_loss(C.detector_lambda[1])
+
+    # setup optimizer
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate=1e-4,
+        decay_steps=10000,
+        decay_rate=0.9)
+    adam = Adam(learning_rate=lr_schedule)
+
+    # setup callbacks
+    CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+
+    ca = CategoricalAccuracy()
+    # compile the model
+    model.compile(optimizer=adam, loss={'detector_out_class':detector_class_loss,\
+                                        'detector_out_regr':detector_regr_loss},\
+                                    metrics = {'detector_out_class':ca,\
+                                                'detector_out_regr':unmasked_IoU})
+
+    # initialize fit parameters
+    model.fit(x=[inputs, rois], y=[Y_labels, Y_bboxes],\
+                validation_split=0.25,\
+                shuffle=True,\
+                batch_size=8, epochs=100,\
+                callbacks = [CsvCallback])
+
+    model.save_weights(detector_model_weight_file, overwrite=True)
+
+    pickle_train_path = Path.cwd().joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_train_path, 'wb'))
+
+    pcheck_point('Finished Training')
 
 
     return C
@@ -76,8 +122,9 @@ if __name__ == "__main__":
 
     # initialize parameters
     lambdas = [1, 100]
-    model_name = 'detector_mc_00'
-    record_name = 'detector_mc_record_00'
+    model_name = 'detector_mc_RCNN_regr_linear'
+    record_name = 'detector_mc_record_RCNN_regr_linear'
 
     C.set_detector_record(model_name, record_name)
+    C.set_detector_lambda(lambdas)
     C = detector_train(C)

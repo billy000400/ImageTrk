@@ -1,4 +1,4 @@
-# Make Training Set
+# Make Testing Set
 # Author: Billy Haoyang Li
 
 # General import
@@ -15,6 +15,7 @@ import random
 import shutil
 import timeit
 import pickle
+import cv2
 from collections import Counter
 
 import numpy as np
@@ -177,7 +178,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_name = "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"
+    dp_name = "dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"
     db_file = track_dir.joinpath(dp_name+".db")
 
     data_dir = C.data_dir
@@ -185,11 +186,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('mc_imgs_train')
+    img_dir = data_dir.joinpath('mc_imgs_test')
     shutil.rmtree(img_dir, ignore_errors=True)
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_name = "mc_bbox_proposal_train.csv"
+    csv_name = "mc_bbox_proposal_test.csv"
     bbox_file = data_dir.joinpath(csv_name)
 
     ### initialize sqlite session
@@ -320,10 +321,21 @@ def make_data(C, mode='dp'):
         perr(f"\"{mode}\" mode is not supported")
         sys.exit()
 
+    ### convert images to npys
+    pinfo('Converting images to numpy arrays')
+    inputs = []
+    glob = img_dir.glob('**/*')
+    img_files = [x for x in glob if x.is_file()]
+    for file in img_files:
+        inputs.append(cv2.imread(str(file)))
+    inputs_npy = np.array(inputs, dtype=np.float32)
+    pinfo('Saving numpy arrays to local')
+    np.save(C.tmp_dir.joinpath('mc_test_inputs.npy'), inputs_npy)
+
     ### Setup configurations
-    C.set_raw_training_data(bbox_file, img_dir)
+    C.set_testing_data(img_dir, inputs_npy, bbox_file)
     cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+    pickle_path = cwd.joinpath('frcnn.test.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
 
     pcheck_point('Images and the bbox table')
@@ -332,42 +344,15 @@ def make_data(C, mode='dp'):
 if __name__ == "__main__":
     pbanner()
     psystem('Faster R-CNN Object Detection System')
-    pmode('Training')
+    pmode('Testing')
 
-    # initialize parameters
-    track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
-    data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
-    # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
-    # window = 20 # unit: ns
-    window = 300 # unit: number of windows
-    resolution = 512
-    mode = 'normal'
-    mean = 5
-    std = 2
-
-    ## parameter handling
-    # argv = sys.argv
-    # if len(argv) == 1:
-    #     pass
-    # elif len(argv) >= 3:
-    #     track_str = argv[1]
-    #     dp_list = argv[2:]
-    # else:
-    #     perr("Invalid number of argument!")
-    #     perr("extra argv num = 0: track_DB_dir and data_product_list are set inside the script")
-    #     perr("extra argv num >= 2: first extra argv is track_DB_dir, and other are data product names")
-
-    # setup parameters
-    track_dir = Path(track_dir_str)
-    data_dir = Path(data_dir_str)
-    C = frcnn_config(track_dir, data_dir)
-    C.set_distribution(mean, std)
-    C.set_window(window)
-    C.set_resolution(resolution)
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('frcnn.test.config.pickle')
+    C = pickle.load(open(pickle_path,'rb'))
 
     # prepare raw tarining set with time measurement
     start = timeit.default_timer()
-    make_data(C, mode)
+    make_data(C, 'normal')
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')

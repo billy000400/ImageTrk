@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
-from mu2e_output import *
-from Config import frcnn_config as Config
+from Information import *
+from Configuration import frcnn_config
 
 def bbox_statistics(C):
     input_shape = C.input_shape
 
-    df = pd.read_csv(C.bbox_file, index_col=0)
+    df = pd.read_csv(C.bbox_reference_file, index_col=0)
     df = df[['FileName','XMin','XMax','YMin','YMax','ClassName']]
 
     df = pd.eval('Width=(df.XMax-df.XMin)', target=df)
