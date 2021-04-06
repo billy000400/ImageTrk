@@ -25,6 +25,10 @@ def preprocess(C):
     assert (C.label_limit_lower != None) and (C.label_limit_upper != None),\
         t_error('You have to setup rpn label limits before precrocessing data')
 
+    if C.has_preprocessed():
+        pwarn('You have preprocessed the raw data before! The Untrainable data '
+                'has been removed and won\'t be shown this time.')
+
     # unpacking parameters
     lim_lo = C.label_limit_lower
     lim_up = C.label_limit_upper
@@ -93,6 +97,8 @@ def preprocess(C):
     labels_npy = np_dir.joinpath('mc_label_maps.npy')
     deltas_npy = np_dir.joinpath('mc_delta_maps.npy')
 
+    inputs = inputs/255.0
+
     np.save(inputs_npy, inputs)
     np.save(labels_npy, label_maps)
     np.save(deltas_npy, delta_maps)
@@ -116,14 +122,14 @@ if __name__ == "__main__":
 
     # configure important parameters
     base_nn_name = 'vgg16'
-    anchor_scales = [0.2,0.3,0.4]
+    anchor_scales = [0.1, 0.2, 0.25, 0.30, 0.35, 0.4]
     anchor_ratios = [[1,1],\
                         [sqrt(2), 1/sqrt(2)], [1/sqrt(2), sqrt(2)]]
     lower_limit = 0.3
-    upper_limit = 0.7
+    upper_limit = 0.65
 
-    posCut = 6
-    nWant = 12
+    posCut = 32
+    nWant = 64
 
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')

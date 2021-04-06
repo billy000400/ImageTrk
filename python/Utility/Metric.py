@@ -86,6 +86,7 @@ def top2_categorical_accuracy(y_real, y_predict):
     return (score_major+score_bg)/sum*100
 
 def unmasked_IoU(t_r, t_p):
+
     mask = ~tf.math.is_nan(t_r)
 
     mt_r = tf.boolean_mask(t_r, mask=mask)
@@ -132,6 +133,54 @@ def unmasked_IoU(t_r, t_p):
 
     rowNum = tf.cast(rowNum, tf.float32)
     return iou_tot/rowNum
+
+def unmasked_IoUV2(t_r, t_p):
+    # IoU for Fast R-CNN
+    mask = ~tf.math.is_nan(t_r)
+
+    mt_r = tf.boolean_mask(t_r, mask=mask)
+    mt_p = tf.boolean_mask(t_p, mask=mask)
+
+    mt_r_4 = tf.reshape(mt_r, [tf.size(mt_r)/4, 4])
+    mt_p_4 = tf.reshape(mt_p, [tf.size(mt_p)/4, 4])
+
+    rx = tf.gather(mt_r_4, 0, axis=1)
+    ry = tf.gather(mt_r_4, 1, axis=1)
+    rw = tf.gather(mt_r_4, 2, axis=1)
+    rh = tf.gather(mt_r_4, 3, axis=1)
+
+    rx1 = rx
+    rx2 = rx+rw
+    ry1 = ry-rh
+    ry2 = ry
+    rec_r = tf.stack([rx1, rx2, ry1, ry2], axis=1)
+
+    px = tf.gather(mt_p_4, 0, axis=1)
+    py = tf.gather(mt_p_4, 1, axis=1)
+    pw = tf.gather(mt_p_4, 2, axis=1)
+    ph = tf.gather(mt_p_4, 3, axis=1)
+    px1 = px
+    px2 = px+pw
+    py1 = py-ph
+    py2 = py
+    rec_p = tf.stack([px1, px2, py1, py2], axis=1)
+
+    rowNum = tf.shape(rec_r)[0]
+    i = 0
+    iou_tot = 0.0
+
+    def add_i(i, rowNum, iou_tot):
+        iou_val = iou(rec_r[i], rec_p[i])
+        return [tf.add(i,1), rowNum, tf.add(iou_tot, iou_val) ]
+
+    def c(i, rowNum, iou_tot):
+        return tf.less(i,rowNum)
+
+    i, rowNum, iou_tot = tf.while_loop(c, add_i, [i, rowNum, iou_tot])
+
+    rowNum = tf.cast(rowNum, tf.float32)
+    return iou_tot/rowNum
+
 
 def positive_number(p_r, p_p):
 

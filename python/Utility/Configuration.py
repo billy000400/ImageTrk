@@ -43,8 +43,10 @@ class frcnn_config:
         self.resolution = None
 
         ## raw data location information
-        self.img_dir = None
-        self.bbox_reference_file = None
+        self.train_img_dir = None
+        self.train_bbox_reference_file = None
+        self.validation_img_dir = None
+        self.validation_bbox_reference_file = None
         self.input_shape = None
 
         #### preprocess rpn training data
@@ -65,9 +67,13 @@ class frcnn_config:
         self.tot_lo_limit = None
 
         ## set preprocessed data directory
-        self.img_inputs_npy = None # also used in the detector training
-        self.labels_npy = None
-        self.deltas_npy = None
+        self.train_img_inputs_npy = None # also used in the detector training
+        self.train_labels_npy = None
+        self.train_deltas_npy = None
+
+        self.validation_img_inputs_npy = None # also used in the detector training
+        self.validation_labels_npy = None
+        self.validation_deltas_npy = None
 
         #### rpn training parameters
 
@@ -82,7 +88,8 @@ class frcnn_config:
         ############### rpn to roi parameters starts ###############
 
         ## prediction on trained data for detector training
-        self.bbox_proposal_file = None
+        self.train_bbox_proposal_file = None
+        self.validation_bbox_proposal_file = None
 
         ############### rpn to roi parameters ends ###############
         ############### detector training parameters starts ###############
@@ -95,9 +102,13 @@ class frcnn_config:
         self.oneHotEncoder = None
 
         # detector training data
-        self.rois = None
+        self.train_rois = None
         self.detector_train_Y_classifier = None
         self.detector_train_Y_regressor = None
+
+        self.validation_rois = None
+        self.detector_validation_Y_classifier = None
+        self.detector_validation_Y_regressor = None
 
         # detector training regulation
         self.detector_lambda = None
@@ -115,6 +126,11 @@ class frcnn_config:
         self.test_img_dir = None
         self.test_inputs_npy = None
         self.test_bbox_reference_file = None
+        self.test_bbox_proposal_file = None
+
+        self.test_detector_imgs_npy_file = None
+        self.test_detector_rois_file = None
+
         self.test_bbox_prediction_file = None
         ############### testing data parameters starts ###############
 
@@ -150,14 +166,19 @@ class frcnn_config:
                 print("[ERROR] Training images' shapes are not consistent")
                 raise ValueError
         self.input_shape = shape
-        self.bbox_reference_file = bbox_file
-        self.img_dir = img_dir
-        return shape
+        self.train_bbox_reference_file = bbox_file
+        self.train_img_dir = img_dir
+        return
+
+    def set_raw_validation_data(self, bbox_file, img_dir):
+        self.validation_bbox_reference_file = bbox_file
+        self.validation_img_dir = img_dir
+        return
 
     ### RPN training: preprocess data
     def set_base_net(self, base_net_class):
         try:
-            base_net = base_net_class.get_base_net(Input(shape=self.input_shape))
+            #base_net = base_net_class.get_base_net(Input(shape=self.input_shape))
             self.base_net = base_net_class
         except:
             perr(f"Invalid base net {base_net_class}")
@@ -177,9 +198,17 @@ class frcnn_config:
         self.tot_lo_limit = tot_lo_limit
 
     def set_rpn_training_data(self, inputs_npy, labels_npy, deltas_npy):
-        self.img_inputs_npy = inputs_npy
-        self.labels_npy = labels_npy
-        self.deltas_npy = deltas_npy
+        self.train_img_inputs_npy = inputs_npy
+        self.train_labels_npy = labels_npy
+        self.train_deltas_npy = deltas_npy
+
+    def set_rpn_validation_data(self, inputs_npy, labels_npy, deltas_npy):
+        self.validation_img_inputs_npy = inputs_npy
+        self.validation_labels_npy = labels_npy
+        self.validation_deltas_npy = deltas_npy
+
+    def has_preprocessed(self):
+        return (self.train_labels_npy!=None) and (self.validation_labels_npy!=None)
 
     ### RPN training: training
     def set_rpn_lambda(self, lambdas):
@@ -190,8 +219,11 @@ class frcnn_config:
         self.rpn_record_name = record_name
 
     ### RPN to RoI start
-    def set_proposal(self, bbox_proposal_file):
-        self.bbox_proposal_file = bbox_proposal_file
+    def set_train_proposal(self, bbox_proposal_file):
+        self.train_bbox_proposal_file = bbox_proposal_file
+
+    def set_validation_proposal(self, bbox_proposal_file):
+        self.validation_bbox_proposal_file = bbox_proposal_file
 
     ### Detector training: make data
     def set_roi_parameters(self, roiNum, negativeRate):
@@ -202,9 +234,14 @@ class frcnn_config:
         self.oneHotEncoder = oneHotEncoder
 
     def set_detector_training_data(self, rois, classifier, regressor):
-        self.rois = rois
+        self.train_rois = rois
         self.detector_train_Y_classifier = classifier
         self.detector_train_Y_regressor = regressor
+
+    def set_detector_validation_data(self, rois, classifier, regressor):
+        self.validation_rois = rois
+        self.detector_validation_Y_classifier = classifier
+        self.detector_validation_Y_regressor = regressor
 
     ### Detector training: training
     def set_detector_lambda(self, lambdas):
@@ -221,13 +258,23 @@ class frcnn_config:
         self.frcnn_record_name = record_name
         return
 
-    ### testing: make data
+    ### testing: make frcnn/rpn testing data
     def set_testing_data(self, img_dir, inputs_npy, bbox_file):
         self.test_inputs_npy = inputs_npy
         self.test_img_dir = img_dir
         self.test_bbox_reference_file = bbox_file
 
-    def set_prediction(self, prediction):
+    ### testing: rpn test
+    def set_test_proposal(self, proposal):
+        self.test_bbox_proposal_file = proposal
+
+    ### testing: make detector testing data
+    def set_detector_testing_data(self, imgs_npy_file, rois_file):
+        self.test_detector_imgs_npy_file = imgs_npy_file
+        self.test_detector_rois_file = rois_file
+
+    ### testing: detector test
+    def set_test_prediction(self, prediction):
         self.test_bbox_prediction_file = prediction
 
     ### (deprecated) test data

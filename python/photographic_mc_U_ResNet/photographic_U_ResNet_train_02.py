@@ -30,11 +30,11 @@ from tensorflow.keras.optimizers import Adam
 
 import U_ResNet
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import extractor_config as Config
+from Configuration import extractor_config
 from DataGenerator import DataGenerator
-from mu2e_output import *
+from Information import *
 from Loss import *
 from Metric import *
 ### import ends
@@ -56,7 +56,7 @@ def photographic_train(C):
     input_shape = (160, 240, 1)
     arhitecture = U_ResNet.U_small(input_shape, 3)
     model= arhitecture.get_model()
-    print(model.summary())
+    model.summary()
 
     # setup loss
     cce = categorical_focal_loss([1, 1.58, 9.09440920e-04], 2)

@@ -47,6 +47,82 @@ class VGG16:
     def get_model(self, in_shape, num_classes):
         return
 
+class ResNet08:
+
+    def __init__(self):
+        # same padding, so size only shrinks when pooling
+        # pooling by 2 for 4 times: ratio = 2^4 = 16
+        self.type = 'Res08'
+        self.ratio = 16
+        self.final_chanel = 512
+
+    def get_base_net(self, input_layer, trainable=True):
+        init = initializers.RandomNormal(stddev=0.01)
+
+        conv1 = Conv2D(64, 3, strides=1, padding='same', kernel_initializer=init)(input_layer)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation("relu")(conv1)
+        conv1 = SpatialDropout2D(64/512)(conv1)
+        conv1 = Conv2D(64, 3, strides=1, padding='same', kernel_initializer=init)(conv1)
+        conv1 = BatchNormalization()(conv1)
+        conv1 = Activation("relu")(conv1)
+        conv1 = SpatialDropout2D(64/512)(conv1)
+
+        residual1 = Conv2D(128, 1, 2, padding='same', kernel_initializer=init)(conv1)
+        pool1 = MaxPooling2D(pool_size=(2,2))(conv1)
+
+        conv2 = Conv2D(128, 3, strides=1, padding="same", kernel_initializer=init)(pool1)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation("relu")(conv2)
+        conv2 = SpatialDropout2D(128/512)(conv2)
+        conv2 = Conv2D(128, 3, strides=1, padding="same", kernel_initializer=init)(conv2)
+        conv2 = BatchNormalization()(conv2)
+        conv2 = Activation("relu")(conv2)
+        conv2 = SpatialDropout2D(128/512)(conv2)
+
+        short_merge1 = Add()([residual1,conv2])
+        residual2 = Conv2D(256, 1, 2, padding='same', kernel_initializer=init)(conv2)
+        pool2 = MaxPooling2D(pool_size=(2,2))(short_merge1)
+
+        conv3 = Conv2D(256, 3, strides=1, padding="same", kernel_initializer=init)(pool2)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation("relu")(conv3)
+        conv3 = SpatialDropout2D(128/512)(conv3)
+        conv3 = Conv2D(256, 3, strides=1, padding="same", kernel_initializer=init)(conv3)
+        conv3 = BatchNormalization()(conv3)
+        conv3 = Activation("relu")(conv3)
+        conv3 = SpatialDropout2D(128/512)(conv3)
+
+        short_merge2 = Add()([residual2, conv3])
+        residual3 = Conv2D(512, 1, 2, padding='same', kernel_initializer=init)(conv3)
+        pool3 = MaxPooling2D(pool_size=(2,2))(short_merge2)
+
+        conv4 = Conv2D(512, 3, padding="same", kernel_initializer=init)(pool3)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation("relu")(conv4)
+        conv4 = SpatialDropout2D(256/512)(conv4)
+        conv4 = Conv2D(512, 3, padding="same", kernel_initializer=init)(conv4)
+        conv4 = BatchNormalization()(conv4)
+        conv4 = Activation("relu")(conv4)
+        conv4 = SpatialDropout2D(256/512)(conv4)
+
+        short_merge_3 = Add()([residual3, conv4])
+        residual4 = Conv2D(512, 1, 2, padding='same', kernel_initializer=init)(conv4)
+        pool4 = MaxPooling2D(pool_size=(2,2))(short_merge_3)
+
+        conv5 = Conv2D(512, 3, padding="same", kernel_initializer=init)(pool4)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation("relu")(conv5)
+        conv5 = SpatialDropout2D(256/512)(conv5)
+        conv5 = Conv2D(512, 3, padding="same", kernel_initializer=init)(conv5)
+        conv5 = BatchNormalization()(conv5)
+        conv5 = Activation("relu")(conv5)
+        #conv5 = SpatialDropout2D(256/512)(conv5)
+
+        short_merge_4 = Add()([residual4, conv5])
+
+        return short_merge_4
+
 # U_Net_like
 class U_Net_Like_1024:
 

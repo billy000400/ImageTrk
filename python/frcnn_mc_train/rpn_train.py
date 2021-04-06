@@ -34,6 +34,7 @@ def rpn_train(C, alternative=False):
 
     # prepare the tensorflow.data.DataSet object
     inputs = np.load(C.img_inputs_npy)
+    pinfo(f"Image Array Value Range: [{inputs.min()}, {inputs.max()}]")
     label_maps = np.load(C.labels_npy)
     delta_maps = np.load(C.deltas_npy)
 
@@ -105,7 +106,7 @@ def rpn_train(C, alternative=False):
     model.fit(x=inputs, y=[label_maps, delta_maps],\
                 validation_split=0.25,\
                 shuffle=True,\
-                batch_size=16, epochs=50,\
+                batch_size=16, epochs=100,\
                 callbacks = [CsvCallback])
 
     model.save_weights(model_weights_file, overwrite=True)

@@ -1,3 +1,4 @@
+### Not working!!!
 ### Alternative trianing of Faster R-CNN,
 # which means we are going to train RPN first, then detector, then RPN, then detector...
 
@@ -5,6 +6,7 @@ import sys
 from pathlib import Path
 import pickle
 import random
+from copy import copy
 
 import numpy as np
 import pandas as pd
@@ -35,6 +37,7 @@ def rpn_to_roi(C, score_maps, delta_maps):
     # initialize parameters
     bbox_idx = 0
     dict_for_df={}
+
 
     # prepare reference and prediction dataframes
     df_r = pd.read_csv(C.bbox_reference_file, index_col=0)
@@ -80,8 +83,9 @@ def rpn_to_roi(C, score_maps, delta_maps):
                                 'Score':score}
             bbox_idx += 1
 
-    # prepare reference and prediction dataframes
+
     df_p = pd.DataFrame.from_dict(dict_for_df, "index")
+
 
     ### make training data for detector
     # register memory for input and output data
@@ -205,14 +209,13 @@ def rpn_to_roi(C, score_maps, delta_maps):
             record_end = record_start + 4
             outputs_regressor[img_idx][i][record_start:record_end] = v
 
-    return rois, Y_classifier_file, Y_regressor_file
+    return rois, outputs_classifier, outputs_regressor
 
 def frcnn_train_alternative(C):
-    pstage('Start Testing')
+    pstage('Start Training')
 
     # prepare oneHotEncoder
     df_r = pd.read_csv(C.bbox_reference_file, index_col=0)
-    imgNames = df_r['FileName'].unique().tolist()
     categories = df_r['ClassName'].unique().tolist()
     oneHotEncoder = {}
     # The first entry indicates if it is a negative example (background)
@@ -220,20 +223,22 @@ def frcnn_train_alternative(C):
     for i, pdgId in enumerate(categories):
         oneHotEncoder[pdgId] = np.identity(len(categories)+1)[i+1]
     C.set_oneHotEncoder(oneHotEncoder)
-    classNum = len(oneHotEncoder)
 
 
     # prepare training dataset
-    inputs = np.load(C.test_inputs_npy)
+    inputs = np.load(C.img_inputs_npy)
+    label_maps = np.load(C.labels_npy)
+    delta_maps = np.load(C.deltas_npy)
 
     # outputs
     cwd = Path.cwd()
     data_dir = C.sub_data_dir
-    bbox_prediction_file = data_dir.joinpath('mc_bbox_prediction_test.csv')
-    weight_dir = C.weight_dir
+    weight_dir = C.data_dir.parent.joinpath('weights')
+    C.weight_dir = weight_dir
 
     model_weights_file = weight_dir.joinpath(C.frcnn_model_name+'.h5')
-
+    rpn_record_file = data_dir.joinpath(C.frcnn_record_name+'_rpn.csv')
+    detector_record_file = data_dir.joinpath(C.frcnn_record_name+'_detector.csv')
     pinfo('I/O Path is configured')
 
     # build models
@@ -249,19 +254,28 @@ def frcnn_train_alternative(C):
     x = Dense(4096, activation='relu')(x)
     x = Dense(4096, activation='relu')(x)
     x = Reshape((C.roiNum,6*6*4096))(x)
-    x1 = Dense(classNum)(x)
+    x1 = Dense(2)(x)
     output_classifier = Softmax(axis=2, name='detector_out_class')(x1)
-    output_regressor = Dense(classNum*4, activation='relu', name='detector_out_regr')(x)
+    output_regressor = Dense(2*4, activation='linear', name='detector_out_regr')(x)
     model_detector = Model(inputs=[img_input, RoI_input], outputs = [output_classifier, output_regressor])
 
     model_all = Model(inputs=[img_input, RoI_input], outputs=[rpn_classifier,rpn_regressor,output_classifier, output_regressor])
-    model_all.load_weights(model_weights_file, by_name=True)
 
     # setup loss
     rpn_regr_loss = define_rpn_regr_loss(C.rpn_lambdas[1])
     rpn_class_loss = define_rpn_class_loss(C.rpn_lambdas[0])
     detector_class_loss = define_detector_class_loss(C.detector_lambda[0])
     detector_regr_loss = define_detector_regr_loss(C.detector_lambda[1])
+
+    # setup metric
+    ca = CategoricalAccuracy()
+
+    # setup optimizer
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate=1e-4,
+        decay_steps=10000,
+        decay_rate=0.9)
+    adam = Adam(learning_rate=lr_schedule)
 
     # compile models
     model_rpn.compile(optimizer=adam, loss={'rpn_out_class' : rpn_class_loss,\
@@ -278,102 +292,68 @@ def frcnn_train_alternative(C):
                                         'rpn_out_regress': rpn_regr_loss,\
                                         'detector_out_class':detector_class_loss,\
                                         'detector_out_regr':detector_regr_loss})
+    model_all.summary()
+    # setup record
+    RpnCsvCallback = tf.keras.callbacks.CSVLogger(str(rpn_record_file), separator=",", append=True)
+    DetectorCsvCallback = tf.keras.callbacks.CSVLogger(str(detector_record_file), separator=",", append=True)
 
+    time_of_iterations = 2
 
-    pinfo('RPN is scoring anchors and proposing delta suggestions')
-    rpn_outputs_raw = model_rpn.predict(x=inputs, batch_size=1)
+    for i in range(time_of_iterations):
+        pinfo(f"Alternative training: iteration {i+1}/{time_of_iterations}")
 
-    pinfo('Proposing RoIs')
-    score_maps = rpn_outputs_raw[0]
-    delta_maps = rpn_outputs_raw[1]
-    rois, Y_labels, Y_bboxes = rpn_to_roi(C, score_maps, delta_maps)
+        pinfo('RPN training')
+        model_rpn.fit(x=inputs, y=[label_maps, delta_maps],\
+                    validation_split=0.25,\
+                    shuffle=True,\
+                    batch_size=8, epochs=10,\
+                    callbacks = [RpnCsvCallback])
+        pinfo('RPN is scoring anchors and proposing delta suggestions')
+        outputs_raw = model_rpn.predict(x=inputs, batch_size=1)
 
-    pinfo('Detector predicting')
-    detector_outputs_raw = model_detector.predict(x=[inputs, rois], batch_size=1)
+        pinfo('Proposing RoIs')
+        score_maps = outputs_raw[0]
+        delta_maps = outputs_raw[1]
+        rois, Y_labels, Y_bboxes = rpn_to_roi(C, score_maps, delta_maps)
 
-    pinfo('Analyzing Faster R-CNN output')
-    cls_outputs, regr_outputs = detector_outputs_raw
+        pinfo('Detector training')
+        model_detector.fit(x=[inputs, rois], y=[Y_labels, Y_bboxes],\
+                    validation_split=0.25,\
+                    shuffle=True,\
+                    batch_size=8, epochs=1,\
+                    callbacks = [DetectorCsvCallback])
 
-    img_idx = 0
-    bbox_idx = 0
-    imgNum = inputs.shape[0]
-    dict_for_df={}
-
-    for img_name, cls_output, regr_output in zip(imgNames, cls_outputs, regr_outputs):
-        sys.stdout.write(t_info(f'Predicting bounding boxes for image: {img_idx+1}/{imgNum}','\r'))
-        if img_idx+1 == imgNum:
-            sys.stdout.write('\n')
-        sys.stdout.flush()
-
-        scores, bboxes_raw = []
-
-        for roi_cls, roi_box in zip(cls_output, regr_output):
-
-            cls = np.argmax(roi_cls)
-
-            if cls == 0:
-                continue
-            else:
-                score = roi_cls[cls]
-                scores.append(score)
-
-                [x,y,w,h] = roi_box[cls*4 : cls*4+4]
-                bbox = [x, x+w, y-h, y]
-                if bbox[0] < 0:
-                    bbox[0] = 0
-                if bbox[1] > 1:
-                    bbox[1] = 1
-                if bbox[2] < 0:
-                    bbox[2] = 0
-                if bbox[3] > 1:
-                    bbox[3] = 1
-                bboxes_raw.append(bbox)
-
-        scores_tf = tf.constant(scores, dtype=tf.float32)
-        bboxes_raw_tf = [ [ymax, xmin, ymin, xmax] for [xmin, xmax, ymin, ymax] in bboxes_raw ]
-        bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
-        selected_indices, selected_scores =\
-            non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
-                    max_output_size=100,\
-                    iou_threshold=1.0, score_threshold=0.0,\
-                    soft_nms_sigma=0.0)
-
-        selected_indices_list = selected_indices.numpy().tolist()
-        bboxes = [ bboxes_raw[index] for index in selected_indices_list ]
-        scores = selected_scores.numpy().tolist()
-
-        for score, bbox in zip(scores, bboxes):
-            dict_for_df[bbox_idx] = {'FileName': str(img_name),\
-                                'XMin':bbox[0],\
-                                'XMax':bbox[1],\
-                                'YMin':bbox[2],\
-                                'YMax':bbox[3],\
-                                'Score':score}
-            bbox_idx += 1
-
-        img_idx += 1
-
-    output_df = pd.DataFrame.from_dict(dict_for_df, "index")
-    output_df.to_csv(bbox_prediction_file)
-
-    C.set_prediction(bbox_prediction_file)
-
-    pickle_train_path = Path.cwd().joinpath('frcnn.train.config.pickle')
+    model_all.save_weights(model_weights_file, overwrite=True)
+    pickle_train_path = Path.cwd().parent.joinpath('frcnn_mc_test/frcnn.test.config.pickle')
     pickle.dump(C, open(pickle_train_path, 'wb'))
 
-    pcheck_point('Finished Testing')
+    pcheck_point('Finished Training')
 
     return C
 
 if __name__ == "__main__":
     pbanner()
     psystem('Faster R-CNN Object Detection System')
-    pmode('Testing Faster R-CNN')
+    pmode('Alternative Training')
 
     pinfo('Parameters are set inside the script')
 
     cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.test.config.pickle')
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path, 'rb'))
 
-    C = frcnn_test(C)
+    # initialize parameters
+    roiNum = 100
+    negativeRate = 0.75
+
+    rpn_lambdas = [1,100]
+    detector_lambdas = [1,100]
+    model_name = 'frcnn_mc_00'
+    record_name = 'frcnn_mc_record_00'
+
+    C.set_roi_parameters(roiNum, negativeRate)
+
+    C.set_rpn_lambda(rpn_lambdas)
+    C.set_detector_lambda(detector_lambdas)
+    C.set_frcnn_record(model_name, record_name)
+    C = frcnn_train_alternative(C)

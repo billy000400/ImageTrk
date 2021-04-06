@@ -23,12 +23,12 @@ from sqlalchemy import *
 import PIL
 from PIL import Image
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import extractor_config as Config
+from Configuration import extractor_config
 from Abstract import binning_objects
-from TrackDB_Classes import *
-from mu2e_output import *
+from Database import *
+from Information import *
 
 def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
 
@@ -338,7 +338,7 @@ if __name__ == "__main__":
 
     track_str = '../../tracks'
     track_dir = Path(track_str)
-    C = Config(track_dir)
+    C = extractor_config(track_dir)
 
     mode = 'normal'
     window = 300 # unit: number of windows
@@ -347,7 +347,6 @@ if __name__ == "__main__":
     resolution = 256
 
     track_dir = Path(track_str)
-    C = Config(track_dir)
 
     C.set_distribution(mean, std)
     C.set_window(window)

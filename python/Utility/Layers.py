@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Conv2D
+from tensorflow.keras.layers import Layer, Conv2D, Dense, Flatten, Dropout
 from tensorflow.image import non_max_suppression_with_scores
 from tensorflow.keras.initializers import RandomNormal
 
@@ -19,6 +19,26 @@ class rpn():
     def regression(self, base):
         x = self.shared_layer(base)
         x_regr = Conv2D(self.num_anchors * 4, (1, 1), activation='linear', kernel_initializer=initializer, name='rpn_out_regress')(x)
+        return x_regr
+
+class rpnV2():
+    def __init__(self, anchor_scales, anchor_ratios):
+        self.num_anchors = len(anchor_scales) * len(anchor_ratios)
+        self.shared_layer = Conv2D(512, (3, 3), padding='same', activation = 'relu', kernel_initializer=initializer, name='rpn_conv1')
+
+    def classifier(self, base):
+        x = self.shared_layer(base)
+        x_class = Conv2D(self.num_anchors, (1, 1), activation='sigmoid', kernel_initializer=initializer, name='rpn_out_class')(x)
+        return x_class
+
+    def regression(self, base):
+        x = self.shared_layer(base)
+        #x = Conv2D(64, (3, 3), padding='same', activation = 'relu', kernel_initializer=initializer)(x)
+        x = Dense(4096, activation='relu', kernel_initializer=initializer)(x)
+        x = Dropout(0.7)(x)
+        x = Dense(4096, activation='relu', kernel_initializer=initializer)(x)
+        x = Dropout(0.7)(x)
+        x_regr = Dense(self.num_anchors * 4, activation='linear', kernel_initializer=initializer, name='rpn_out_regress')(x)
         return x_regr
 
 ### !!! Not Working
@@ -226,3 +246,12 @@ class RoIPooling(Layer):
         pooled_features = tf.stack([[pool_area(x) for x in row] for row in areas])
 
         return pooled_features
+
+    def get_config(self):
+
+        config = super().get_config().copy()
+        config.update({
+            'pooled_height': self.pooled_height,
+            'pooled_width': self.pooled_width
+        })
+        return config
