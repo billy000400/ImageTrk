@@ -29,15 +29,15 @@ pickle_path = cwd.joinpath('frcnn.train.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
 max_output_size = 100
-ITs = np.linspace(0.5,1.0,6).tolist()
-STs = np.linspace(0.5,0.9,5).tolist()
+ITs = [0.7]
+STs = list(np.round(np.arange(0.9,1.0,0.01,dtype=np.float32),2))
 # Sigmas = np.linspace(0,1,11).tolist()
-Sigmas = [0.0, 0.1, 0.5, 0.8, 1.0]
+Sigmas = [1e2, 1e3, 1e4, 1e6, 1e8]
 IoU_cuts = [0.5]
 
 
-data_dir = C.img_dir.parent
-csv_file = data_dir.joinpath("mc_NMS_grid_search_result_anchor_ratios=0.1_0.3_0.8.csv")
+data_dir = C.sub_data_dir
+csv_file = data_dir.joinpath("mc_NMS_grid_search_result_IT=0.7_ST=0.99.csv")
 
 df = pd.DataFrame(columns=["IoU_threshold", "Score_threshold", "Sigma", "Precision", "Recall", "Degeneracy"])
 
@@ -59,4 +59,5 @@ for IT in ITs:
             df = df.append(tmp, ignore_index=True)
             df.to_csv(csv_file, index=False)
 
-pinfo(df)
+# don't use pinfo, because you cannot concatenate string with a dataframe
+print(df)

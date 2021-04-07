@@ -23,9 +23,11 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
 
     ### load reference and prediction bbox table to pandas framework
     # construct file object
-    data_dir = C.data_dir
-    reference_file = data_dir.joinpath(C.bbox_reference_file)
-    prediction_file = data_dir.joinpath(C.bbox_proposal_file)
+    data_dir = C.sub_data_dir
+    data_dir = data_dir.joinpath('NMS analysis nodes')
+    data_dir.mkdir(exist_ok=True)
+    reference_file = data_dir.joinpath(C.validation_bbox_reference_file)
+    prediction_file = data_dir.joinpath(C.validation_bbox_proposal_file)
 
 
     # read csv to df
@@ -106,7 +108,9 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
                 if np.any(row>=iou_limit):
                     degeneracy = np.count_nonzero(row>=iou_limit)
                     degeneracies.append(degeneracy)
+
                 else:
+                    degeneracies.append(0)
                     fn += 1
 
             for j in range(jNum):
@@ -118,23 +122,31 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
 
             dom1 = tp+fp
 
-            if dom1==0:
-                precision = 0
-            else:
+            if dom1!=0:
                 precision = tp/dom1
+                precisions.append(precision)
 
             recall = tp/(tp+fn)
-
-            precisions.append(precision)
             recalls.append(recall)
 
-        precision_entry = np.array(precisions).mean()
-        recall_entry = np.array(recalls).mean()
-        degeneracy_entry = np.array(degeneracies).mean()
+        if len(precisions)!=0:
+            precision_entry = np.array(precisions).mean()
+            precision_row.append(precision_entry)
+        else:
+            precision_row.append([])
 
-        precision_row.append(precision_entry)
-        recall_row.append(recall_entry)
-        degeneracy_row.append(degeneracy_entry)
+        if len(recalls)!=0:
+            recall_entry = np.array(recalls).mean()
+            recall_row.append(recall_entry)
+        else:
+            recall_row.append([])
+
+        if len(degeneracies)!=0:
+            degeneracy_entry = np.array(degeneracies).mean()
+            degeneracy_row.append(degeneracy_entry)
+        else:
+            degeneracy_row.append([])
+
 
     precision_df = pd.DataFrame([precision_row], columns=columns)
     recall_df = pd.DataFrame([recall_row], columns=columns)

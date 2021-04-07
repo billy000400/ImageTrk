@@ -28,22 +28,22 @@ for img_file in img_files:
 
     imgplot = plt.imshow(img, interpolation='none')
 
-    # for index, bbox in bboxes.iterrows():
-    #     xmin = bbox['XMin']
-    #     xmax = bbox['XMax']
-    #     ymin = bbox['YMin']
-    #     ymax = bbox['YMax']
-    #
-    #     xmin = xmin*height
-    #     xmax = xmax*width
-    #     ymin, ymax = (1-ymax)*800, (1-ymin)*800
-    #
-    #
-    #     rec_xy = (xmin, ymin)
-    #     rec_width = abs(xmax-xmin)
-    #     rec_height = abs(ymax-ymin)
-    #     rect=Rectangle(rec_xy,rec_width,rec_height,linewidth=1,edgecolor='r',facecolor='none')
-    #     plt.gca().add_patch(rect)
+    for index, bbox in bboxes.iterrows():
+        xmin = bbox['XMin']
+        xmax = bbox['XMax']
+        ymin = bbox['YMin']
+        ymax = bbox['YMax']
+
+        xmin = xmin*height
+        xmax = xmax*width
+        ymin, ymax = (1-ymax)*800, (1-ymin)*800
+
+
+        rec_xy = (xmin, ymin)
+        rec_width = abs(xmax-xmin)
+        rec_height = abs(ymax-ymin)
+        rect=Rectangle(rec_xy,rec_width,rec_height,linewidth=1,edgecolor='r',facecolor='none')
+        plt.gca().add_patch(rect)
 
     plt.xlabel('x')
     plt.ylabel('y')
