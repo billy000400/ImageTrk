@@ -119,9 +119,9 @@ def rpn_predict_RoI(C, nms=True):
             bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
             selected_indices, selected_scores =\
                 non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
-                        max_output_size=2000,\
-                        iou_threshold=0.5, score_threshold=0.0,\
-                        soft_nms_sigma=0.0)
+                        max_output_size=100,\
+                        iou_threshold=0.7, score_threshold=0.998,\
+                        soft_nms_sigma=1000.0)
 
             selected_indices_list = selected_indices.numpy().tolist()
             bboxes = [ bboxes_raw[index] for index in selected_indices_list ]
@@ -226,9 +226,9 @@ def rpn_predict_RoI(C, nms=True):
             bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
             selected_indices, selected_scores =\
                 non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
-                        max_output_size=2000,\
-                        iou_threshold=0.5, score_threshold=0.0,\
-                        soft_nms_sigma=0.0)
+                        max_output_size=100,\
+                        iou_threshold=0.7, score_threshold=0.998,\
+                        soft_nms_sigma=1000.0)
 
             selected_indices_list = selected_indices.numpy().tolist()
             bboxes = [ bboxes_raw[index] for index in selected_indices_list ]

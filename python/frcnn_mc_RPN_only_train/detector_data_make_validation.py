@@ -30,9 +30,9 @@ def make_data(C,):
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    roi_dir = data_dir.joinpath('detector_train_X_RoIs')
-    Y_classifier_dir = data_dir.joinpath('detector_train_Y_classifier')
-    Y_regressor_dir = data_dir.joinpath('detector_train_Y_regressor')
+    roi_dir = data_dir.joinpath('detector_validation_X_RoIs')
+    Y_classifier_dir = data_dir.joinpath('detector_validation_Y_classifier')
+    Y_regressor_dir = data_dir.joinpath('detector_validation_Y_regressor')
 
     shutil.rmtree(roi_dir, ignore_errors=True)
     roi_dir.mkdir(parents=True, exist_ok=True)
@@ -42,16 +42,11 @@ def make_data(C,):
     Y_regressor_dir.mkdir(parents=True, exist_ok=True)
 
     # load reference and prediction dataframes
-    df_r = pd.read_csv(C.train_bbox_reference_file, index_col=None)
-    df_p = pd.read_csv(C.train_bbox_proposal_file, index_col=None)
+    df_r = pd.read_csv(C.validation_bbox_reference_file, index_col=0)
+    df_p = pd.read_csv(C.validation_bbox_proposal_file, index_col=0)
 
     # one-hot encoder
-    categories = df_r['ClassName'].unique().tolist()
-    oneHotEncoder = {}
-    # The first entry indicates if it is a negative example (background)
-    oneHotEncoder['bg'] = np.identity(len(categories)+1)[0]
-    for i, pdgId in enumerate(categories):
-        oneHotEncoder[pdgId] = np.identity(len(categories)+1)[i+1]
+    oneHotEncoder = C.oneHotEncoder
 
     imgNames = df_r['FileName'].unique().tolist()
     assert imgNames==df_p['FileName'].unique().tolist(),\
@@ -83,7 +78,6 @@ def make_data(C,):
          [   [[r['XMin'], r['XMax'], r['YMin'], r['YMax']],\
                         r['ClassName']] \
                  for i, r in df_r_slice.iterrows()]
-
         proposals = [ [r['XMin'], r['XMax'], r['YMin'], r['YMax']] for i, r in df_p_slice.iterrows()]
 
         pos_tuples = []
@@ -108,6 +102,8 @@ def make_data(C,):
                 neg_tuples.append((proposal, 'bg', ref_bbox))
 
         # calculate the number of positive example and negative example
+        posNum = len(pos_tuples)
+
         posNum = len(pos_tuples)
         referenceNum = len(df_r_slice['ClassName'].tolist())
 
@@ -198,8 +194,7 @@ def make_data(C,):
 
 
     # save file path to config and dump it
-    C.set_oneHotEncoder(oneHotEncoder)
-    C.set_detector_training_data(roi_dir, Y_classifier_dir, Y_regressor_dir)
+    C.set_detector_validation_data(roi_dir, Y_classifier_dir, Y_regressor_dir)
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
 
@@ -213,10 +208,5 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path, 'rb'))
-
-    roiNum = 64
-    negativeRate = 0.5
-
-    C.set_roi_parameters(roiNum, negativeRate)
 
     C = make_data(C)

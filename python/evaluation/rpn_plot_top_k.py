@@ -28,7 +28,7 @@ val_img_dir = C.validation_img_dir
 
 imgNames = df_r['FileName'].unique().tolist()
 
-threshold = 8
+threshold = 100
 
 res = C.resolution
 

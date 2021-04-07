@@ -21,9 +21,10 @@ from tensorflow.keras.optimizers import Adam
 
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Layers import rpnV2
+from Layers import rpn
 from Information import *
 from Configuration import frcnn_config
+from DataGenerator import DataGeneratorV2
 from Loss import *
 from Metric import *
 
@@ -32,11 +33,9 @@ from Metric import *
 def rpn_train(C, alternative=False):
     pstage("Start Training")
 
-    # prepare the tensorflow.data.DataSet object
-    inputs = np.load(C.img_inputs_npy)
-    pinfo(f"Image Array Value Range: [{inputs.min()}, {inputs.max()}]")
-    label_maps = np.load(C.labels_npy)
-    delta_maps = np.load(C.deltas_npy)
+    # prepare data generator
+    train_generator = DataGeneratorV2(C.train_img_inputs_npy, C.train_labels_npy, C.train_deltas_npy, batch_size=8)
+    val_generator = DataGeneratorV2(C.validation_img_inputs_npy, C.validation_labels_npy, C.validation_deltas_npy, batch_size=8)
 
     # outputs
     cwd = Path.cwd()
@@ -52,7 +51,7 @@ def rpn_train(C, alternative=False):
     # build the model
     input_layer = Input(C.input_shape)
     base_net = C.base_net.get_base_net(input_layer)
-    rpn_layer = rpnV2(C.anchor_scales, C.anchor_ratios)
+    rpn_layer = rpn(C.anchor_scales, C.anchor_ratios)
     classifier = rpn_layer.classifier(base_net)
     regressor = rpn_layer.regression(base_net)
     model = Model(inputs=input_layer, outputs = [classifier,regressor])
@@ -102,12 +101,14 @@ def rpn_train(C, alternative=False):
                                     metrics={'rpn_out_class': [unmasked_binary_accuracy, positive_number],\
                                              'rpn_out_regress': unmasked_IoU})
 
+
+
     # initialize fit parameters
-    model.fit(x=inputs, y=[label_maps, delta_maps],\
-                validation_split=0.25,\
+    model.fit(x=train_generator,
+                validation_data=val_generator,\
                 shuffle=True,\
-                batch_size=16, epochs=500,\
-                callbacks = [CsvCallback])
+                callbacks = [CsvCallback],\
+                epochs=30)
 
     model.save_weights(model_weights_file, overwrite=True)
     pinfo(f"Weights are saved to {str(model_weights_file)}")
