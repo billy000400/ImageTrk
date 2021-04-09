@@ -16,7 +16,7 @@ from Abstract import *
 from Information import *
 from Configuration import frcnn_config
 
-from mean_average_precision import MeanAveragePrecision
+from mean_average_precision import MetricBuilder
 ### import ends
 
 ### This function analysis the result of NMS given a SINGLE set of parameters
@@ -97,7 +97,7 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
             map3s.append(0)
         else:
             # create metric_fn
-            metric_fn = MeanAveragePrecision(num_classes=1)
+            metric_fn = MetricBuilder.build_evaluation_metric("map_2d", async_mode=True, num_classes=1)
             # add some samples to evaluation
             metric_fn.add(preds, gt)
 

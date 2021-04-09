@@ -24,6 +24,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
 from Configuration import frcnn_config
+from DataGenerator import DataGeneratorV3
 from Layers import RoIPooling
 from Loss import *
 from Metric import *
@@ -37,11 +38,15 @@ def detector_train(C, alternative=False):
     classNum = len(oneHotEncoder)
 
     # prepare the tensorflow.data.DataSet object
-    inputs = np.load(C.img_inputs_npy)
-    pinfo(f"Image Array Value Range: [{inputs.min()}, {inputs.max()}]")
-    rois = np.load(C.rois)
-    Y_labels = np.load(C.detector_train_Y_classifier)
-    Y_bboxes = np.load(C.detector_train_Y_regressor)
+    train_generator = DataGeneratorV3(C.train_img_inputs_npy, C.train_rois,\
+                                        C.detector_train_Y_classifier,\
+                                        C.detector_train_Y_regressor,\
+                                        batch_size=2)
+
+    val_generator = DataGeneratorV3(C.validation_img_inputs_npy, C.validation_rois,\
+                                        C.detector_validation_Y_classifier,\
+                                        C.detector_validation_Y_regressor,\
+                                        batch_size=2)
 
     # outputs
     cwd = Path.cwd()
@@ -56,14 +61,14 @@ def detector_train(C, alternative=False):
 
     # construct model
     img_input = Input(shape=C.input_shape)
-    RoI_input = Input(shape=rois.shape[1:])
+    RoI_input = Input(shape=(C.roiNum, 4))
     x = C.base_net.get_base_net(img_input, trainable=True)
-    x = RoIPooling(6,6)([x, RoI_input])
+    x = RoIPooling(7,7)([x, RoI_input])
     x = TimeDistributed(Flatten(name='flatten'))(x)
     x = TimeDistributed(Dense(4096, activation='relu', name='fcl'))(x)
-    x = TimeDistributed(Dropout(0.5))(x)
+    #x = TimeDistributed(Dropout(0.5))(x)
     x = TimeDistributed(Dense(4096, activation='relu', name='fc2'))(x)
-    x = TimeDistributed(Dropout(0.5))(x)
+    #x = TimeDistributed(Dropout(0.5))(x)
     x1 = Dense(classNum)(x)
     output_classifier = Softmax(axis=2, name='detector_out_class')(x1)
     output_regressor = Dense(classNum*4, activation='linear', name='detector_out_regr')(x)
@@ -72,7 +77,7 @@ def detector_train(C, alternative=False):
     model.summary()
 
     # load weights trianed by RPN
-    model.load_weights(rpn_model_weight_file, by_name=True)
+    # model.load_weights(rpn_model_weight_file, by_name=True)
 
     # setup loss functions
     detector_class_loss = define_detector_class_loss(C.detector_lambda[0])
@@ -87,20 +92,21 @@ def detector_train(C, alternative=False):
 
     # setup callbacks
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(detector_model_weight_file), monitor='loss', verbose=1,
+                        save_best_only=True, mode='auto', save_freq='epoch')
 
     ca = CategoricalAccuracy()
     # compile the model
     model.compile(optimizer=adam, loss={'detector_out_class':detector_class_loss,\
                                         'detector_out_regr':detector_regr_loss},\
-                                    metrics = {'detector_out_class':ca,\
-                                                'detector_out_regr':unmasked_IoU})
+                                    metrics = {'detector_out_class':[ca, positive_number],\
+                                                'detector_out_regr':unmasked_IoUV2})
 
     # initialize fit parameters
-    model.fit(x=[inputs, rois], y=[Y_labels, Y_bboxes],\
-                validation_split=0.25,\
-                shuffle=True,\
-                batch_size=8, epochs=100,\
-                callbacks = [CsvCallback])
+    model.fit(x=train_generator,\
+                validation_data=val_generator,\
+                epochs=50,\
+                callbacks = [CsvCallback, ModelCallback])
 
     model.save_weights(detector_model_weight_file, overwrite=True)
 
@@ -124,7 +130,7 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    lambdas = [1, 100]
+    lambdas = [1, 1e3]
     model_name = 'detector_mc_RCNN_regr_linear'
     record_name = 'detector_mc_record_RCNN_regr_linear'
 

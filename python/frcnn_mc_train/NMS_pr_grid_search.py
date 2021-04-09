@@ -28,18 +28,19 @@ cwd = Path.cwd()
 pickle_path = cwd.joinpath('frcnn.train.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
-max_output_size = 100
-ITs = np.linspace(0.5,1.0,6).tolist()
-STs = np.linspace(0.5,0.9,5).tolist()
+max_output_size = 10
+ITs = [0.7]
+STs = [0.911, 0.912, 0.913, 0.914, 0.915, 0.916, 0.917, 0.918, 0.919]
+#STs = list(np.round(np.arange(0.99,0.998,0.001,dtype=np.float32),3))
 # Sigmas = np.linspace(0,1,11).tolist()
-Sigmas = [0.0, 0.1, 0.5, 0.8, 1.0]
+Sigmas = [1e2]
 IoU_cuts = [0.5]
 
 
-data_dir = C.img_dir.parent
-csv_file = data_dir.joinpath("mc_NMS_grid_search_result_anchor_ratios=0.1_0.3_0.8.csv")
+data_dir = C.sub_data_dir
+csv_file = data_dir.joinpath("mc_NMS_grid_search_10_ST_[0.91,0.92].csv")
 
-df = pd.DataFrame(columns=["IoU_threshold", "Score_threshold", "Sigma", "Precision", "Recall", "Degeneracy"])
+df = pd.DataFrame(columns=["IoU_threshold", "Score_threshold", "Sigma", "Precision", "Recall", "Degeneracy", "mAP@.75", "mAP@.5", "mAP@[.5,.95]"])
 
 prNum = len(ITs)*len(STs)*len(Sigmas)
 prIdx = 0
@@ -56,7 +57,11 @@ for IT in ITs:
             tmp["Precision"] = df_tmp.loc[0,0.5]
             tmp["Recall"] = df_tmp.loc[1,0.5]
             tmp["Degeneracy"] = df_tmp.loc[2,0.5]
+            tmp['mAP@.75'] = df_tmp.loc[3,0.5]
+            tmp['mAP@.5'] = df_tmp.loc[4,0.5]
+            tmp['mAP@[.5,.95]'] = df_tmp.loc[5,0.5]
             df = df.append(tmp, ignore_index=True)
             df.to_csv(csv_file, index=False)
 
-pinfo(df)
+# don't use pinfo, because you cannot concatenate string with a dataframe
+print(df)

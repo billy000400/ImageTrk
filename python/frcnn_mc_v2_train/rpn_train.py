@@ -108,7 +108,7 @@ def rpn_train(C, alternative=False):
                 validation_data=val_generator,\
                 shuffle=True,\
                 callbacks = [CsvCallback],\
-                epochs=30)
+                epochs=60)
 
     model.save_weights(model_weights_file, overwrite=True)
     pinfo(f"Weights are saved to {str(model_weights_file)}")

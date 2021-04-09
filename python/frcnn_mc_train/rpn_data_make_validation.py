@@ -177,15 +177,9 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -195,11 +189,11 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('mc_imgs_train')
+    img_dir = data_dir.joinpath('mc_imgs_validation')
     shutil.rmtree(img_dir, ignore_errors=True)
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_name = "mc_bbox_proposal_train.csv"
+    csv_name = "mc_bbox_proposal_validation.csv"
     bbox_file = data_dir.joinpath(csv_name)
 
     ### initialize sqlite session
@@ -340,7 +334,7 @@ def make_data(C, mode='dp'):
         track_dir = C.track_dir
         mean = C.trackNum_mean
         std = C.trackNum_std
-        windowNum = C.window
+        windowNum = int(C.window/3)
         resolution = C.resolution
         bbox_file, img_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
     else:
@@ -348,7 +342,7 @@ def make_data(C, mode='dp'):
         sys.exit()
 
     ### Setup configurations
-    C.set_raw_training_data(bbox_file, img_dir)
+    C.set_raw_validation_data(bbox_file, img_dir)
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))
@@ -361,40 +355,13 @@ if __name__ == "__main__":
     psystem('Faster R-CNN Object Detection System')
     pmode('Training')
 
-    # initialize parameters
-    track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
-    data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
-    # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
-    # window = 20 # unit: ns
-    window = 3000 # unit: number of windows
-    resolution = 512
-    mode = 'normal'
-    mean = 5
-    std = 2
-
-    ## parameter handling
-    # argv = sys.argv
-    # if len(argv) == 1:
-    #     pass
-    # elif len(argv) >= 3:
-    #     track_str = argv[1]
-    #     dp_list = argv[2:]
-    # else:
-    #     perr("Invalid number of argument!")
-    #     perr("extra argv num = 0: track_DB_dir and data_product_list are set inside the script")
-    #     perr("extra argv num >= 2: first extra argv is track_DB_dir, and other are data product names")
-
-    # setup parameters
-    track_dir = Path(track_dir_str)
-    data_dir = Path(data_dir_str)
-    C = frcnn_config(track_dir, data_dir)
-    C.set_distribution(mean, std)
-    C.set_window(window)
-    C.set_resolution(resolution)
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+    C = pickle.load(open(pickle_path,'rb'))
 
     # prepare raw tarining set with time measurement
     start = timeit.default_timer()
-    make_data(C, mode)
+    make_data(C, 'normal')
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')

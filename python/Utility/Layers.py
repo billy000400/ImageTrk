@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer, Conv2D, Dense, Flatten, Dropout
 from tensorflow.image import non_max_suppression_with_scores
 from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.backend import print_tensor
 
 initializer = RandomNormal(stddev=0.01)
 
@@ -188,6 +189,10 @@ class RoIPooling(Layer):
 
         pooled_areas = tf.map_fn(curried_pool_rois, x, dtype=tf.float32)
 
+        inf_val = tf.math.reduce_sum(tf.cast(tf.math.is_inf(pooled_areas), dtype=tf.int32))
+        if inf_val > 0:
+            print_tensor('Found inf')
+
         return pooled_areas
 
     @staticmethod
@@ -227,6 +232,14 @@ class RoIPooling(Layer):
         # Divide the region into non overlapping areas
         region_height = h_end - h_start
         region_width  = w_end - w_start
+
+        # in case the feature area is smaller than the pooled area
+        if (region_height < pooled_height) or (region_width < pooled_width):
+            region = tf.image.resize(region,[region_height*pooled_height, region_width*pooled_width],method='nearest')
+            region_height = region_height*pooled_height
+            region_width = region_width*pooled_width
+
+
         h_step = tf.cast( region_height / pooled_height, 'int32')
         w_step = tf.cast( region_width  / pooled_width , 'int32')
 

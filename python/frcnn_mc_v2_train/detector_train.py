@@ -70,8 +70,9 @@ def detector_train(C, alternative=False):
     x = TimeDistributed(Dense(4096, activation='relu', name='fc2'))(x)
     #x = TimeDistributed(Dropout(0.5))(x)
     x1 = Dense(classNum)(x)
+    x2 = Dense(classNum*4, activation='relu')(x)
     output_classifier = Softmax(axis=2, name='detector_out_class')(x1)
-    output_regressor = Dense(classNum*4, activation='linear', name='detector_out_regr')(x)
+    output_regressor = Dense(classNum*4, activation='linear', name='detector_out_regr')(x2)
 
     model = Model(inputs=[img_input, RoI_input], outputs = [output_classifier, output_regressor])
     model.summary()

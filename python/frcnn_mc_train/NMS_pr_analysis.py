@@ -15,6 +15,8 @@ sys.path.insert(1, str(util_dir))
 from Abstract import *
 from Information import *
 from Configuration import frcnn_config
+
+from mean_average_precision import MeanAveragePrecision
 ### import ends
 
 ### This function analysis the result of NMS given a SINGLE set of parameters
@@ -23,9 +25,11 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
 
     ### load reference and prediction bbox table to pandas framework
     # construct file object
-    data_dir = C.data_dir
-    reference_file = data_dir.joinpath(C.bbox_reference_file)
-    prediction_file = data_dir.joinpath(C.bbox_proposal_file)
+    data_dir = C.sub_data_dir
+    data_dir = data_dir.joinpath('NMS analysis nodes')
+    data_dir.mkdir(exist_ok=True)
+    reference_file = data_dir.joinpath(C.validation_bbox_reference_file)
+    prediction_file = data_dir.joinpath(C.validation_bbox_proposal_file)
 
 
     # read csv to df
@@ -38,15 +42,25 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
     precision_row = ['precision']
     recall_row = ['recall']
     degeneracy_row = ['degeneracy']
+    map1_row = ['mAP@.75']
+    map2_row = ['mAP@.5']
+    map3_row = ['mAP@[.5,.95]']
 
     ### Grading the RPN prediction after NMS
     grading_grids = []
     imgs = ref_df['FileName'].unique()
+
+    map1s, map2s, map3s = [], [], []
+
     for img_idx, img in enumerate(imgs):
         sys.stdout.write(t_info(f"Parsing image: {img_idx+1}/{len(imgs)}", '\r'))
         if img_idx+1 == len(imgs):
             sys.stdout.write('\n')
         sys.stdout.flush()
+
+
+
+
 
         ref_slice = ref_df[ref_df['FileName']==img]
         pred_slice = pred_df[pred_df['FileName']==img]
@@ -71,6 +85,29 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
         pred_bboxes = [ pred_bboxes_raw[index] for index in selected_indices_list ]
 
         selected_score = selected_score.numpy().tolist()
+
+        gt = np.array([ [r['XMin'], r['YMin'], r['XMax'], r['YMax'], 0, 0, 0] for index,r in ref_slice.iterrows()])
+
+        preds = np.array([ [b[0], b[2], b[1], b[3], 0, score]\
+                    for b, score in zip(pred_bboxes, selected_score)])
+
+        if len(pred_bboxes)==0:
+            map1s.append(0)
+            map2s.append(0)
+            map3s.append(0)
+        else:
+            # create metric_fn
+            metric_fn = MeanAveragePrecision(num_classes=1)
+            # add some samples to evaluation
+            metric_fn.add(preds, gt)
+
+            map1 = metric_fn.value(iou_thresholds=0.75)['mAP']
+            map2 = metric_fn.value(iou_thresholds=0.5)['mAP']
+            map3 = metric_fn.value(iou_thresholds=np.arange(0.5, 1.0, 0.05))['mAP']
+
+            map1s.append(map1)
+            map2s.append(map2)
+            map3s.append(map3)
 
         # calculate precision, recall, and degeneracy
         iNum = len(ref_bboxes)
@@ -106,7 +143,9 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
                 if np.any(row>=iou_limit):
                     degeneracy = np.count_nonzero(row>=iou_limit)
                     degeneracies.append(degeneracy)
+
                 else:
+                    degeneracies.append(0)
                     fn += 1
 
             for j in range(jNum):
@@ -118,31 +157,49 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
 
             dom1 = tp+fp
 
-            if dom1==0:
-                precision = 0
-            else:
+            if dom1!=0:
                 precision = tp/dom1
+                precisions.append(precision)
 
             recall = tp/(tp+fn)
-
-            precisions.append(precision)
             recalls.append(recall)
 
-        precision_entry = np.array(precisions).mean()
-        recall_entry = np.array(recalls).mean()
-        degeneracy_entry = np.array(degeneracies).mean()
+        if len(precisions)!=0:
+            precision_entry = np.array(precisions).mean()
+            precision_row.append(precision_entry)
+        else:
+            precision_row.append([])
 
-        precision_row.append(precision_entry)
-        recall_row.append(recall_entry)
-        degeneracy_row.append(degeneracy_entry)
+        if len(recalls)!=0:
+            recall_entry = np.array(recalls).mean()
+            recall_row.append(recall_entry)
+        else:
+            recall_row.append([])
+
+        if len(degeneracies)!=0:
+            degeneracy_entry = np.array(degeneracies).mean()
+            degeneracy_row.append(degeneracy_entry)
+        else:
+            degeneracy_row.append([])
+
+        map1_row.append(np.array(map1s).mean())
+        map2_row.append(np.array(map2s).mean())
+        map3_row.append(np.array(map3s).mean())
+
 
     precision_df = pd.DataFrame([precision_row], columns=columns)
     recall_df = pd.DataFrame([recall_row], columns=columns)
     degeneracy_df = pd.DataFrame([degeneracy_row], columns=columns)
+    map1_df = pd.DataFrame([map1_row], columns=columns)
+    map2_df = pd.DataFrame([map2_row], columns=columns)
+    map3_df = pd.DataFrame([map3_row], columns=columns)
 
     result_df = result_df.append(precision_df, ignore_index=True)
     result_df = result_df.append(recall_df, ignore_index=True)
     result_df = result_df.append(degeneracy_df, ignore_index=True)
+    result_df = result_df.append(map1_df, ignore_index=True)
+    result_df = result_df.append(map2_df, ignore_index=True)
+    result_df = result_df.append(map3_df, ignore_index=True)
 
     result_file = data_dir.joinpath(f'NMS_analysis_IT={iou_threshold}_ST={score_threshold}_Sigma={soft_nms_sigma}')
     result_df.to_csv(result_file)

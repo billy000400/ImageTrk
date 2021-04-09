@@ -159,9 +159,9 @@ class frcnn_config:
         img_names = df['FileName'].unique()
         files = [str(img_dir.joinpath(img)) for img in img_names]
         files_itr = iter(files)
-        shape = cv2.imread(next(files_itr)).shape
+        shape = cv2.imread(next(files_itr),cv2.IMREAD_UNCHANGED).shape
         for i in range(1,len(files)):
-            shape_new = cv2.imread(next(files_itr)).shape
+            shape_new = cv2.imread(next(files_itr), cv2.IMREAD_UNCHANGED).shape
             if shape_new != shape:
                 print("[ERROR] Training images' shapes are not consistent")
                 raise ValueError

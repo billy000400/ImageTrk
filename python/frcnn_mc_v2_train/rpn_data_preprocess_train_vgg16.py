@@ -70,7 +70,8 @@ def preprocess(C):
     for img_name, bbox_list in img_bbox_list:
         # get input
         img_path_str = str(C.train_img_dir.joinpath(img_name))
-        input = cv2.imread(img_path_str)
+        input = cv2.imread(img_path_str, cv2.IMREAD_UNCHANGED)
+        input = cv2.cvtColor(input, cv2.COLOR_BGRA2RGBA)
         if input.any() == None:
             perr(f'{img_path_str} is invalid')
         # make truth table for RPN classifier
