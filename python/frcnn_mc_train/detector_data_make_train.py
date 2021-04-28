@@ -214,7 +214,7 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path, 'rb'))
 
-    roiNum = 64
+    roiNum = 128
     negativeRate = 0.5
 
     C.set_roi_parameters(roiNum, negativeRate)

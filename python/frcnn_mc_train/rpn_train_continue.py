@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 import pickle
 import timeit
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -44,6 +45,7 @@ def rpn_train(C, alternative=False):
     C.weight_dir = weight_dir
 
     model_weights_file = weight_dir.joinpath(C.rpn_model_name+'.h5')
+    model_file = weight_dir.joinpath(C.rpn_model_name+'_whole_model.h5')
     record_file = data_dir.joinpath(C.rpn_record_name+'.csv')
 
     pinfo('I/O Path is configured')
@@ -56,6 +58,8 @@ def rpn_train(C, alternative=False):
     regressor = rpn_layer.regression(base_net)
     model = Model(inputs=input_layer, outputs = [classifier,regressor])
     model.summary()
+
+    model.load_weights(model_weights_file, by_name=True)
 
     if alternative:
         rpn_model_weights_file = C.weight_dir.joinpath(C.rpn_model_name+'.h5')
@@ -95,6 +99,11 @@ def rpn_train(C, alternative=False):
 
     posNumCallback = EarlyStoppingAtMinMetric('rpn_out_class_positive_number', 30)
 
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(model_file), monitor='loss', verbose=1,
+                        save_best_only=True, mode='auto', save_freq='epoch')
+    logdir="logs/fit/" + "rpn_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+
     # compile the model
     model.compile(optimizer=adam, loss={'rpn_out_class' : rpn_class_loss,\
                                         'rpn_out_regress': rpn_regr_loss},\
@@ -107,8 +116,8 @@ def rpn_train(C, alternative=False):
     model.fit(x=train_generator,
                 validation_data=val_generator,\
                 shuffle=True,\
-                callbacks = [CsvCallback],\
-                epochs=60)
+                callbacks = [CsvCallback, ModelCallback, tensorboard_callback],\
+                epochs=240)
 
     model.save_weights(model_weights_file, overwrite=True)
     pinfo(f"Weights are saved to {str(model_weights_file)}")
@@ -132,10 +141,10 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    lambdas = [1, 100]
-    model_name = 'rpn_mc_00'
-    record_name = 'rpn_mc_record_00'
-
-    C.set_rpn_record(model_name, record_name)
-    C.set_rpn_lambda(lambdas)
+    # lambdas = [1, 100]
+    # model_name = 'rpn_mc_00'
+    # record_name = 'rpn_mc_record_00'
+    # #
+    # C.set_rpn_record(model_name, record_name)
+    # C.set_rpn_lambda(lambdas)
     C = rpn_train(C, alternative=False)

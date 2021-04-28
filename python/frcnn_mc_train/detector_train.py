@@ -9,11 +9,13 @@ import sys
 from pathlib import Path
 import pickle
 import timeit
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
 
 import tensorflow as tf
+from tensorflow.keras.regularizers import l2
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense, Conv2D, Dropout, Flatten, TimeDistributed, Reshape, Softmax
 from tensorflow.keras.optimizers import Adam
@@ -59,25 +61,31 @@ def detector_train(C, alternative=False):
 
     pinfo('I/O Path is configured')
 
+    # tf.compat.v1.disable_eager_execution()
+
+    reg = l2(l2=1e-3)
+
     # construct model
     img_input = Input(shape=C.input_shape)
     RoI_input = Input(shape=(C.roiNum, 4))
     x = C.base_net.get_base_net(img_input, trainable=True)
-    x = RoIPooling(7,7)([x, RoI_input])
+    x = RoIPooling(6,6)([x, RoI_input])
     x = TimeDistributed(Flatten(name='flatten'))(x)
     x = TimeDistributed(Dense(4096, activation='relu', name='fcl'))(x)
-    #x = TimeDistributed(Dropout(0.5))(x)
+    # x = TimeDistributed(Dropout(0.1))(x)
     x = TimeDistributed(Dense(4096, activation='relu', name='fc2'))(x)
-    #x = TimeDistributed(Dropout(0.5))(x)
-    x1 = Dense(classNum)(x)
-    output_classifier = Softmax(axis=2, name='detector_out_class')(x1)
-    output_regressor = Dense(classNum*4, activation='linear', name='detector_out_regr')(x)
+    # x = TimeDistributed(Dropout(0.1))(x)
+    x1 = TimeDistributed(Dense(classNum, name='fc3'))(x)
+    x2 = TimeDistributed(Dense(classNum*4, activation='relu', name='fc4'))(x)
+    output_classifier = TimeDistributed(Softmax(axis=-1), name='detector_out_class')(x1)
+    output_regressor = TimeDistributed(Dense(classNum*4, activation='linear'), name='detector_out_regr')(x2)
 
     model = Model(inputs=[img_input, RoI_input], outputs = [output_classifier, output_regressor])
     model.summary()
 
     # load weights trianed by RPN
-    # model.load_weights(rpn_model_weight_file, by_name=True)
+    if alternative == True:
+        model.load_weights(rpn_model_weight_file, by_name=True)
 
     # setup loss functions
     detector_class_loss = define_detector_class_loss(C.detector_lambda[0])
@@ -92,21 +100,29 @@ def detector_train(C, alternative=False):
 
     # setup callbacks
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
-    ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(detector_model_weight_file), monitor='loss', verbose=1,
-                        save_best_only=True, mode='auto', save_freq='epoch')
+
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(detector_model_weight_file),\
+                        monitor='val_loss', verbose=1,\
+                        save_weights_only=True, save_best_only=True,\
+                        mode='auto', save_freq='epoch')
+
+    logdir="logs/fit/" + "_dr=0.0_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+
+    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
 
     ca = CategoricalAccuracy()
     # compile the model
     model.compile(optimizer=adam, loss={'detector_out_class':detector_class_loss,\
                                         'detector_out_regr':detector_regr_loss},\
-                                    metrics = {'detector_out_class':[ca, positive_number],\
+                                    metrics = {'detector_out_class':[ca],\
                                                 'detector_out_regr':unmasked_IoUV2})
 
     # initialize fit parameters
     model.fit(x=train_generator,\
                 validation_data=val_generator,\
-                epochs=50,\
-                callbacks = [CsvCallback, ModelCallback])
+                epochs=200,\
+                callbacks = [CsvCallback, ModelCallback, tensorboard_callback, earlyStopCallback])
 
     model.save_weights(detector_model_weight_file, overwrite=True)
 
@@ -131,9 +147,9 @@ if __name__ == "__main__":
 
     # initialize parameters
     lambdas = [1, 1e3]
-    model_name = 'detector_mc_RCNN_regr_linear'
-    record_name = 'detector_mc_record_RCNN_regr_linear'
+    model_name = 'detector_mc_RCNN_dr=0.0'
+    record_name = 'detector_mc_record_dr=0.0'
 
     C.set_detector_record(model_name, record_name)
     C.set_detector_lambda(lambdas)
-    C = detector_train(C)
+    C = detector_train(C, alternative=True)

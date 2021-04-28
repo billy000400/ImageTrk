@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 import pickle
 import timeit
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -18,6 +19,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
 
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
@@ -50,7 +52,7 @@ def rpn_train(C, alternative=False):
 
     # build the model
     input_layer = Input(C.input_shape)
-    base_net = C.base_net.get_base_net(input_layer)
+    base_net = C.base_net.get_base_net(input_layer, trainable=False)
     rpn_layer = rpn(C.anchor_scales, C.anchor_ratios)
     classifier = rpn_layer.classifier(base_net)
     regressor = rpn_layer.regression(base_net)
@@ -59,7 +61,7 @@ def rpn_train(C, alternative=False):
 
     if alternative:
         rpn_model_weights_file = C.weight_dir.joinpath(C.rpn_model_name+'.h5')
-        detector_model_weights_file = C.weight_dir.joinpath(C.detector_model_name+'.h5')
+        detector_model_weights_file = C.weight_dir.joinpath('detector_mc_RCNN_dr=0.0.h5')
         pinfo(f"Loading weights from {str(rpn_model_weights_file)}")
         model.load_weights(rpn_model_weights_file, by_name=True)
         pinfo(f"Loading weights from {str(detector_model_weights_file)}")
@@ -95,6 +97,16 @@ def rpn_train(C, alternative=False):
 
     posNumCallback = EarlyStoppingAtMinMetric('rpn_out_class_positive_number', 30)
 
+    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(model_weights_file,\
+                        monitor='val_loss', verbose=1,\
+                        save_weights_only=True,\
+                        save_best_only=True, mode='auto', save_freq='epoch')
+
+    logdir="logs/fit/" + "rpn_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+
     # compile the model
     model.compile(optimizer=adam, loss={'rpn_out_class' : rpn_class_loss,\
                                         'rpn_out_regress': rpn_regr_loss},\
@@ -102,13 +114,13 @@ def rpn_train(C, alternative=False):
                                              'rpn_out_regress': unmasked_IoU})
 
 
-
     # initialize fit parameters
     model.fit(x=train_generator,
                 validation_data=val_generator,\
                 shuffle=True,\
-                callbacks = [CsvCallback],\
-                epochs=100)
+                callbacks = [CsvCallback, ModelCallback, earlyStopCallback, tensorboard_callback],\
+                epochs=200)
+
 
     model.save_weights(model_weights_file, overwrite=True)
     pinfo(f"Weights are saved to {str(model_weights_file)}")
@@ -138,4 +150,4 @@ if __name__ == "__main__":
 
     C.set_rpn_record(model_name, record_name)
     C.set_rpn_lambda(lambdas)
-    C = rpn_train(C, alternative=False)
+    C = rpn_train(C, alternative=True)

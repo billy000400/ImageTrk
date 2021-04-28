@@ -1,6 +1,7 @@
 import sys
 import pickle
 from pathlib import Path
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -20,15 +21,18 @@ cwd = Path.cwd()
 pickle_path = cwd.joinpath('frcnn.train.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
-
-df_r = pd.read_csv(C.validation_bbox_reference_file, index_col=None)
-df_p = pd.read_csv(C.validation_bbox_proposal_file, index_col=None)
+test_dir = cwd.joinpath('rpn_original_10')
+df_r = pd.read_csv(test_dir.joinpath('mc_bbox_proposal_validation.csv'), index_col=None)
+df_p = pd.read_csv(test_dir.joinpath('mc_RoI_prediction_NMS_validation.csv'), index_col=None)
+img_dir = test_dir.joinpath('images')
+shutil.rmtree(img_dir, ignore_errors=True)
+img_dir.mkdir(parents=True)
 
 val_img_dir = C.validation_img_dir
 
 imgNames = df_r['FileName'].unique().tolist()
 
-threshold = 100
+threshold = 3e3
 
 res = C.resolution
 
@@ -39,7 +43,10 @@ for index, imgName in enumerate(imgNames):
         slice_p = slice_p.sort_values(by='Score', ascending=False).head(threshold)
 
 
-    fig, (ax1, ax2) = plt.subplots(1,2, figsize=(10,5))
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize=(10,5), sharey=True)
+
+    ax1.set(xlabel='x (pixel)', ylabel='y (pixel)')
+    ax2.set(xlabel='x (pixel)')
 
 
     img = mpimg.imread(val_img_dir.joinpath(imgName))
@@ -80,4 +87,9 @@ for index, imgName in enumerate(imgNames):
         rect = Rectangle(rec_xy, rec_width, rec_height, linewidth=1, edgecolor='r', facecolor='none')
         ax2.add_patch(rect)
 
-    plt.show()
+    imgFile = img_dir.joinpath(imgName)
+    plt.savefig(imgFile)
+    plt.close()
+
+    if index==300:
+        sys.exit()

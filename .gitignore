@@ -5,10 +5,11 @@ data/*
 tmp/
 weights/
 python/Utility/__pycache__
+python/evaluation
 python/frcnn_mc_train/frcnn.train.config.pickle
 python/frcnn_mc_train/__pycache__
-python/frcnn_mc_v2_train/__pycache__
-python/frcnn_mc_v2_train/frcnn.train.config.pickle
+python/frcnn_mc_train/logs
+
 
 python/frcnn_mc_ResNet08_train/__pycache__
 python/frcnn_mc_ResNet08_train/frcnn.train.config.pickle
