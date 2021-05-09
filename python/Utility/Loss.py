@@ -16,6 +16,7 @@ from tensorflow.keras.losses import (
     MeanSquaredError,
     Reduction
 )
+from tensorflow.keras.backend import print_tensor
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
@@ -41,8 +42,9 @@ def log_loss(y, p):
 def define_rpn_class_loss(reg):
     def rpn_class_loss(p_r, p_p):
 
-        mask = ~tf.math.is_nan(p_r)
 
+        mask = ~tf.math.is_nan(p_r)
+        mask.set_shape([None,32,32,18])
         mp_r = tf.boolean_mask(p_r, mask=mask)
         mp_p = tf.boolean_mask(p_p, mask=mask)
         #tf.keras.backend.print_tensor(tf.math.reduce_any(~tf.math.is_nan(mp_r)))
@@ -63,6 +65,7 @@ def define_rpn_class_loss(reg):
 def define_rpn_regr_loss(reg):
     def rpn_regr_loss(t_r, t_p):
         mask = ~tf.math.is_nan(t_r)
+        mask.set_shape([None,32,32,72])
 
         mt_r = tf.boolean_mask(t_r, mask=mask)
         mt_p = tf.boolean_mask(t_p, mask=mask)

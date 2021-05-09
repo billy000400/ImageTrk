@@ -32,7 +32,7 @@ def iou(rec_a, rec_b):
 
 def unmasked_binary_accuracy(p_r, p_p):
     mask = ~tf.math.is_nan(p_r)
-
+    mask.set_shape([None,32,32,18])
     mp_r = tf.boolean_mask(p_r, mask=mask)
     mp_p = tf.boolean_mask(p_p, mask=mask)
 
@@ -88,7 +88,7 @@ def top2_categorical_accuracy(y_real, y_predict):
 def unmasked_IoU(t_r, t_p):
 
     mask = ~tf.math.is_nan(t_r)
-
+    mask.set_shape([None,32,32,72])
     mt_r = tf.boolean_mask(t_r, mask=mask)
     mt_p = tf.boolean_mask(t_p, mask=mask)
 
