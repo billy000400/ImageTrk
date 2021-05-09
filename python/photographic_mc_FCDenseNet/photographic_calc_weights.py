@@ -11,10 +11,10 @@ import numpy as np
 
 
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import extractor_config as Config
-from mu2e_output import *
+from Configuration import extractor_config as Config
+from Information import *
 ### import ends
 def calc_weights(Y_dir):
     pinfo('Calculating class weights by median frequency')

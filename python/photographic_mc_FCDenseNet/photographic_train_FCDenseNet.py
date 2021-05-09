@@ -29,15 +29,17 @@ from tensorflow.keras.layers import(
 from tensorflow.keras.optimizers import Adam
 
 
-util_dir = Path.cwd().parent.joinpath('util')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Config import extractor_config as Config
+from Configuration import extractor_config
 from DataGenerator import DataGenerator as Generator
-from Architecture import FC_DenseNet
-from mu2e_output import *
+from Architectures import FC_DenseNet
+from Information import *
 from Loss import *
 from Metric import *
-### import ends
+### import end
+
+print(tf.executing_eagerly())
 
 def photographic_train(C):
     pstage("Start Training")
@@ -45,19 +47,20 @@ def photographic_train(C):
     ### outputs
     pinfo('Configuring output paths')
     cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
-    weights_dir = cwd.parent.parent.joinpath('weights')
+    data_dir = C.sub_data_dir
+    weights_dir = C.data_dir.parent.joinpath('weights')
 
-    model_weights = weights_dir.joinpath(C.model_name+'.h5')
+    model_weights_file = weights_dir.joinpath(C.model_name+'.h5')
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     input_shape = (C.resolution, C.resolution, 1)
-    architecture = FC_DenseNet(input_shape, 3, dr=0.0)
+    architecture = FC_DenseNet(input_shape, 3, dr=0.1)
     model = architecture.get_model()
     model.summary()
 
     # setup loss
-    weights = [1, 1.62058132, 1.13653004e-03]
+    weights = C.weights
+
     cce = categorical_focal_loss(alpha=weights, gamma=2)
 
     # setup metric
@@ -72,7 +75,15 @@ def photographic_train(C):
 
     # setup callback
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
-    logdir="logs/fit/" + "mc_FCDenseNet_dr=0.0_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_top2_categorical_accuracy', patience=10)
+
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(model_weights_file,\
+                        monitor='val_top2_categorical_accuracy', verbose=1,\
+                        save_weights_only=True,\
+                        save_best_only=True, mode='auto', save_freq='epoch')
+
+    logdir="logs/fit/" + C.model_name+'_' + datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 
     # print(cnn.summary())
@@ -88,11 +99,9 @@ def photographic_train(C):
     model.fit(x=train_generator,\
             shuffle=True,\
             validation_data=val_generator,\
-            callbacks = [CsvCallback, tensorboard_callback],\
-            use_multiprocessing=True,\
-            workers=4,\
+            callbacks = [CsvCallback,earlyStopCallback, ModelCallback, tensorboard_callback],\
             epochs=150)
-    model.save(model_weights)
+    model.save(model_weights_file)
 
     pcheck_point('Finished Training')
     return C
@@ -110,8 +119,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = "photographic_mc_arc_FCDense_Dropout_0.0"
-    record_name = "photographic_record_mc_arc_FCDense_Dropout_0.0"
+    model_name = "photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented"
+    record_name = "photographic_record_mc_arc_FCDense_Dropout_0.1_UnAugmented"
 
     # setup parameters
     C.set_outputs(model_name, record_name)

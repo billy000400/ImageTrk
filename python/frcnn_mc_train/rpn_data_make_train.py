@@ -172,8 +172,13 @@ def make_data_from_dp(track_dir, dp_name, window, resolution, mode='first'):
 
     return bbox_file, img_dir
 
-def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
-
+def make_data_from_distribution(C):
+    track_dir = C.track_dir
+    mean = C.trackNum_mean
+    std = C.trackNum_std
+    windowNum = C.window
+    resolution = C.resolution
+    
     hitNumCut = 20
 
     ### Construct Path Objects
@@ -342,7 +347,7 @@ def make_data(C, mode='dp'):
         std = C.trackNum_std
         windowNum = C.window
         resolution = C.resolution
-        bbox_file, img_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
+        bbox_file, img_dir = make_data_from_distribution(C)
     else:
         perr(f"\"{mode}\" mode is not supported")
         sys.exit()

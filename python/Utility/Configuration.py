@@ -290,12 +290,15 @@ class frcnn_config:
 
 
 class extractor_config:
-    def __init__(self, track_sql_dir):
+    def __init__(self, track_sql_dir, data_dir):
         assert Path.exists(track_sql_dir), \
             t_error('The directory for track SQLits database does not exist')
 
         # source member
         self.track_dir = track_sql_dir
+        self.data_dir = data_dir
+        self.sub_data_dir = None
+        
         self.source = None
         self.window = None
         self.resolution = None

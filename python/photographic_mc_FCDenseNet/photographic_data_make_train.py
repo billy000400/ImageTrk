@@ -30,7 +30,13 @@ from Abstract import binning_objects
 from Database import *
 from Information import *
 
-def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
+def make_data_from_distribution(C):
+
+    track_dir = C.track_dir
+    mean = C.trackNum_mean
+    std = C.trackNum_std
+    windowNum = C.window
+    resolution = C.resolution
 
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 20
@@ -48,8 +54,10 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
-    cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
+
+    data_dir = C.data_dir
+    C.sub_data_dir = data_dir.joinpath(Path.cwd().name)
+    data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
     ### directories for numpy data
@@ -263,7 +271,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             im_in = Image.fromarray(xo)
             im_out = Image.fromarray(yo, mode='RGB')
 
-            for degree in [0, 90, 180, 270]:
+            for degree in [0]:
 
                 input_file = photographic_train_x_dir.joinpath(f'input_{str(index).zfill(6)}')
                 output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
@@ -318,11 +326,7 @@ def make_data(C, mode):
 
 
     if mode == "normal":
-        track_dir = C.track_dir
-        mean = C.trackNum_mean
-        std = C.trackNum_std
-        windowNum = C.window
-        train_x_dir, train_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
+        train_x_dir, train_y_dir = make_data_from_distribution(C)
 
     C.set_train_dir(train_x_dir, train_y_dir)
     cwd = Path.cwd()
@@ -336,17 +340,19 @@ if __name__ == "__main__":
     pmode('Testing Feasibility')
     pinfo('Input DType for testing: StrawDigiMC')
 
-    track_str = '../../tracks'
-    track_dir = Path(track_str)
-    C = extractor_config(track_dir)
+    track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
+    data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
+
+    track_dir = Path(track_dir_str)
+    data_dir = Path(data_dir_str)
+
+    C = extractor_config(track_dir, data_dir)
 
     mode = 'normal'
-    window = 300 # unit: number of windows
+    window = 3000 # unit: number of windows
     mean = 5
     std = 2
     resolution = 256
-
-    track_dir = Path(track_str)
 
     C.set_distribution(mean, std)
     C.set_window(window)

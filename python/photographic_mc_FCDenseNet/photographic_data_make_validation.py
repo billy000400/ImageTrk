@@ -30,7 +30,13 @@ from Information import *
 
 
 
-def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
+def make_data_from_distribution(C):
+
+    track_dir = C.track_dir
+    mean = C.trackNum_mean
+    std = C.trackNum_std
+    windowNum = int(C.window/3.0)
+    resolution = C.resolution
 
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 20
@@ -42,8 +48,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
-    cwd = Path.cwd()
-    data_dir = cwd.parent.parent.joinpath('data')
+    data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
     photographic_val_x_dir = data_dir.joinpath('photographic_large_val_X')
@@ -245,7 +250,7 @@ def make_data_from_distribution(track_dir, mean, std, windowNum, resolution):
             im_in = Image.fromarray(xo)
             im_out = Image.fromarray(yo, mode='RGB')
 
-            for degree in [0, 90, 180, 270]:
+            for degree in [0]:
 
                 input_file = photographic_val_x_dir.joinpath(f'input_{str(index).zfill(6)}')
                 output_file = photographic_val_y_dir.joinpath(f'output_{str(index).zfill(6)}')
@@ -299,12 +304,8 @@ def make_data(C):
 
 
 
-    track_dir = C.track_dir
-    mean = C.trackNum_mean
-    std = C.trackNum_std
-    windowNum = int(C.window/7*2)
-    resolution = C.resolution
-    val_x_dir, val_y_dir = make_data_from_distribution(track_dir, mean, std, windowNum, resolution)
+
+    val_x_dir, val_y_dir = make_data_from_distribution(C)
 
     C.set_val_dir(val_x_dir, val_y_dir)
     cwd = Path.cwd()
