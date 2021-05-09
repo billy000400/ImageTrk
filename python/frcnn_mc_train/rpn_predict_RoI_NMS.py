@@ -37,7 +37,7 @@ def rpn_predict_RoI(C, nms=True):
     # reconstruct model file
     cwd = Path.cwd()
     weights_dir = C.weight_dir
-    model_weights = weights_dir.joinpath(C.rpn_model_name+'.h5')
+    model_weights = str(weights_dir.joinpath(C.rpn_model_name+'.h5'))
 
     # load model
     input_layer = Input(shape=C.input_shape)
@@ -64,7 +64,7 @@ def rpn_predict_RoI(C, nms=True):
 
     ### predicting by model
     pinfo('RPN is scoring anchors and proposing delta suggestions')
-    outputs_raw = model.predict(x=train_generator)
+    outputs_raw = model.predict(x=train_generator, verbose=1)
     score_maps = outputs_raw[0]
     delta_maps = outputs_raw[1]
 
