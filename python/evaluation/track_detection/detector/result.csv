@@ -1,0 +1,2 @@
+loss,detector_out_class_loss,detector_out_regr_loss,detector_out_class_categorical_accuracy,detector_out_regr_unmasked_IoUV2
+0.3648794889450073,0.364664226770401,0.00021518729045055807,0.8690196871757507,0.6103771924972534

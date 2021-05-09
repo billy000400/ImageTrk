@@ -5,7 +5,15 @@ data/*
 tmp/
 weights/
 python/Utility/__pycache__
-python/evaluation
+python/evaluation/track_detection/examples_private
+
+python/evaluation/track_detection/rpn/rpn_mc_00.h5
+python/evaluation/track_detection/detector/detector_mc_RCNN_dr=0.0.h5
+python/evaluation/track_detection/detector/rpn_mc_00.h5
+
+python/evaluation/track_extraction/photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented.h5
+
+
 python/frcnn_mc_train/frcnn.train.config.pickle
 python/frcnn_mc_train/__pycache__
 python/frcnn_mc_train/logs
@@ -14,11 +22,15 @@ python/frcnn_mc_train/logs
 python/frcnn_mc_ResNet08_train/__pycache__
 python/frcnn_mc_ResNet08_train/frcnn.train.config.pickle
 
+python/frcnn_mc_train_v3
+
 python/frcnn_mc_RPN_only_train/__pycache__
 python/frcnn_mc_RPN_only_train/frcnn.train.config.pickle
 
 python/frcnn_mc_GridSearchImprove_train/__pycache__
 python/frcnn_mc_GridSearchImprove_train/frcnn.train.config.pickle
+
+python/RD/
 
 python/frcnn_train/frcnn.train.config.pickle
 python/photographic_mc_morphology/photographic.train.config.pickle
