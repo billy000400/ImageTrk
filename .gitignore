@@ -8,9 +8,16 @@ python/Utility/__pycache__
 python/evaluation/track_detection/examples_private
 
 python/evaluation/track_detection/rpn/rpn_mc_00.h5
+python/evaluation/track_detection/rpn/frcnn.test.config.pickle
+
+python/evaluation/track_detection/detector/frcnn.test.config.pickle
 python/evaluation/track_detection/detector/detector_mc_RCNN_dr=0.0.h5
 python/evaluation/track_detection/detector/rpn_mc_00.h5
 
+python/evaluation/track_detection/combined/frcnn.test.config.pickle
+python/evaluation/track_detection/combined/rpn_mc_00.h5
+
+python/evaluation/track_extraction/extractor.test.config.pickle
 python/evaluation/track_extraction/photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented.h5
 
 
@@ -40,10 +47,14 @@ python/photographic_mc_U_Net/photographic.train.config.pickle
 python/photographic_mc_U_Net_like/photographic.train.config.pickle
 python/photographic_mc_U_ResNet/photographic.train.config.pickle
 python/photographic_mc_overfitting/photographic.train.config.pickle
-python/photographic_mc_FCDenseNet/photographic.train.config.pickle
+
 python/photographic_mc_zEncoded/photographic.train.config.pickle
 python/photographic_mc_zEncoded/logs
 python/photographic_mc_tEncoded/photographic.train.config.pickle
+
+python/photographic_mc_FCDenseNet/__pycache__
 python/photographic_mc_FCDenseNet/logs/
+python/photographic_mc_FCDenseNet/photographic.train.config.pickle
+
 html/
 latex/

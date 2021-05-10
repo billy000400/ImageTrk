@@ -31,6 +31,8 @@ class frcnn_config:
         self.sub_data_dir = None
         self.tmp_dir = None
         self.weight_dir = None
+        self.train_dp_list = None
+        self.val_dp_list = None
 
         ## raw data generation information
         # mode 1: constant sampling window
@@ -136,6 +138,12 @@ class frcnn_config:
 
 
     ### RPN training: make raw data
+    def set_train_dp_list(self, dp_list):
+        self.train_dp_list = dp_list
+
+    def set_val_dp_list(self, dp_list):
+        self.val_dp_list = dp_list
+
     def set_source(self, source):
         for file in source:
             assert Path.exists(self.track_dir.joinpath(file+'.db')), \
@@ -298,7 +306,7 @@ class extractor_config:
         self.track_dir = track_sql_dir
         self.data_dir = data_dir
         self.sub_data_dir = None
-        
+
         self.source = None
         self.window = None
         self.resolution = None
@@ -306,6 +314,9 @@ class extractor_config:
         # alternative source: distribution
         self.trackNum_mean = None
         self.trackNum_std = None
+
+        self.train_dp_list = None
+        self.val_dp_list = None
 
         # input member
         self.train_dir = None
@@ -354,6 +365,12 @@ class extractor_config:
     def set_resolution(self, resolution):
         self.resolution = resolution
 
+    def set_train_dp_list(self, dp_list):
+        self.train_dp_list = dp_list
+
+    def set_val_dp_list(self, dp_list):
+        self.val_dp_list = dp_list
+        
     def set_inputs(self, extractor_train_dir, X_file, Y_file):
         self.train_dir = extractor_train_dir
         self.X_file = X_file

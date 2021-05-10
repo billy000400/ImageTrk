@@ -67,6 +67,7 @@ model.load_weights(str(Path.cwd().joinpath('detector_mc_RCNN_dr=0.0.h5')), by_na
 val_generator = DataGeneratorV3(C.validation_img_inputs_npy, C.validation_rois,\
                                     C.detector_validation_Y_classifier,\
                                     C.detector_validation_Y_regressor,\
+                                    shuffle=False,\
                                     batch_size=1)
 
 # evaluate model
@@ -79,9 +80,22 @@ model.compile(optimizer=adam, loss={'detector_out_class':detector_class_loss,\
                                 metrics = {'detector_out_class':ca,\
                                             'detector_out_regr':unmasked_IoUV2})
 
-#sys.exit()
 
-result = model.evaluate(x=val_generator, return_dict=True)
+class StdCallback(tf.keras.callbacks.Callback):
+    accs = []
+    ious = []
+
+    def on_test_batch_end(self, batch, logs=None):
+        self.accs.append(logs['detector_out_class_categorical_accuracy'])
+        self.ious.append(logs['detector_out_regr_unmasked_IoUV2'])
+
+    def on_test_end(self, epoch, logs=None):
+        accs = np.array(self.accs)
+        ious = np.array(self.ious)
+        print()
+        print(f'accs_std:{accs.std()}; ious_std:{ious.std()}')
+
+result = model.evaluate(x=val_generator, return_dict=True, callbacks=[StdCallback()])
 result = {key:[value] for key, value in result.items()}
 df = pd.DataFrame.from_dict(result)
 df.to_csv(Path.cwd().joinpath('result.csv'), index=None)

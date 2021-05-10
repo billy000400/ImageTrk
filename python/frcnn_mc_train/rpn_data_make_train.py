@@ -178,19 +178,11 @@ def make_data_from_distribution(C):
     std = C.trackNum_std
     windowNum = C.window
     resolution = C.resolution
-    
+
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+    dp_list = C.train_dp_list
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -354,9 +346,6 @@ def make_data(C, mode='dp'):
 
     ### Setup configurations
     C.set_raw_training_data(bbox_file, img_dir)
-    cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
 
     pcheck_point('Images and the bbox table')
     return C
@@ -377,6 +366,13 @@ if __name__ == "__main__":
     mean = 5
     std = 2
 
+    dp_list =  ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
+            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
+            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
+            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
+            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
+            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+
     ## parameter handling
     # argv = sys.argv
     # if len(argv) == 1:
@@ -393,13 +389,18 @@ if __name__ == "__main__":
     track_dir = Path(track_dir_str)
     data_dir = Path(data_dir_str)
     C = frcnn_config(track_dir, data_dir)
+    C.set_train_dp_list(dp_list)
     C.set_distribution(mean, std)
     C.set_window(window)
     C.set_resolution(resolution)
 
     # prepare raw tarining set with time measurement
     start = timeit.default_timer()
-    make_data(C, mode)
+    C = make_data(C, mode)
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')
+
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_path, 'wb'))

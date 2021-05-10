@@ -42,9 +42,7 @@ def make_data_from_distribution(C):
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    dp_list = C.val_dp_list
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -323,6 +321,11 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('photographic.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
+
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    C.set_val_dp_list(dp_list)
 
     start = timeit.default_timer()
     make_data(C)

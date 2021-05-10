@@ -41,9 +41,23 @@ mode = 'normal'
 mean = 5
 std = 2
 
+train_dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+
+test_dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
+        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+
 track_dir = Path(track_dir_str)
 data_dir = Path(data_dir_str)
 C = frcnn_config(track_dir, data_dir)
+C.set_train_dp_list(train_dp_list)
+C.set_val_dp_list(test_dp_list) # notice that we replace val with test here and you can test by using val
+
 C.set_distribution(mean, std)
 C.set_window(window)
 C.set_resolution(resolution)
@@ -63,9 +77,6 @@ upper_limit = 0.7
 posCut = 32
 nWant = 64
 
-cwd = Path.cwd()
-pickle_path = cwd.joinpath('frcnn.train.config.pickle')
-C = pickle.load(open(pickle_path,'rb'))
 vgg16  = VGG16()
 C.set_base_net(vgg16)
 C.set_anchor(anchor_scales, anchor_ratios)
@@ -76,3 +87,7 @@ C = preprocess(C)
 
 from rpn_data_preprocess_validation_vgg16 import preprocess
 C = preprocess(C)
+
+cwd = Path.cwd()
+pickle_path = cwd.joinpath('frcnn.test.config.pickle')
+pickle.dump(C, open(pickle_path, 'wb'))

@@ -195,8 +195,7 @@ def make_data(C,):
 
     # save file path to config and dump it
     C.set_detector_validation_data(roi_dir, Y_classifier_dir, Y_regressor_dir)
-    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
+
 
     return C
 
@@ -210,3 +209,6 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path, 'rb'))
 
     C = make_data(C)
+
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_path, 'wb'))

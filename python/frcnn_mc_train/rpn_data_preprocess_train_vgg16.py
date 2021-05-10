@@ -119,9 +119,6 @@ def preprocess(C):
     # setup configuration
     C.set_rpn_training_data(input_dir, label_dir, delta_dir)
 
-    pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
-
     pcheck_point('Preprocessed data')
     return C
 
@@ -159,3 +156,6 @@ if __name__ == "__main__":
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')
+
+    pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_path, 'wb'))

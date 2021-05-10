@@ -57,12 +57,26 @@ rpn_class_loss = define_rpn_class_loss(1)
 rpn_regr_loss = define_rpn_regr_loss(100)
 adam = Adam()
 
+class StdCallback(tf.keras.callbacks.Callback):
+    accs = []
+    ious = []
+
+    def on_test_batch_end(self, batch, logs=None):
+        self.accs.append(logs['rpn_out_class_unmasked_binary_accuracy'])
+        self.ious.append(logs['rpn_out_regress_unmasked_IoU'])
+
+    def on_test_end(self, epoch, logs=None):
+        accs = np.array(self.accs)
+        ious = np.array(self.ious)
+        print()
+        print(f'accs_std:{accs.std()}; ious_std:{ious.std()}')
+
 model.compile(optimizer=adam, loss={'rpn_out_class' : rpn_class_loss,\
                                         'rpn_out_regress': rpn_regr_loss},\
                                     metrics={'rpn_out_class': [unmasked_binary_accuracy, positive_number],\
                                              'rpn_out_regress': unmasked_IoU})
 
-result = model.evaluate(x=val_generator, return_dict=True)
+result = model.evaluate(x=val_generator, return_dict=True, callbacks=[StdCallback()])
 result = {key:[value] for key, value in result.items()}
 df = pd.DataFrame.from_dict(result)
 df.to_csv(Path.cwd().joinpath('result.csv'), index=None)

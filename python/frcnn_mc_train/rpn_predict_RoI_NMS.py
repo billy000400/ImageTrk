@@ -256,12 +256,7 @@ def rpn_predict_RoI(C, nms=True):
 
     C.set_validation_proposal(output_file)
 
-    cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
 
-    pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
 
     pcheck_point('Predicted bbox table')
 
@@ -277,3 +272,6 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     C = rpn_predict_RoI(C, nms=True)
+
+    pickle_path = Path.cwd().joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_path, 'wb'))

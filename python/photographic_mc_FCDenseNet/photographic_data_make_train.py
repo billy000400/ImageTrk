@@ -42,15 +42,7 @@ def make_data_from_distribution(C):
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+    dp_list = C.train_dp_list
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -353,6 +345,15 @@ if __name__ == "__main__":
     mean = 5
     std = 2
     resolution = 256
+
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+
+    C.set_train_dp_list(dp_list)
 
     C.set_distribution(mean, std)
     C.set_window(window)

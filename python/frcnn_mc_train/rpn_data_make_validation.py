@@ -183,9 +183,7 @@ def make_data_from_distribution(C):
     hitNumCut = 20
 
     ### Construct Path Objects
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    dp_list = C.val_dp_list
     dp_name_iter = iter(dp_list)
     dp_name = next(dp_name_iter)
     db_file = track_dir.joinpath(dp_name+".db")
@@ -349,9 +347,6 @@ def make_data(C, mode='dp'):
 
     ### Setup configurations
     C.set_raw_validation_data(bbox_file, img_dir)
-    cwd = Path.cwd()
-    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
-    pickle.dump(C, open(pickle_path, 'wb'))
 
     pcheck_point('Images and the bbox table')
     return C
@@ -365,9 +360,19 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
 
+    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
+                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+
+    C.set_val_dp_list(dp_list)
+
     # prepare raw tarining set with time measurement
     start = timeit.default_timer()
-    make_data(C, 'normal')
+    C = make_data(C, 'normal')
     total_time = timeit.default_timer()-start
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')
+
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+    pickle.dump(C, open(pickle_path, 'wb'))
