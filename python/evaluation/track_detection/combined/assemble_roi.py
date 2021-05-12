@@ -22,7 +22,7 @@ from Layers import *
 from Geometry import iou
 from Information import *
 
-def roi_to_detector(C):
+def roi_to_detector_train(C):
     # initialize path objects
     cwd = Path.cwd()
     data_dir = C.sub_data_dir
@@ -62,7 +62,7 @@ def roi_to_detector(C):
         # register memory for input and output data
         rois = np.zeros(shape=(roiNum, 4))
 
-        df_p_slice = df_p[df_p['FileName']==img]
+        df_p_slice = df_p[df_p['FileName']==imgName]
 
         proposals = [[r['XMin'], r['XMax'], r['YMin'], r['YMax']]\
                     for i, r in df_p_slice.iterrows()]
@@ -70,7 +70,6 @@ def roi_to_detector(C):
 
         # copy the result to the registered memory
         for i, proposal in enumerate(proposals):
-            proposal, label, ref_bbox = tuple
             # proposal t = (x, y, w, h) as indicated in the original paper
             # (x,y) is the left upper corner
             t = [ proposal[0], proposal[3],\
@@ -88,6 +87,68 @@ def roi_to_detector(C):
     # save file path to config and dump it
     C.set_oneHotEncoder(oneHotEncoder)
     C.set_detector_training_data(roi_dir, None, None)
+
+    return C
+
+def roi_to_detector_val(C):
+    # initialize path objects
+    cwd = Path.cwd()
+    data_dir = C.sub_data_dir
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    roi_dir = data_dir.joinpath('frcnn_test_X_RoIs')
+
+    shutil.rmtree(roi_dir, ignore_errors=True)
+    roi_dir.mkdir(parents=True, exist_ok=True)
+
+    # load reference and prediction dataframes
+    df_r = pd.read_csv(C.validation_bbox_reference_file, index_col=None)
+    df_p = pd.read_csv(C.validation_bbox_proposal_file, index_col=None)
+
+    # one-hot encoder
+    oneHotEncoder = C.oneHotEncoder
+
+    imgNames = df_r['FileName'].unique().tolist()
+    assert imgNames==df_p['FileName'].unique().tolist(),\
+        perr('bbox_file\'s images do not agree with bbox_prediction_file\'s images')
+
+    file_idx = 0
+    for img_idx, imgName in enumerate(imgNames):
+
+        sys.stdout.write(t_info(f"Parsing image: {img_idx+1}/{len(imgNames)}", '\r'))
+        if img_idx+1 == len(imgNames):
+            sys.stdout.write('\n')
+        sys.stdout.flush()
+
+        roiNum = np.count_nonzero(df_p['FileName']==imgName)
+
+        # register memory for input and output data
+        rois = np.zeros(shape=(roiNum, 4))
+
+        df_p_slice = df_p[df_p['FileName']==imgName]
+
+        proposals = [[r['XMin'], r['XMax'], r['YMin'], r['YMax']]\
+                    for i, r in df_p_slice.iterrows()]
+
+
+        # copy the result to the registered memory
+        for i, proposal in enumerate(proposals):
+            # proposal t = (x, y, w, h) as indicated in the original paper
+            # (x,y) is the left upper corner
+            t = [ proposal[0], proposal[3],\
+                        (proposal[1]-proposal[0]), (proposal[3]-proposal[2]) ]
+            rois[i] = np.array(t, dtype=np.float32)
+
+        roi_file = roi_dir.joinpath(f'roi_{str(file_idx).zfill(7)}.npy')
+
+        # save data to disk
+        np.save(roi_file, rois)
+
+        file_idx += 1
+
+
+    # save file path to config and dump it
+    C.set_detector_validation_data(roi_dir, None, None)
 
 
     return C

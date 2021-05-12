@@ -33,9 +33,9 @@ from Information import *
 
 from rpn_data_make_train import make_data, make_data_from_distribution
 
-track_dir_str = '/Users/billyli/Mu2e/analysis/ImageTrk/tracks'
-data_dir_str = '/Users/billyli/Mu2e/analysis/ImageTrkdata'
-window = 30 # unit: number of windows
+track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
+data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
+window = 3000 # unit: number of windows
 resolution = 512
 mode = 'normal'
 mean = 5
@@ -94,8 +94,9 @@ C.rpn_model_name = 'rpn_mc_00'
 from rpn_predict_RoI_NMS import rpn_predict_RoI
 C = rpn_predict_RoI(C, nms=True)
 
-from assemble_roi import roi_to_detector
-C = roi_to_detecto(C)
+from assemble_roi import roi_to_detector_train, roi_to_detector_val
+C = roi_to_detector_train(C)
+C = roi_to_detector_val(C)
 
 pickle_path = Path.cwd().joinpath('frcnn.test.config.pickle')
 pickle.dump(C, open(pickle_path, 'wb'))
