@@ -46,9 +46,9 @@ class rpnV2():
 ### A Tensorflow.keras layer propose bboxes according to the RPN outputs
 # A Non-Maximum Suppression is embedded.
 class RPN_to_RoI(Layer):
-    def __init__(self, anchors, max_output_size=100, iou_threshold=0.9,\
-        score_threshold=0.9, soft_nms_sigma=0.0):
-        self.anchors = anchors
+    def __init__(self, anchors, max_output_size=2000, iou_threshold=0.7,\
+        score_threshold=0.0, soft_nms_sigma=0.0):
+        self.anchors = tf.constant(anchors)
         self.mos = max_output_size
         self.it = iou_threshold
         self.st = score_threshold
@@ -56,6 +56,7 @@ class RPN_to_RoI(Layer):
         super().__init__()
 
     # A method modified from Abstract.translate_delta
+    @staticmethod
     def translate_delta(self, anchor, delta):
         tx, ty, tw, th = delta
         xa = (anchor[0]+anchor[1])/2
@@ -76,65 +77,73 @@ class RPN_to_RoI(Layer):
         result = [xmin, xmax, ymin, ymax]
         return result
 
+    @staticmethod
+    def trim_bboxes(bboxes):
+        bboxes = tf.clip_by_value(t, clip_value_min=0, clip_value_max=1)
+        return bboxes
 
     def call(self, x):
-
-
-        def propose_score_bbox_pair(mini_batch):
-
-            score_map, delta_map = mini_batch
-            anchors = self.anchors
-
-            scores = []
-            bbox_raws = []
-
-            threshold = 0.5
-
-            for i, j, k in np.ndindex((score_map.shape)):
-                score = score_map[i,j,k]
-                if score > threshold:
-                    anchor = anchors[i][j][k]
-                    delta = delta_map[i,j,4*k:4*k+4]
-                    bbox = translate_delta(anchor, delta)
-                    scores.append(score)
-                    bbox_raws.append(bbox)
-
-            # trim bboxes
-            for i, bbox in enumerate(bbox_raws):
-                if bbox[0] < 0:
-                    bbox_raws[i][0] = 0
-                if bbox[1] > 1:
-                    bbox_raws[i][1] = 1
-                if bbox[2] < 0:
-                    bbox_raws[i][2] = 0
-                if bbox[3] > 1:
-                    bbox_raws[i][3] = 1
-
-            return [scores, bbox_raws]
-
-
-        score_bbox_pair_batches = tf.map_fn(fn=propose_score_bbox_pair, elems=x)
-
-        def nms(mini_batch):
-
-            scores, bboxes_raw = mini_batch
-
-            scores_tf = tf.constant(scores, dtype=tf.float32)
-            bboxes_raw_tf = [ [ymax, xmin, ymin, xmax] for [xmin, xmax, ymin, ymax] in bboxes_raw ]
-            bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
-
-            selected_indices, selected_score =\
-                non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
-                        max_output_size=self.mos,\
-                        iou_threshold=self.it, score_threshold=self.st,\
-                        soft_nms_sigma=self.sigma)
-
-            bboxes_tf = bboxes_raw_tf[selected_indices]
-            return bboxes_tf
-
+        bboxes, scores = tf.map_fn(fn=propose_score_bbox_pair, elems=x)
+        bboxes = trim_bboxes(bboxes)
         proposal_batches = tf.map_fn(fn=nms, elems=score_bbox_pair_batches)
 
         return proposal_batches
+
+    @staticmethod
+    def propose_score_bbox_pair(single_data):
+
+        score_map, delta_map = single_data
+        h,w,d = score_map.shape
+        delta_map = tf.reshape(tensor=delta_map, shape=(h,w,d,4))
+        anchors = self.anchors
+
+        scores = []
+        bbox_raws = []
+
+        threshold = 0.5
+        mask = scores>threshold
+
+        for i, j, k in np.ndindex((score_map.shape)):
+            score = score_map[i,j,k]
+            if score > threshold:
+                anchor = anchors[i][j][k]
+                delta = delta_map[i,j,4*k:4*k+4]
+                bbox = translate_delta(anchor, delta)
+                scores.append(score)
+                bbox_raws.append(bbox)
+
+        # trim bboxes
+        for i, bbox in enumerate(bbox_raws):
+            if bbox[0] < 0:
+                bbox_raws[i][0] = 0
+            if bbox[1] > 1:
+                bbox_raws[i][1] = 1
+            if bbox[2] < 0:
+                bbox_raws[i][2] = 0
+            if bbox[3] > 1:
+                bbox_raws[i][3] = 1
+
+        return [scores, bbox_raws]
+
+
+    def nms(mini_batch):
+
+        scores, bboxes_raw = mini_batch
+
+        scores_tf = tf.constant(scores, dtype=tf.float32)
+        bboxes_raw_tf = [ [ymax, xmin, ymin, xmax] for [xmin, xmax, ymin, ymax] in bboxes_raw ]
+        bboxes_raw_tf = tf.constant(bboxes_raw_tf, dtype=tf.float32)
+
+        selected_indices, selected_score =\
+            non_max_suppression_with_scores(bboxes_raw_tf, scores_tf,\
+                    max_output_size=self.mos,\
+                    iou_threshold=self.it, score_threshold=self.st,\
+                    soft_nms_sigma=self.sigma)
+
+        bboxes_tf = bboxes_raw_tf[selected_indices]
+        return bboxes_tf
+
+
 
 class RoIPooling(Layer):
     """ Implements Region Of Interest Max Pooling
