@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
+from Geomoetry import iou
 from Information import *
 from Configuration import frcnn_config
 

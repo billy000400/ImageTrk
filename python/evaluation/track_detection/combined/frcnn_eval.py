@@ -9,6 +9,7 @@ import pandas as pd
 util_dir = Path.cwd().parent.parent.parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
+from Geometry import iou
 from Information import *
 from Configuration import frcnn_config
 
@@ -123,6 +124,7 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
 
             dom1 = tp+fp
 
+            # dom1 == 0 when no ROI is proposed
             if dom1!=0:
                 precision = tp/dom1
                 precisions.append(precision)
