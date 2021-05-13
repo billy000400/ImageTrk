@@ -170,15 +170,36 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
 
 # load real bboxes and predicted bboxes
 IoU_cuts = [0.5, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
-ref_df = pd.read_csv(C.validation_bbox_proposal_file, index_col=None)
-pred1_df = pd.read_csv('frcnn_prediction_type1.csv', index_col=None)
-pred2_df = pd.read_csv('frcnn_prediction_type2.csv', index_col=None)
+ref_df = pd.read_csv(C.validation_bbox_proposal_file, index_col=0)
 
-rs1_df = od_analysis(ref_df, pred1_df, IoU_cuts)
-rs2_df = od_analysis(ref_df, pred2_df, IoU_cuts)
 
-rs1_file = Path.cwd().joinpath('rpn+detector_cls_result.csv')
-rs1_df.to_csv(rs1_file)
 
-rs2_file = Path.cwd().joinpath('rpn+detector_result.csv')
-rs2_df.to_csv(rs2_file)
+
+# pred1_df = pd.read_csv('rpn+detector_cls_prediction.csv', index_col=0)
+# rs1_df = od_analysis(ref_df, pred1_df, IoU_cuts)
+# rs1_file = Path.cwd().joinpath('rpn+detector_cls_result.csv')
+# rs1_df.to_csv(rs1_file)
+#
+#
+# pred2_df = pd.read_csv('rpn+detector_prediction.csv', index_col=0)
+# rs2_df = od_analysis(ref_df, pred2_df, IoU_cuts)
+# rs2_file = Path.cwd().joinpath('rpn+detector_result.csv')
+# rs2_df.to_csv(rs2_file)
+
+pred3_df = pd.read_csv('rpn+detector_cls+nms@0.6_prediction.csv', index_col=0)
+rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
+rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.6_result.csv')
+rs3_df.to_csv(rs3_file)
+print(rs3_df)
+
+pred3_df = pd.read_csv('rpn+detector_cls+nms@0.5_prediction.csv', index_col=0)
+rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
+rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.5_result.csv')
+rs3_df.to_csv(rs3_file)
+print(rs3_df)
+
+pred3_df = pd.read_csv('rpn+detector_cls+nms@0.4_prediction.csv', index_col=0)
+rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
+rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.4_result.csv')
+rs3_df.to_csv(rs3_file)
+print(rs3_df)

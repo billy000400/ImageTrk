@@ -18,8 +18,16 @@ python/evaluation/track_detection/combined/__pycache__
 python/evaluation/track_detection/combined/frcnn.test.config.pickle
 python/evaluation/track_detection/combined/rpn_mc_00.h5
 python/evaluation/track_detection/combined/detector_mc_RCNN_dr=0.0.h5
-python/evaluation/track_detection/combined/frcnn_prediction_type1.csv
-python/evaluation/track_detection/combined/frcnn_prediction_type2.csv
+python/evaluation/track_detection/combined/rpn+detector_cls_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.4_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.5_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.6_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms_prediction.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms_result.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.4_result.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.5_result.csv
+python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.6_result.csv
 
 python/evaluation/track_extraction/extractor.test.config.pickle
 python/evaluation/track_extraction/photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented.h5

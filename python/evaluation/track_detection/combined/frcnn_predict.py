@@ -178,5 +178,5 @@ for i in range(iterNum):
         df_o1 = df_o1.append(o1, ignore_index=True)
         df_o2 = df_o2.append(o2, ignore_index=True)
 
-df_o1.to_csv('frcnn_prediction_type1.csv')
-df_o2.to_csv('frcnn_prediction_type2.csv')
+df_o1.to_csv('rpn+detector_cls_prediction.csv')
+df_o2.to_csv('rpn+detector_prediction.csv')
