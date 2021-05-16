@@ -171,7 +171,7 @@ def rpn_predict_RoI(C, nms=True):
 
     ### predicting by model
     pinfo('RPN is scoring anchors and proposing delta suggestions')
-    outputs_raw = model.predict(x=val_generator)
+    outputs_raw = model.predict(x=val_generator, verbose=1)
     score_maps = outputs_raw[0]
     delta_maps = outputs_raw[1]
 

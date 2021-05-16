@@ -35,7 +35,7 @@ def preprocess(C):
 
     # setup save path for preprocessed data
     cwd = Path.cwd()
-    tmp_dir = C.data_dir.parent.joinpath('tmp')
+    tmp_dir = C.sub_data_dir
     C.tmp_dir = tmp_dir
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
