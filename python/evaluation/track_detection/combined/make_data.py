@@ -30,23 +30,15 @@ from Layers import *
 from Geometry import iou
 from Information import *
 
-
 from rpn_data_make_train import make_data, make_data_from_distribution
 
 track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
 data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
-window = 3000 # unit: number of windows
+window = 300 # unit: number of windows
 resolution = 512
 mode = 'normal'
 mean = 5
 std = 2
-
-train_dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-        "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
 
 test_dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
         "dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",\
@@ -55,15 +47,11 @@ test_dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",\
 track_dir = Path(track_dir_str)
 data_dir = Path(data_dir_str)
 C = frcnn_config(track_dir, data_dir)
-C.set_train_dp_list(train_dp_list)
-C.set_val_dp_list(test_dp_list) # notice that we replace val with test here and you can test by using val
+C.set_train_dp_list(test_dp_list) # notice that we replace train with test here and you can test by using train
 
 C.set_distribution(mean, std)
 C.set_window(window)
 C.set_resolution(resolution)
-C = make_data(C, mode)
-
-from rpn_data_make_validation import make_data, make_data_from_distribution
 C = make_data(C, mode)
 
 from rpn_data_preprocess_train_vgg16 import preprocess
@@ -83,20 +71,6 @@ C.set_anchor(anchor_scales, anchor_ratios)
 C.set_label_limit(lower_limit, upper_limit)
 C.set_sample_parameters(posCut, nWant)
 C = preprocess(C)
-
-
-from rpn_data_preprocess_validation_vgg16 import preprocess
-C = preprocess(C)
-
-C.weight_dir = Path.cwd()
-C.rpn_model_name = 'rpn_mc_00'
-
-from rpn_predict_RoI_NMS import rpn_predict_RoI
-C = rpn_predict_RoI(C, nms=True)
-
-from assemble_roi import roi_to_detector_train, roi_to_detector_val
-C = roi_to_detector_train(C)
-C = roi_to_detector_val(C)
 
 pickle_path = Path.cwd().joinpath('frcnn.test.config.pickle')
 pickle.dump(C, open(pickle_path, 'wb'))
