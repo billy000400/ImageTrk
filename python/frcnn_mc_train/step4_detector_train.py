@@ -30,9 +30,12 @@ from DataGenerator import DataGeneratorV3
 from Layers import RoIPooling
 from Loss import *
 from Metric import *
+
+gpus = tf.config.list_physical_devices('GPU')
+tf.config.set_visible_devices(gpus[0], 'GPU')
 ### imports ends
 
-def detector_train(C, alternative=False):
+def detector_train(C, first=True):
     pstage("Start Training")
 
     # load the oneHotEncoder
@@ -84,22 +87,38 @@ def detector_train(C, alternative=False):
     model.summary()
 
     # load weights trianed by RPN
-    if alternative == True:
-        model.load_weights(rpn_model_weight_file, by_name=True)
+    model.load_weights(detector_model_weight_file, by_name=True)
+
+    if first==True:
+        ie=0
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=1e-4,
+            decay_steps=10000,
+            decay_rate=0.9)
+        CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+    else:
+        pinfo("Continue Training")
+        df = pd.read_csv(record_file, index_col=0)
+        index = df[df['val_loss']==df['val_loss'].min()].index[0]
+        ie = index+1
+        df = df.iloc[0:ie]
+        df.to_csv(record_file)
+        pinfo(f"Has trained {ie} epochs; Restarting epoch {ie+1}")
+        CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=True)
+
+        ilr = 1e-4*0.9**((ie+1)/10000.0)
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=ilr,
+            decay_steps=10000,
+            decay_rate=0.9)
+        pinfo(f'New initial learning rate is {ilr}')
 
     # setup loss functions
     detector_class_loss = define_detector_class_loss(C.detector_lambda[0])
     detector_regr_loss = define_detector_regr_loss(C.detector_lambda[1])
 
     # setup optimizer
-    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-4,
-        decay_steps=10000,
-        decay_rate=0.9)
     adam = Adam(learning_rate=lr_schedule)
-
-    # setup callbacks
-    CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
 
     ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(detector_model_weight_file),\
                         monitor='val_loss', verbose=1,\
@@ -122,7 +141,8 @@ def detector_train(C, alternative=False):
     model.fit(x=train_generator,\
                 validation_data=val_generator,\
                 epochs=200,\
-                callbacks = [CsvCallback, ModelCallback, tensorboard_callback, earlyStopCallback])
+                callbacks = [CsvCallback, ModelCallback, tensorboard_callback, earlyStopCallback],\
+                initial_epoch=ie)
 
     model.save_weights(detector_model_weight_file, overwrite=True)
 
@@ -152,4 +172,4 @@ if __name__ == "__main__":
 
     C.set_detector_record(model_name, record_name)
     C.set_detector_lambda(lambdas)
-    C = detector_train(C, alternative=True)
+    C = detector_train(C, first=True)

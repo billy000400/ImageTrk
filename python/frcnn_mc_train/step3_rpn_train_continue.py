@@ -30,9 +30,11 @@ from DataGenerator import DataGeneratorV2
 from Loss import *
 from Metric import *
 
+gpus = tf.config.list_physical_devices('GPU')
+tf.config.set_visible_devices(gpus[0], 'GPU')
 ### imports ends
 
-def rpn_train(C, alternative=False):
+def rpn_train(C, first=True):
     pstage("Start Training")
 
     # prepare data generator
@@ -42,9 +44,13 @@ def rpn_train(C, alternative=False):
     # outputs
     cwd = Path.cwd()
     data_dir = C.sub_data_dir
-    weight_dir = C.data_dir.parent.joinpath('weights')
-    C.weight_dir = weight_dir
+    weight_dir = C.weight_dir
 
+    # where to read weights
+    rpn_model_weights_file = C.weight_dir.joinpath(C.rpn_model_name+'.h5')
+    detector_model_weights_file = C.weight_dir.joinpath(C.detector_model_name+'.h5')
+
+    # where to save weights
     model_weights_file = weight_dir.joinpath(C.rpn_model_name+'.h5')
     record_file = data_dir.joinpath(C.rpn_record_name+'.csv')
 
@@ -59,29 +65,48 @@ def rpn_train(C, alternative=False):
     model = Model(inputs=input_layer, outputs = [classifier,regressor])
     model.summary()
 
-    if alternative:
-        rpn_model_weights_file = C.weight_dir.joinpath(C.rpn_model_name+'.h5')
-        detector_model_weights_file = C.weight_dir.joinpath('detector_mc_RCNN_dr=0.0.h5')
-        pinfo(f"Loading weights from {str(rpn_model_weights_file)}")
-        model.load_weights(rpn_model_weights_file, by_name=True)
-        pinfo(f"Loading weights from {str(detector_model_weights_file)}")
-        model.load_weights(detector_model_weights_file, by_name=True)
+
+    # Loading weights is the same for the first epoch and others
+    # This is because base net's weight is non-trainable
+    # so only RPN weights were updated after the first epoch
+    pinfo(f"Loading weights from {str(rpn_model_weights_file)}")
+    model.load_weights(rpn_model_weights_file, by_name=True)
+    pinfo(f"Loading weights from {str(detector_model_weights_file)}")
+    model.load_weights(detector_model_weights_file, by_name=True)
+
+    if first==True:
+        ie=0
+        CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=1e-4,
+            decay_steps=10000,
+            decay_rate=0.9)
+    else:
+        pinfo("Continue Training")
+        df = pd.read_csv(record_file, index_col=0)
+        index = df[df['val_loss']==df['val_loss'].min()].index[0]
+        ie = index+1
+        df = df.iloc[0:ie]
+        df.to_csv(record_file)
+        pinfo(f"Has trained {ie} epochs; Restarting epoch {ie+1}")
+        CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=True)
+
+        ilr = 1e-4*0.9**((ie+1)/10000.0)
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=ilr,
+            decay_steps=10000,
+            decay_rate=0.9)
+        pinfo(f'New initial learning rate is {ilr}')
 
     # setup loss
     rpn_class_loss = define_rpn_class_loss(C.rpn_lambdas[0])
     rpn_regr_loss = define_rpn_regr_loss(C.rpn_lambdas[1])
 
     # setup optimizer
-    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-4,
-        decay_steps=10000,
-        decay_rate=0.9)
     adam = Adam(learning_rate=lr_schedule)
 
     # setup callbacks
-    CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
-
-
     # setup a callback to monitor number of positive anchors
     # if positive anchor number is less than limit, stop training
     class EarlyStoppingAtMinMetric(tf.keras.callbacks.Callback):
@@ -119,7 +144,7 @@ def rpn_train(C, alternative=False):
                 validation_data=val_generator,\
                 shuffle=True,\
                 callbacks = [CsvCallback, ModelCallback, earlyStopCallback, tensorboard_callback],\
-                epochs=200)
+                epochs=200, initial_epoch=ie)
 
 
     model.save_weights(model_weights_file, overwrite=True)
@@ -150,4 +175,4 @@ if __name__ == "__main__":
 
     C.set_rpn_record(model_name, record_name)
     C.set_rpn_lambda(lambdas)
-    C = rpn_train(C, alternative=True)
+    C = rpn_train(C, first=True)
