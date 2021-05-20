@@ -119,6 +119,9 @@ class frcnn_config:
         self.detector_model_name = None
         self.detector_record_name = None
 
+        # detector predcition
+        self.validation_bbox_prediction_file = None
+
         ############### detector training parameters ends ###############
         ############### alternative training parameters starts ###############
         self.frcnn_model_name = None
@@ -266,6 +269,10 @@ class frcnn_config:
         self.frcnn_record_name = record_name
         return
 
+    ### predict validation data by trained weights
+    def set_validation_prediction(self, file):
+        self.validation_bbox_prediction_file = file
+
     ### testing: make frcnn/rpn testing data
     def set_testing_data(self, img_dir, inputs_npy, bbox_file):
         self.test_inputs_npy = inputs_npy
@@ -370,7 +377,7 @@ class extractor_config:
 
     def set_val_dp_list(self, dp_list):
         self.val_dp_list = dp_list
-        
+
     def set_inputs(self, extractor_train_dir, X_file, Y_file):
         self.train_dir = extractor_train_dir
         self.X_file = X_file
