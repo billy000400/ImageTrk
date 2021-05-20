@@ -151,7 +151,7 @@ def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
     num_col_anchor = int(num_col_anchor)
 
     # register memory for anchors
-    anchors = np.zeros(shape=(num_row_anchor, num_col_anchor, num_anchors, 4))
+    anchors = np.zeros(shape=(num_row_anchor, num_col_anchor, num_anchors, 4), dtype=np.float32)
 
     # fill in data to empty arrays
     num_anchor_area = num_row_anchor * num_col_anchor
@@ -161,7 +161,6 @@ def make_anchors(input_shape, ratio, anchor_scales, anchor_ratios):
             y_center = 1 - i*ratio/img_height
             pos_center = (x_center, y_center)
             anchors[i][j] = make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center)
-
 
     return anchors
 
@@ -413,10 +412,11 @@ def make_img_bbox_dict(img_dir, bbox_file):
 def translate_delta(anchor, delta):
 
     tx, ty, tw, th = delta
-    xa = (anchor[0]+anchor[1])/2
+    xa = (anchor[0]+anchor[1])/2 #At this point, numpy changes xa.dtype to double
     ya = (anchor[2]+anchor[3])/2
     wa = anchor[1]-anchor[0]
     ha = anchor[3]-anchor[2]
+
 
     x = tx*wa+xa
     y = ty*ha+ya
@@ -429,6 +429,7 @@ def translate_delta(anchor, delta):
     ymax = y+h/2
 
     result = [xmin, xmax, ymin, ymax]
+    result = [float(x) for x in result]
     return result
 
 ## Propose bounding boxes and their scores. Only bboxes whose score > 0.5 will be proposed.
@@ -443,6 +444,7 @@ def translate_delta(anchor, delta):
 
 def propose_score_bbox_list(anchors, score_map, delta_map):
 
+    # print(score_map.dtype)
     (iNum, jNum, kNum) = score_map.shape
 
     score_bbox_list = []
