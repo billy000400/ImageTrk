@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
-from Geomoetry import iou
+from Geometry import iou
 from Information import *
 from Configuration import frcnn_config
 
@@ -30,7 +30,7 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
     data_dir = data_dir.joinpath('NMS analysis nodes')
     data_dir.mkdir(exist_ok=True)
     reference_file = data_dir.joinpath(C.validation_bbox_reference_file)
-    prediction_file = data_dir.joinpath(C.validation_bbox_proposal_file)
+    prediction_file = data_dir.joinpath(C.validation_bbox_prediction_file)
 
 
     # read csv to df
@@ -43,8 +43,8 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
     precision_row = ['precision']
     recall_row = ['recall']
     degeneracy_row = ['degeneracy']
-    map1_row = ['mAP@.75']
-    map2_row = ['mAP@.5']
+    map1_row = ['mAP@.5']
+    map2_row = ['mAP@.75']
     map3_row = ['mAP@[.5,.95]']
 
     ### Grading the RPN prediction after NMS
@@ -58,9 +58,6 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
         if img_idx+1 == len(imgs):
             sys.stdout.write('\n')
         sys.stdout.flush()
-
-
-
 
 
         ref_slice = ref_df[ref_df['FileName']==img]
@@ -102,8 +99,8 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
             # add some samples to evaluation
             metric_fn.add(preds, gt)
 
-            map1 = metric_fn.value(iou_thresholds=0.75)['mAP']
-            map2 = metric_fn.value(iou_thresholds=0.5)['mAP']
+            map1 = metric_fn.value(iou_thresholds=0.5)['mAP']
+            map2 = metric_fn.value(iou_thresholds=0.75)['mAP']
             map3 = metric_fn.value(iou_thresholds=np.arange(0.5, 1.0, 0.05))['mAP']
 
             map1s.append(map1)
