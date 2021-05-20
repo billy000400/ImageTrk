@@ -43,6 +43,7 @@ class rpnV2():
         return x_regr
 
 ### !!! Not Working
+### Will work for batch_size = 1
 ### A Tensorflow.keras layer propose bboxes according to the RPN outputs
 # A Non-Maximum Suppression is embedded.
 class RPN_to_RoI(Layer):
