@@ -31,10 +31,15 @@ from Layers import *
 from Loss import *
 from Metric import *
 
+### Using a specific pair of CPU and GPU
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.set_visible_devices(physical_devices[1], 'GPU')
+tf.config.experimental.set_memory_growth(physical_devices[1], True)
+print(tf.config.experimental.get_visible_devices())
 
 # load configuration object
 cwd = Path.cwd()
-pickle_path = cwd.joinpath('frcnn.train.config.pickle')
+pickle_path = cwd.joinpath('frcnn.test.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
 # re-build model
@@ -48,6 +53,7 @@ model.summary()
 
 # load model weights
 model.load_weights(str(Path.cwd().joinpath('rpn_mc_00.h5')), by_name=True)
+model.load_weights(str(Path.cwd().joinpath('detector_mc_RCNN_dr=0.0.h5')), by_name=True)
 
 # set data generator
 val_generator = DataGeneratorV2(C.validation_img_inputs_npy, C.validation_labels_npy, C.validation_deltas_npy, batch_size=8)
