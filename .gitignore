@@ -5,9 +5,20 @@ data/*
 tmp/
 weights/
 python/Utility/__pycache__
+
+python/evaluation/reconstruction/__pycache__
+python/evaluation/reconstruction/rpn_mc_00.h5
+python/evaluation/reconstruction/frcnn.test.config.pickle
+python/evaluation/reconstruction/detector_mc_RCNN_dr=0.0.h5
+python/evaluation/reconstruction/photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented.h5
+python/evaluation/reconstruction/predictions
+python/evaluation/reconstruction/metrics
+python/evaluation/reconstruction/tmp_pic.png
+
 python/evaluation/track_detection/examples_private
 
 python/evaluation/track_detection/rpn/rpn_mc_00.h5
+python/evaluation/track_detection/rpn/detector_mc_RCNN_dr=0.0.h5
 python/evaluation/track_detection/rpn/frcnn.test.config.pickle
 
 python/evaluation/track_detection/detector/frcnn.test.config.pickle
@@ -15,6 +26,8 @@ python/evaluation/track_detection/detector/detector_mc_RCNN_dr=0.0.h5
 python/evaluation/track_detection/detector/rpn_mc_00.h5
 
 python/evaluation/track_detection/combined/__pycache__
+python/evaluation/track_detection/combined/predictions
+python/evaluation/track_detection/combined/performances
 python/evaluation/track_detection/combined/frcnn.test.config.pickle
 python/evaluation/track_detection/combined/rpn_mc_00.h5
 python/evaluation/track_detection/combined/detector_mc_RCNN_dr=0.0.h5
@@ -67,6 +80,8 @@ python/photographic_mc_tEncoded/photographic.train.config.pickle
 python/photographic_mc_FCDenseNet/__pycache__
 python/photographic_mc_FCDenseNet/logs/
 python/photographic_mc_FCDenseNet/photographic.train.config.pickle
+
+python/Utility/Test_HitGenerators.py
 
 html/
 latex/
