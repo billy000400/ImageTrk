@@ -35,16 +35,16 @@ pickle_path = cwd.joinpath('frcnn.train.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
 max_output_size = 2000
-ITs = [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-STs = [0.5, 0.6, .7, .8, .9]
+ITs = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+STs = [0.5]
 #STs = list(np.round(np.arange(0.99,0.998,0.001,dtype=np.float32),3))
 # Sigmas = np.linspace(0,1,11).tolist()
-Sigmas = [0.1, 1.0, 1e2, 1e3, 1e4]
+Sigmas = [5e2, 6e2, 7e2, 8e2, 9e2, 10e2, 11e2, 12e2, 13e2, 14e2, 15e2]
 IoU_cuts = [0.75]
 
 
 data_dir = C.sub_data_dir
-csv_file = data_dir.joinpath("NMS_grid_search_soft_IoU>0.75.csv")
+csv_file = data_dir.joinpath("NMS_grid_search_soft_IoU>0.75_Sigma:e2->e3.csv")
 
 df = pd.DataFrame(columns=["IoU_threshold", "Score_threshold", "Sigma", "Precision", "Recall", "Degeneracy", "mAP@.5", "mAP@.75", "mAP@[.5,.95]"])
 
