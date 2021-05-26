@@ -26,9 +26,13 @@ cwd = Path.cwd()
 pickle_path = cwd.joinpath('frcnn.test.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
+# setup convenient directories
+prediction_dir = cwd.joinpath('predictions')
+performance_dir = cwd.joinpath('performances')
+
 # Load frcnn prediction
-ref_df = pd.read_csv(C.validation_bbox_reference_file, index_col=0)
-pred_df = pd.read_csv('rpn+detector_cls_prediction.csv', index_col=0)
+ref_df = pd.read_csv(C.train_bbox_reference_file, index_col=0)
+pred_df = pd.read_csv(prediction_dir.joinpath('rpn+detector_cls_predictions.csv'), index_col=0)
 
 def detector_to_nms(ref_df, pred_df, nms_fn):
     imgs = ref_df['FileName'].unique().tolist()
@@ -78,13 +82,23 @@ def define_nms_fn(max_output_size, iou_threshold, score_threshold, soft_nms_sigm
                     soft_nms_sigma=soft_nms_sigma)
     return nms_fn
 
-for iou in [0.4, 0.5, 0.6]:
-    nms_fn = define_nms_fn(max_output_size=3000,\
-        iou_threshold=iou, score_threshold=0.0,\
-        soft_nms_sigma=0.0)
+# for iou in [0.45, 0.5, 0.55]:
+#     nms_fn = define_nms_fn(max_output_size=3000,\
+#         iou_threshold=iou, score_threshold=0.0,\
+#         soft_nms_sigma=0.0)
+#
+#     df = detector_to_nms(ref_df, pred_df, nms_fn)
+#
+#
+#     output_file = prediction_dir.joinpath(f"rpn+detector_cls+nms@{iou}_predictions.csv")
+#     df.to_csv(output_file)
 
-    df = detector_to_nms(ref_df, pred_df, nms_fn)
+nms_fn = define_nms_fn(max_output_size=3000,\
+    iou_threshold=0.6, score_threshold=0.5,\
+    soft_nms_sigma=1.0)
+
+df = detector_to_nms(ref_df, pred_df, nms_fn)
 
 
-    output_file = Path.cwd().joinpath(f"rpn+detector_cls+nms@{iou}_prediction.csv")
-    df.to_csv(output_file)
+output_file = prediction_dir.joinpath(f"rpn+detector_cls+nms@IT=0.6_ST=0.5_Sigma=1.0_predictions.csv")
+df.to_csv(output_file)

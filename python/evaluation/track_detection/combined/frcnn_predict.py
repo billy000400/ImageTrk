@@ -262,9 +262,9 @@ for i in range(iterNum):
         df_o1 = df_o1.append(o1, ignore_index=True)
         df_o2 = df_o2.append(o2, ignore_index=True)
 
-pred_f0 = prediction_dir.joinpath('mc_bbox_rpn_prediction_validation.csv')
-pred_f1 = prediction_dir.joinpath('mc_bbox_cls_prediction_validation.csv')
-pred_f2 = prediction_dir.joinpath('mc_bbox_prediction_validation.csv')
+pred_f0 = prediction_dir.joinpath('rpn_predictions.csv')
+pred_f1 = prediction_dir.joinpath('rpn+detector_cls_predictions.csv')
+pred_f2 = prediction_dir.joinpath('rpn+detector_predictions.csv')
 df_o0.to_csv(pred_f0)
 df_o1.to_csv(pred_f1)
 df_o2.to_csv(pred_f2)

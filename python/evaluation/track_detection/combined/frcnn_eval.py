@@ -20,6 +20,11 @@ cwd = Path.cwd()
 pickle_path = cwd.joinpath('frcnn.test.config.pickle')
 C = pickle.load(open(pickle_path,'rb'))
 
+### setup convenient directories
+prediction_dir = cwd.joinpath('predictions')
+performance_dir = cwd.joinpath('performances')
+performance_dir.mkdir(parents=True, exist_ok=True)
+
 ### object detection analysis function
 # return common metrics: precision, recall, degeneracy, and mAPs
 def od_analysis(ref_df, pred_df, IoU_cuts):
@@ -29,16 +34,13 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
     result_df = pd.DataFrame(columns = columns)
     precision_row = ['precision']
     recall_row = ['recall']
-    degeneracy_row = ['degeneracy']
-    map1_row = ['mAP@.75']
-    map2_row = ['mAP@.5']
-    map3_row = ['mAP@[.5,.95]']
+    degeneracy_row = ['duplicity']
+    ap_row = ['AP']
 
-    ### Grading the RPN prediction after NMS
+
     grading_grids = []
     imgs = ref_df['FileName'].unique()
-
-    map1s, map2s, map3s = [], [], []
+    ap_cols = [ [] for i in IoU_cuts] # every sub [] contains aps for every IoU
 
     for img_idx, img in enumerate(imgs):
         sys.stdout.write(t_info(f"Parsing image: {img_idx+1}/{len(imgs)}", '\r'))
@@ -59,22 +61,15 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
                     for b in pred_bboxes])
 
         if len(pred_bboxes)==0:
-            map1s.append(0)
-            map2s.append(0)
-            map3s.append(0)
+            for ap_col in ap_cols:
+                ap_col.append(0)
         else:
             # create metric_fn
             metric_fn = MetricBuilder.build_evaluation_metric("map_2d", async_mode=True, num_classes=1)
             # add some samples to evaluation
             metric_fn.add(preds, gt)
-
-            map1 = metric_fn.value(iou_thresholds=0.75)['mAP']
-            map2 = metric_fn.value(iou_thresholds=0.5)['mAP']
-            map3 = metric_fn.value(iou_thresholds=np.arange(0.5, 1.0, 0.05))['mAP']
-
-            map1s.append(map1)
-            map2s.append(map2)
-            map3s.append(map3)
+            for col_idx, iou_val in enumerate(IoU_cuts):
+                ap_cols[col_idx].append(metric_fn.value(iou_thresholds=iou_val)['mAP'])
 
         # calculate precision, recall, and degeneracy
         iNum = len(ref_bboxes)
@@ -86,13 +81,20 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
 
         grading_grids.append(grading_grid)
 
+    for ap_col in ap_cols:
+        ap_row.append(np.array(ap_col).mean())
 
+
+
+
+
+    ### Grading the RPN prediction after NMS
     for iou_idx, iou_limit in enumerate(IoU_cuts):
-
         sys.stdout.write(t_info(f"Processing iou cuts: {iou_idx+1}/{len(IoU_cuts)}", '\r'))
         if iou_idx+1 == len(IoU_cuts):
             sys.stdout.write('\n')
         sys.stdout.flush()
+
 
         precisions = []
         recalls = []
@@ -150,58 +152,97 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
         else:
             degeneracy_row.append([])
 
-        map1_row.append(np.array(map1s).mean())
-        map2_row.append(np.array(map2s).mean())
-        map3_row.append(np.array(map3s).mean())
-
 
     precision_df = pd.DataFrame([precision_row], columns=columns)
     recall_df = pd.DataFrame([recall_row], columns=columns)
     degeneracy_df = pd.DataFrame([degeneracy_row], columns=columns)
-    map1_df = pd.DataFrame([map1_row], columns=columns)
-    map2_df = pd.DataFrame([map2_row], columns=columns)
-    map3_df = pd.DataFrame([map3_row], columns=columns)
+    ap_df = pd.DataFrame([ap_row], columns=columns)
 
     result_df = result_df.append(precision_df, ignore_index=True)
     result_df = result_df.append(recall_df, ignore_index=True)
     result_df = result_df.append(degeneracy_df, ignore_index=True)
-    result_df = result_df.append(map1_df, ignore_index=True)
-    result_df = result_df.append(map2_df, ignore_index=True)
-    result_df = result_df.append(map3_df, ignore_index=True)
+    result_df = result_df.append(ap_df, ignore_index=True)
+
     return result_df
 
 # load real bboxes and predicted bboxes
 IoU_cuts = [0.5, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
-ref_df = pd.read_csv(C.validation_bbox_proposal_file, index_col=0)
+ref_df = pd.read_csv(C.train_bbox_reference_file, index_col=0)
 
+pred_files = [f for f in prediction_dir.glob('*.csv')]
+for i, pred_file in enumerate(pred_files):
+    pinfo(f'Evaluating predictions {i+1}/{len(pred_files)}: {pred_file.name}')
+    pred_df = pd.read_csv(pred_file, index_col=0)
+    fileName = pred_file.name[::-1].split('_',1)[1][::-1]+'_performance.csv'
+    file = performance_dir.joinpath(fileName)
 
-
+    if file.exists():
+        read_df = pd.read_csv(file, index_col=0)
+        print(read_df)
+    else:
+        rs_df = od_analysis(ref_df, pred_df, IoU_cuts)
+        rs_df.to_csv(file)
+        print(rs_df)
 
 # pred1_df = pd.read_csv('rpn+detector_cls_prediction.csv', index_col=0)
 # rs1_df = od_analysis(ref_df, pred1_df, IoU_cuts)
 # rs1_file = Path.cwd().joinpath('rpn+detector_cls_result.csv')
 # rs1_df.to_csv(rs1_file)
+# print('rpn+detector_cls')
+# print(rs1_df)
 #
 #
 # pred2_df = pd.read_csv('rpn+detector_prediction.csv', index_col=0)
 # rs2_df = od_analysis(ref_df, pred2_df, IoU_cuts)
 # rs2_file = Path.cwd().joinpath('rpn+detector_result.csv')
 # rs2_df.to_csv(rs2_file)
-
-pred3_df = pd.read_csv('rpn+detector_cls+nms@0.6_prediction.csv', index_col=0)
-rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
-rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.6_result.csv')
-rs3_df.to_csv(rs3_file)
-print(rs3_df)
-
-pred3_df = pd.read_csv('rpn+detector_cls+nms@0.5_prediction.csv', index_col=0)
-rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
-rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.5_result.csv')
-rs3_df.to_csv(rs3_file)
-print(rs3_df)
-
-pred3_df = pd.read_csv('rpn+detector_cls+nms@0.4_prediction.csv', index_col=0)
-rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
-rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.4_result.csv')
-rs3_df.to_csv(rs3_file)
-print(rs3_df)
+# print('rpn+detector')
+# print(rs2_df)
+#
+# pred3_df = pd.read_csv('rpn+detector_cls+nms@0.6_prediction.csv', index_col=0)
+# rs3_df = od_analysis(ref_df, pred3_df, IoU_cuts)
+# rs3_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.6_result.csv')
+# rs3_df.to_csv(rs3_file)
+# print('rpn+detector_cls+nms@0.6')
+# print(rs3_df)
+#
+# pred4_df = pd.read_csv('rpn+detector_cls+nms@0.5_prediction.csv', index_col=0)
+# rs4_df = od_analysis(ref_df, pred4_df, IoU_cuts)
+# rs4_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.5_result.csv')
+# rs4_df.to_csv(rs4_file)
+# print('rpn+detector_cls+nms@0.5')
+# print(rs4_df)
+#
+# pred5_df = pd.read_csv('rpn+detector_cls+nms@0.4_prediction.csv', index_col=0)
+# rs5_df = od_analysis(ref_df, pred5_df, IoU_cuts)
+# rs5_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.4_result.csv')
+# rs5_df.to_csv(rs5_file)
+# print('rpn+detector_cls+nms@0.4')
+# print(rs5_df)
+#
+# pred6_df = pd.read_csv(C.validation_bbox_proposal_file, index_col=0)
+# rs6_df = od_analysis(ref_df, pred6_df, IoU_cuts)
+# rs6_file = Path.cwd().joinpath('rpn2000_result.csv')
+# rs6_df.to_csv(rs6_file)
+# print(rs6_df)
+#
+# pred7_df = pd.read_csv('rpn+detector_cls+nms@0.45_prediction.csv', index_col=0)
+# rs7_df = od_analysis(ref_df, pred7_df, IoU_cuts)
+# rs7_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.45_result.csv')
+# rs7_df.to_csv(rs7_file)
+# print('rpn+detector_cls+nms@0.45')
+# print(rs7_df)
+#
+# pred8_df = pd.read_csv('rpn+detector_cls+nms@0.55_prediction.csv', index_col=0)
+# rs8_df = od_analysis(ref_df, pred8_df, IoU_cuts)
+# rs8_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.55_result.csv')
+# rs8_df.to_csv(rs8_file)
+# print('rpn+detector_cls+nms@0.55')
+# print(rs8_df)
+#
+# pred9_df = pd.read_csv('rpn+detector_cls+nms@0.65_prediction.csv', index_col=0)
+# rs9_df = od_analysis(ref_df, pred9_df, IoU_cuts)
+# rs9_file = Path.cwd().joinpath('rpn+detector_cls+nms@0.65_result.csv')
+# rs9_df.to_csv(rs9_file)
+# print('rpn+detector_cls+nms@0.65')
+# print(rs9_df)
