@@ -14,5 +14,5 @@ def intersection(rec_a, rec_b):
 
 def iou(rec_a, rec_b):
     overlap = intersection(rec_a, rec_b)
-    sum = union(rec_a, rec_b, overlap)
-    return overlap/sum
+    sum_val = union(rec_a, rec_b, overlap)
+    return overlap/float(sum_val)
