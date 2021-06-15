@@ -52,6 +52,65 @@ class VGG16:
     def get_model(self, in_shape, num_classes):
         return
 
+class DenseNet:
+    def __init__(self, dr=0.0):
+        self.type = 'DenseNet'
+        self.ratio = 2
+        self.final_chanel = 256
+        self.dr = dr
+
+    def _add_layer(self,x, k, trainable):
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(k, (3,3), padding='same', kernel_initializer=self.init,\
+                trainable=trainable)(x)
+        if self.dr!=0.0:
+            x = SpatialDropout2D(self.dr)(x)
+        return x
+
+    def _add_DB(self,x, lyn, k, trainable):
+        pls = []
+        for i in range(lyn):
+            x = self.add_layer(x, k, trainable)
+            pls.append(x)
+            if len(pls) < 2:
+                x = x
+            else:
+                x = concatenate(pls, axis=3)
+        return x
+
+    def add_TD(self,x, m):
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = Conv2D(m, (1,1), kernel_initializer=self.init)(x)
+        if self.dr!=0.0:
+            x = SpatialDropout2D(self.dr)(x)
+        x = MaxPooling2D((2,2))(x)
+        return x
+
+    def get_base_net(self, input_layer, trainable=True):
+
+        m = 64 # current number of feature maps
+        lyns = [4, 8] # layer number; one layer is a set of feature maps
+        k = 16 # growth rate of feature map due to concatenation
+
+        # Entry block
+        x = layers.Conv2D(m, (3,3), strides=1, padding="same", kernel_initializer=self.init,\
+                            trainable=trainable)(input_layer)
+
+        ### [First half of the network: downsampling inputs] ###
+
+        for lyn in lyns:
+            skip = x
+            x = self.add_DB(x, lyn=lyn, k=k, trainable=trainable)
+            x = concatenate([skip, x])
+            m += lyn*k
+
+        return x
+
+    def get_model(self, in_shape, num_classes):
+        return
+
 class ResNet08:
 
     def __init__(self):
@@ -1479,10 +1538,9 @@ class FC_DenseNet:
 
         # parameters
         input_shape = self.input_shape
-        in_c = 3
-        m = 48
-        lyns = [4, 5, 7, 10, 12]
-        k = 16
+        m = 48 # current number of feature maps
+        lyns = [4, 5, 7, 10, 12] # layer number; one layer is a set of feature maps
+        k = 16 # growth rate of feature map due to concatenation
 
         # input layer
         inputs = keras.Input(shape=input_shape)
