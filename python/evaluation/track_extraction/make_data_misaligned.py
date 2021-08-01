@@ -88,6 +88,7 @@ def make_data(C):
     photographic_train_x_dir = data_dir.joinpath('photographic_large_train_X')
     photographic_train_y_dir = data_dir.joinpath('photographic_large_train_Y')
     iou_dir = data_dir.joinpath('photographic_misaligned_ious')
+    ratio_dir = data_dir.joinpath('misaligned_hit_ratios')
 
     ### directories for jpg data
     photo_train_in_dir = data_dir.joinpath('photographic_large_train_input_photo')
@@ -96,11 +97,13 @@ def make_data(C):
     shutil.rmtree(photographic_train_x_dir, ignore_errors=True)
     shutil.rmtree(photographic_train_y_dir, ignore_errors=True)
     shutil.rmtree(iou_dir, ignore_errors=True)
+    shutil.rmtree(ratio_dir, ignore_errors=True)
     shutil.rmtree(photo_train_in_dir, ignore_errors=True)
     shutil.rmtree(photo_train_out_dir, ignore_errors=True)
     photographic_train_x_dir.mkdir(parents=True, exist_ok=True)
     photographic_train_y_dir.mkdir(parents=True, exist_ok=True)
     iou_dir.mkdir(parents=True, exist_ok=true)
+    ratio_dir.mkdir(parents=True, exist_ok=true)
     photo_train_in_dir.mkdir(parents=True, exist_ok=True)
     photo_train_out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -178,18 +181,22 @@ def make_data(C):
         xs = [ [mc.x for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         ys = [ [mc.y for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         zs = [ [mc.z for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
+        mcs_pos = [ [(x,y,z) for x, y, z in zip(xs_i, ys_i, zs_i)] for xs_i, ys_i, zs_i in zip(xs, ys, zs) ]
+        mcs_pos = [pos for pos in mcs_pos for i in range(10)]
+        hitNums = [len(pos) for pos in mcs_pos]
 
         # flatten data means destroying the 2-D list structure so that you cannot
         # tell which (x,y,z) belong to which particle.
         # They will be collections of data of all particles in this window
-        mcs_pos = [ [(x,y,z) for x, y, z in zip(xs_i, ys_i, zs_i)] for xs_i, ys_i, zs_i in zip(xs, ys, zs) ]
-        mcs_pos = [pos for pos in mcs_pos for i in range(10)]
         mcs_pos_flatten = [ (x,y,z) for mcs_pos_i in mcs_pos for x,y,z in mcs_pos_i ]
         xs_flatten = [ x for x, y, z in mcs_pos_flatten]
         ys_flatten = [ y for x, y, z in mcs_pos_flatten]
 
+        # xs_i refers to the ith particle. So does ys_i
         bboxes = [ [min(xs_i), max(xs_i), min(ys_i), max(ys_i)] for xs_i, ys_i in zip(xs, ys) ]
         bboxes, ious = random_shift_bboxes(bboxes, shift_min=0.0, shift_max=0.25, times=10)
+
+        # calculate the ratio of hits left in the shifted bboxes
 
         for i, bbox in enumerate(bboxes):
 
@@ -260,7 +267,7 @@ def make_data(C):
                             if pos in mcs_pos[i]:
                                 has_major = True
                                 majorDetected+=1
-                                break
+                                # break # commented out to calculate how many hits remain after shifting the bbox
                         if has_major == True:
                             output_truth[ypixel-row-1][col] = is_major
 
@@ -268,25 +275,27 @@ def make_data(C):
                             output_truth[ypixel-row-1][col] = is_bg
 
 
-            if len(np.where(input_photo!=0)[0]) == 0:
-                pdebug(bins_by_row)
-                ptcl_found = False
-                for row, bin in enumerate(bins_by_row):
-                    x_bin_flatten = [ x for (x,y,z) in bin]
-                    squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
-                    for square in squares_by_column:
-                        if len(square)!= 0:
-                            ptcl_found = True
-                            break
-                    if ptcl_found:
-                        pdebug(squares_by_column,f'{799-row}th row')
-                    elif len(bin)!=0 :
-                        pdebug(bin,'bin')
-                        pdebug(x_bin_flatten, 'xbin_flatten')
-                        pdebug(xbins, 'xbins')
-                        pdebug(binning_objects(bin, x_bin_flatten, xbins))
-                pdebug('Empty input photo!')
-                sys.exit()
+
+            #
+            # if len(np.where(input_photo!=0)[0]) == 0:
+            #     pdebug(bins_by_row)
+            #     ptcl_found = False
+            #     for row, bin in enumerate(bins_by_row):
+            #         x_bin_flatten = [ x for (x,y,z) in bin]
+            #         squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
+            #         for square in squares_by_column:
+            #             if len(square)!= 0:
+            #                 ptcl_found = True
+            #                 break
+            #         if ptcl_found:
+            #             pdebug(squares_by_column,f'{799-row}th row')
+            #         elif len(bin)!=0 :
+            #             pdebug(bin,'bin')
+            #             pdebug(x_bin_flatten, 'xbin_flatten')
+            #             pdebug(xbins, 'xbins')
+            #             pdebug(binning_objects(bin, x_bin_flatten, xbins))
+            #     pdebug('Empty input photo!')
+            #     sys.exit()
 
 
             ### scale tensors
@@ -307,7 +316,7 @@ def make_data(C):
                 output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
 
                 iou_file = iou_dir.joinpath(f'iou_{str(index).zfill(6)}')
-
+                ratio_file = ratio_dir.joinpath(f'ratio_{str(index).zfill(6)}')
                 input_photo_file = photo_train_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
                 output_truth_file = photo_train_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
 
@@ -323,6 +332,10 @@ def make_data(C):
                 np.save(input_file, x)
                 np.save(output_file, y)
                 pickle.dump(iou_val, open(iou_file, 'wb'))
+
+                hit_ratio = majorDetected/float(hitNums[i])
+                pickle.dump(hit _ratio, open(ratio_file, 'wb'))
+
 
                 x_max = int(x.max())
                 ratio = 255/x_max
