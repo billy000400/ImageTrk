@@ -233,6 +233,11 @@ def define_nms_fn(max_output_size, iou_threshold, score_threshold, soft_nms_sigm
 nms = define_nms_fn(max_output_size=3000,\
         iou_threshold=.7, score_threshold=.5, soft_nms_sigma=1400.0)
 
+# convert bboxes coordinates from ratios in [0,1] to mm in detector
+# min -810mm, max 810mm
+def ratio2mm(bbox):
+    return bbox*1620 - 810
+
 ### define a process-oriented function
 def track_detection(hits, nms):
     x = plot_in_RAM(hits, 512)
@@ -263,6 +268,7 @@ def track_detection(hits, nms):
     selected_bboxes = xywh_to_bbox(selected_rois)
 
     bboxes = selected_bboxes.numpy()
+    bboxes = np.vectorize(ratio2mm)(bboxes)
     return bboxes
 
 
