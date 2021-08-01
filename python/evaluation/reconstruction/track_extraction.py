@@ -41,8 +41,9 @@ def select_hits_in_bbox(hits, bbox):
         ys.append(pos[1])
     hit_selected_by_x = binning_objects(hits, xs, x_bins)[2]
     hit_selected_by_y = binning_objects(hits, ys, y_bins)[2]
-    selected_hits = list(set(hit_selected_by_x).intersection(hit_selected_by_y))
-    return hits
+    selected_ids = set(hit_selected_by_x).intersection(set(hit_selected_by_y))
+    selected_hits = {id:hits[id] for id in selected_ids}
+    return selected_hits
 
 def make_density_photo(hits, resolution=256):
     selected_mcs_x, selected_mcs_y = [], []
@@ -113,7 +114,7 @@ def track_extraction(hit_dict, bboxes):
         hits_s = select_hits_in_bbox(hits_s, bbox)
 
         # if no hits in the bounding box, skip to the next iteration
-        if len(hits_s) <2:
+        if len(hits_s) <3:
             continue
         # otherwise, grouping hits into tracks
         else:
