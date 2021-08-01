@@ -327,6 +327,7 @@ class extractor_config:
 
         # input member
         self.train_dir = None
+        self.iou_dir = None
         self.X_file = None
         self.Y_file = None
 
@@ -383,9 +384,10 @@ class extractor_config:
         self.X_file = X_file
         self.Y_file = Y_file
 
-    def set_train_dir(self, train_x_dir, train_y_dir):
+    def set_train_dir(self, train_x_dir, train_y_dir, iou_dir=None):
         self.X_train_dir = train_x_dir
         self.Y_train_dir = train_y_dir
+        self.iou_dir=iou_dir
 
     def set_val_dir(self, val_x_dir, val_y_dir):
         self.X_val_dir = val_x_dir
