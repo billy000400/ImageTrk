@@ -14,7 +14,7 @@ from Configuration import frcnn_config
 def bbox_statistics(C):
     input_shape = C.input_shape
 
-    df = pd.read_csv(C.bbox_reference_file, index_col=0)
+    df = pd.read_csv(C.train_bbox_reference_file, index_col=0)
     df = df[['FileName','XMin','XMax','YMin','YMax','ClassName']]
 
     df = pd.eval('Width=(df.XMax-df.XMin)', target=df)
