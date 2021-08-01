@@ -31,13 +31,13 @@ val_acc = df.iloc[:,-1]
 
 fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,5))
 
-ax1.plot(epoch, loss, label='tra_loss')
-ax1.plot(epoch, val_loss, label='val_loss')
+ax1.plot(epoch, loss, label='train loss')
+ax1.plot(epoch, val_loss, label='val loss')
 ax1.set(xlabel='epoch', ylabel='loss', title='Loss vs. Epoch Plot')
 ax1.legend()
 
-ax2.plot(epoch, acc, label='tra_acc')
-ax2.plot(epoch, val_acc, label='val_acc')
+ax2.plot(epoch, acc, label='train acc')
+ax2.plot(epoch, val_acc, label='val acc')
 ax2.set(xlabel='epoch', ylabel='accuracy (%)', title='Accuracy vs. Epoch Plot')
 ax2.legend()
 
