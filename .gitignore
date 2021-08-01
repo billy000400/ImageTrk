@@ -17,6 +17,10 @@ python/evaluation/reconstruction/tmp_pic.png
 
 python/evaluation/track_detection/examples_private
 
+python/rpn_mc_train
+
+
+
 python/evaluation/track_detection/rpn/rpn_mc_00.h5
 python/evaluation/track_detection/rpn/detector_mc_RCNN_dr=0.0.h5
 python/evaluation/track_detection/rpn/frcnn.test.config.pickle
@@ -25,6 +29,11 @@ python/evaluation/track_detection/detector/frcnn.test.config.pickle
 python/evaluation/track_detection/detector/detector_mc_RCNN_dr=0.0.h5
 python/evaluation/track_detection/detector/rpn_mc_00.h5
 
+
+python/evaluation/track_detection/combined/.ipynb_checkpoints
+python/evaluation/track_detection/combined/iou_diagnosis.ipynb
+python/evaluation/track_detection/combined/gt
+python/evaluation/track_detection/combined/preds
 python/evaluation/track_detection/combined/__pycache__
 python/evaluation/track_detection/combined/predictions
 python/evaluation/track_detection/combined/performances
@@ -43,6 +52,8 @@ python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.5_result.csv
 python/evaluation/track_detection/combined/rpn+detector_cls+nms@0.6_result.csv
 
 python/evaluation/track_extraction/extractor.test.config.pickle
+python/evaluation/track_extraction/extractor_perfect_misalignment.test.config.pickle
+python/evaluation/track_extraction/images
 python/evaluation/track_extraction/photographic_mc_arc_FCDense_Dropout_0.1_Unaugmented.h5
 
 
