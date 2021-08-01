@@ -60,7 +60,7 @@ def photographic_train(C):
 
     # setup loss
     weights = C.weights
-
+    assert weights.all()!=None, "The weight is None! You need to calculate the weights first!"
     cce = categorical_focal_loss(alpha=weights, gamma=2)
 
     # setup metric
