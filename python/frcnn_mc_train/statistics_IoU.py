@@ -49,7 +49,8 @@ maxIoUs = np.array(maxIoUs, dtype=np.float32)
 
 pinfo(f'Max IoU statistics: min: {maxIoUs.min()}, max: {maxIoUs.max()}, avg: {maxIoUs.mean()}')
 
-plt.hist(maxIoUs)
+plt.hist(maxIoUs, histtype='step')
 plt.xlabel('Max IoU')
 plt.ylabel('NUmber of images')
+plt.title('Distribution of Max Cross-IoU of True BBoxes')
 plt.show()
