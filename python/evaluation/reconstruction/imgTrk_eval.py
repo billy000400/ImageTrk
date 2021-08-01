@@ -43,6 +43,8 @@ from track_detection import define_nms_fn
 from track_detection import track_detection
 from track_extraction import track_extraction
 
+
+
 ### calculate the number of intersection
 def overlap(list1, list2):
     counter = 0
@@ -126,6 +128,7 @@ if __name__ == "__main__":
     precision_values = []
     recall_values = []
     iou_values = []
+    hitNum_values = []
 
 
     for i in range(windowNum):
@@ -136,10 +139,12 @@ if __name__ == "__main__":
         hit_dict, trks_ref = gen.generate(mode='eval')
         bboxes = track_detection(hit_dict, nms)
         trks_pred = track_extraction(hit_dict, bboxes)
+        trks_pred = [ trk for trk in trks_pred if len(trk)>5 ]
 
         precisions = precision(trks_ref, trks_pred)
         recalls = recall(trks_ref, trks_pred)
         ious = iou(trks_ref, trks_pred)
+        hitNums = [len(trk_pred) for trk_pred in trks_pred]
 
         for precision_value in precisions:
             precision_values.append(precision_value)
@@ -147,12 +152,17 @@ if __name__ == "__main__":
             recall_values.append(recall_value)
         for iou_value in ious:
             iou_values.append(iou_value)
+        for hitNum in hitNums:
+            hitNum_values.append(hitNum)
 
-    precision_path = metric_dir.joinpath('hit_precisions')
-    pickle.dump(iou_values, open(precision_path, 'wb'))
+    precision_path = metric_dir.joinpath('hit_precisions.list')
+    pickle.dump(precision_values, open(precision_path, 'wb'))
 
-    recall_path = metric_dir.joinpath('hit_recalls')
-    pickle.dump(iou_values, open(recall_path, 'wb'))
+    recall_path = metric_dir.joinpath('hit_recalls.list')
+    pickle.dump(recall_values, open(recall_path, 'wb'))
 
-    iou_path = metric_dir.joinpath('hit_ious')
+    iou_path = metric_dir.joinpath('hit_ious.list')
     pickle.dump(iou_values, open(iou_path, 'wb'))
+
+    hitNum_path = metric_dir.joinpath('hitNums.list')
+    pickle.dump(hitNum_values, open(hitNum_path, 'wb'))
