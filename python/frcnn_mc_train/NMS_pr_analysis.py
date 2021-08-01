@@ -85,10 +85,10 @@ def region_proposal_analysis(C, max_output_size, iou_threshold, score_threshold,
         selected_score = selected_score.numpy().tolist()
 
         gt = np.array([ [r['XMin'], r['YMin'], r['XMax'], r['YMax'], 0, 0, 0] for index,r in ref_slice.iterrows()])
-
+        gt *= 512.0
         preds = np.array([ [b[0], b[2], b[1], b[3], 0, score]\
                     for b, score in zip(pred_bboxes, selected_score)])
-
+        preds *= 512.0
         if len(pred_bboxes)==0:
             map1s.append(0)
             map2s.append(0)
