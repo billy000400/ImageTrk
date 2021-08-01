@@ -36,9 +36,8 @@ def binning_objects(objects, features, bin_array):
     assert len(objects)==len(features), \
         t_error('The lengths of object and feature are not equal')
 
-    obj_ftr_raw  = dict(zip(objs,ftrs))
-    obj_ftr = sorted( obj_ftr_raw.items(), key=lambda item: item[1])
-    obj_ftr_it = iter(obj_ftr)
+    obj_ftr_raw  = [(obj,ftr) for obj,ftr in zip(objs,ftrs)]
+    obj_ftr = sorted( obj_ftr_raw, key=lambda x: x[1])
 
     result = []
     obj_ftr_idx = 0
