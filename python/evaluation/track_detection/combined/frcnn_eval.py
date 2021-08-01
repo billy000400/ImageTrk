@@ -9,7 +9,7 @@ import pandas as pd
 util_dir = Path.cwd().parent.parent.parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Abstract import *
-from Geometry import iou
+from Geometry import intersection, union, iou
 from Information import *
 from Configuration import frcnn_config
 
@@ -34,12 +34,13 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
     result_df = pd.DataFrame(columns = columns)
     precision_row = ['precision']
     recall_row = ['recall']
-    degeneracy_row = ['duplicity']
     ap_row = ['AP']
 
 
     grading_grids = []
     imgs = ref_df['FileName'].unique()
+    precision_cols = [ [] for i in IoU_cuts ]
+    recall_cols = [ [] for i in IoU_cuts]
     ap_cols = [ [] for i in IoU_cuts] # every sub [] contains aps for every IoU
 
     for img_idx, img in enumerate(imgs):
@@ -57,8 +58,15 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
 
 
         gt = np.array([ [r['XMin'], r['YMin'], r['XMax'], r['YMax'], 0, 0, 0] for index,r in ref_slice.iterrows()])
+        gt *= 512.0
         preds = np.array([ [b[0], b[2], b[1], b[3], 0, b[4]]\
                     for b in pred_bboxes])
+        preds *= 512.0
+
+        pickle.dump(gt, open('gt', 'wb'))
+        pickle.dump(preds, open('preds', 'wb'))
+
+        recall_dict1 = {}
 
         if len(pred_bboxes)==0:
             for ap_col in ap_cols:
@@ -68,99 +76,110 @@ def od_analysis(ref_df, pred_df, IoU_cuts):
             metric_fn = MetricBuilder.build_evaluation_metric("map_2d", async_mode=True, num_classes=1)
             # add some samples to evaluation
             metric_fn.add(preds, gt)
+            result = metric_fn.value(iou_thresholds=IoU_cuts, recall_thresholds=np.arange(0., 1.1, 0.1))
+
             for col_idx, iou_val in enumerate(IoU_cuts):
-                ap_cols[col_idx].append(metric_fn.value(iou_thresholds=iou_val)['mAP'])
+
+                ap = result[iou_val][0]['ap']
+                final_precision = result[iou_val][0]['precision'][-1]
+                final_recall = result[iou_val][0]['recall'][-1]
+
+                precision_cols[col_idx].append(final_precision)
+                recall_cols[col_idx].append(final_recall)
+                ap_cols[col_idx].append(ap)
+
 
         # calculate precision, recall, and degeneracy
-        iNum = len(ref_bboxes)
-        jNum = len(pred_bboxes)
-        grading_grid = np.zeros(shape=(iNum, jNum))
+        # iNum = len(ref_bboxes)
+        # jNum = len(pred_bboxes)
+        # grading_grid = np.zeros(shape=(iNum, jNum))
+        #
+        # for i, j in np.ndindex(iNum, jNum):
+        #     grading_grid[i,j] = iou(ref_bboxes[i], pred_bboxes[j])
+        #
+        # grading_grids.append(grading_grid)
 
-        for i, j in np.ndindex(iNum, jNum):
-            grading_grid[i,j] = iou(ref_bboxes[i], pred_bboxes[j])
-
-        grading_grids.append(grading_grid)
-
-    for ap_col in ap_cols:
+    for precision_col, recall_col, ap_col in zip(precision_cols, recall_cols, ap_cols):
+        precision_row.append(np.array(precision_col).mean())
+        recall_row.append(np.array(recall_col).mean())
         ap_row.append(np.array(ap_col).mean())
 
 
 
 
 
+
     ### Grading the RPN prediction after NMS
-    for iou_idx, iou_limit in enumerate(IoU_cuts):
-        sys.stdout.write(t_info(f"Processing iou cuts: {iou_idx+1}/{len(IoU_cuts)}", '\r'))
-        if iou_idx+1 == len(IoU_cuts):
-            sys.stdout.write('\n')
-        sys.stdout.flush()
-
-
-        precisions = []
-        recalls = []
-        degeneracies = []
-
-        for grading_grid in grading_grids:
-            iNum, jNum = grading_grid.shape
-
-            tp = 0
-            fp = 0
-            fn = 0
-
-            for i in range(iNum):
-                row = grading_grid[i]
-                if np.any(row>=iou_limit):
-                    degeneracy = np.count_nonzero(row>=iou_limit)
-                    degeneracies.append(degeneracy)
-
-                else:
-                    degeneracies.append(0)
-                    fn += 1
-
-            for j in range(jNum):
-                col = grading_grid[:,j]
-                if np.any(col>=iou_limit):
-                    tp += 1
-                else:
-                    fp += 1
-
-            dom1 = tp+fp
-
-            # dom1 == 0 when no ROI is proposed
-            if dom1!=0:
-                precision = tp/dom1
-                precisions.append(precision)
-
-            recall = tp/(tp+fn)
-            recalls.append(recall)
-
-        if len(precisions)!=0:
-            precision_entry = np.array(precisions).mean()
-            precision_row.append(precision_entry)
-        else:
-            precision_row.append([])
-
-        if len(recalls)!=0:
-            recall_entry = np.array(recalls).mean()
-            recall_row.append(recall_entry)
-        else:
-            recall_row.append([])
-
-        if len(degeneracies)!=0:
-            degeneracy_entry = np.array(degeneracies).mean()
-            degeneracy_row.append(degeneracy_entry)
-        else:
-            degeneracy_row.append([])
+    # for iou_idx, iou_limit in enumerate(IoU_cuts):
+    #     sys.stdout.write(t_info(f"Processing iou cuts: {iou_idx+1}/{len(IoU_cuts)}", '\r'))
+    #     if iou_idx+1 == len(IoU_cuts):
+    #         sys.stdout.write('\n')
+    #     sys.stdout.flush()
+    #
+    #
+    #     precisions = []
+    #     recalls = []
+    #     degeneracies = []
+    #
+    #     for grading_grid in grading_grids:
+    #         iNum, jNum = grading_grid.shape
+    #
+    #         tp = 0
+    #         fp = 0
+    #         fn = 0
+    #
+    #         for i in range(iNum):
+    #             row = grading_grid[i]
+    #             if np.any(row>=iou_limit):
+    #                 degeneracy = np.count_nonzero(row>=iou_limit)
+    #                 degeneracies.append(degeneracy)
+    #
+    #             else:
+    #                 degeneracies.append(0)
+    #                 fn += 1
+    #
+    #         for j in range(jNum):
+    #             col = grading_grid[:,j]
+    #             if np.any(col>=iou_limit):
+    #                 tp += 1
+    #             else:
+    #                 fp += 1
+    #
+    #         dom1 = tp+fp
+    #
+    #         # dom1 == 0 when no ROI is proposed
+    #         if dom1!=0:
+    #             precision = tp/dom1
+    #             precisions.append(precision)
+    #
+    #         recall = tp/(tp+fn)
+    #         recalls.append(recall)
+    #
+    #     if len(precisions)!=0:
+    #         precision_entry = np.array(precisions).mean()
+    #         precision_row.append(precision_entry)
+    #     else:
+    #         precision_row.append([])
+    #
+    #     if len(recalls)!=0:
+    #         recall_entry = np.array(recalls).mean()
+    #         recall_row.append(recall_entry)
+    #     else:
+    #         recall_row.append([])
+    #
+    #     if len(degeneracies)!=0:
+    #         degeneracy_entry = np.array(degeneracies).mean()
+    #         degeneracy_row.append(degeneracy_entry)
+    #     else:
+    #         degeneracy_row.append([])
 
 
     precision_df = pd.DataFrame([precision_row], columns=columns)
     recall_df = pd.DataFrame([recall_row], columns=columns)
-    degeneracy_df = pd.DataFrame([degeneracy_row], columns=columns)
     ap_df = pd.DataFrame([ap_row], columns=columns)
 
     result_df = result_df.append(precision_df, ignore_index=True)
     result_df = result_df.append(recall_df, ignore_index=True)
-    result_df = result_df.append(degeneracy_df, ignore_index=True)
     result_df = result_df.append(ap_df, ignore_index=True)
 
     return result_df
@@ -183,6 +202,19 @@ for i, pred_file in enumerate(pred_files):
         rs_df = od_analysis(ref_df, pred_df, IoU_cuts)
         rs_df.to_csv(file)
         print(rs_df)
+
+# pred_files = [f for f in prediction_dir.glob('*.csv')]
+# for i, pred_file in enumerate(pred_files):
+#     if i<5:
+#         continue
+#     pinfo(f'Evaluating predictions {i+1}/{len(pred_files)}: {pred_file.name}')
+#     pred_df = pd.read_csv(pred_file, index_col=0)
+#     fileName = pred_file.name[::-1].split('_',1)[1][::-1]+'_performance.csv'
+#     file = performance_dir.joinpath(fileName)
+#
+#     rs_df = od_analysis(ref_df, pred_df, IoU_cuts)
+#     print(rs_df)
+
 
 # pred1_df = pd.read_csv('rpn+detector_cls_prediction.csv', index_col=0)
 # rs1_df = od_analysis(ref_df, pred1_df, IoU_cuts)
