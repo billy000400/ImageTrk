@@ -181,6 +181,39 @@ def unmasked_IoUV2(t_r, t_p):
     rowNum = tf.cast(rowNum, tf.float32)
     return iou_tot/rowNum
 
+# hit purity: real major/predicted major
+def hit_purity(y_r, y_p):
+    predict_major_mask = tf.argmax(y_p, axis=3, output_type=tf.int32)==2
+
+    y_predict_major = tf.boolean_mask(y_p, predict_major_mask)
+    y_real_selected = tf.boolean_mask(y_r, predict_major_mask)
+
+    binary_purity = categorical_accuracy(y_real_selected, y_predict_major)
+    binary_sum = tf.math.reduce_sum(binary_purity)
+
+    N = tf.cast(tf.size(binary_purity), tf.float32)
+    N = tf.math.maximum(N,1.0)
+
+    purity = binary_sum/N*100
+
+    return purity
+
+# hit efficiency: real major/all major
+def hit_efficiency(y_r, y_p):
+    real_major_mask = y_r[:,:,:,2]==1
+
+    y_real_major = tf.boolean_mask(y_r, real_major_mask)
+    y_predict_selected = tf.boolean_mask(y_p, real_major_mask)
+
+    binary_purity = categorical_accuracy(y_real_major, y_predict_selected)
+    binary_sum = tf.math.reduce_sum(binary_purity)
+
+    N = tf.cast(tf.size(binary_purity), tf.float32)
+    N = tf.math.maximum(N,1.0)
+
+    efficiency = binary_sum/N*100
+
+    return efficiency
 
 def positive_number(p_r, p_p):
 
