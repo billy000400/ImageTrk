@@ -92,6 +92,15 @@ python/photographic_mc_FCDenseNet/__pycache__
 python/photographic_mc_FCDenseNet/logs/
 python/photographic_mc_FCDenseNet/photographic.train.config.pickle
 
+python/photographic_mc_FCDenseNet_largeKernel/__pycache__
+python/photographic_mc_FCDenseNet_largeKernel/logs/
+python/photographic_mc_FCDenseNet_largeKernel/photographic.train.config.pickle
+
+python/photographic_mc_FCDenseNet_channelByPlane/__pycache__
+python/photographic_mc_FCDenseNet_channelByPlane/logs/
+python/photographic_mc_FCDenseNet_channelByPlane/photographic.train.config.pickle
+
+
 python/Utility/Test_HitGenerators.py
 
 html/
