@@ -45,20 +45,33 @@ namespace mu2e{
 	class TracksOutputSQL : public art::EDAnalyzer {
 
     public:
+			struct Config {
+				using Name=fhicl::Name;
+				using Comment=fhicl::Comment;
+				fhicl::Atom<art::InputTag> mcdigisTag{ Name("StrawDigiMCCollection"), Comment("MC digi tag")};
+				fhicl::Atom<art::InputTag> chTag{ Name("ComboHitCollection"), Comment("Use strawHit instead of comboHit")};
+				Sequence<std::string> sourceNames{Name("sourceNames"),Comment("list of files")};
+			};
+
+			// the following line is needed to enable art --print-description
+			typedef art::EDAnalyzer::Table<Config> Parameters;
+
     	explicit TracksOutputSQL(fhicl::ParameterSet const&);
-        void analyze(const art::Event& event) override;
-				void beginJob() override;
-        void endJob() override;
+      void analyze(const art::Event& event) override;
+			void beginJob() override;
+      void endJob() override;
 
     private:
+			/// fcl config data
+			Config _conf;
+    	int _verbose;
+
 			//// my functions
 			void insert_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
 			void insert_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p);
 			void insert_hit(sqlite3* DB, int&ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 
 			// data tag
-			art::InputTag _chTag;
-      art::InputTag _mcdigisTag;
 			const ComboHitCollection* _chcol;
       const StrawDigiMCCollection* _mcdigis;
 
@@ -68,10 +81,8 @@ namespace mu2e{
 			std::string reco_dir;
 			std::string mc_dir;
 
-			// source file info
-			std::string sourceName;
-
 			// event info
+			int fileIndex;
 			int runNum;
 			int subrunNum;
 			int eventNum;
@@ -79,25 +90,18 @@ namespace mu2e{
 			// track info
 			int particleID;
 			int strawDigiMCID;
-void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniqueStraw);
+
 			// Database
 			sqlite3* DB;
 			std::string db_path;
     };
 
     // Constructor
-    TracksOutputSQL::TracksOutputSQL(fhicl::ParameterSet const& pset):
-			art::EDAnalyzer(pset),
-			_chTag(pset.get<std::string>("ComboHitCollection","makeSH")),
-			_mcdigisTag(pset.get<std::string>("StrawDigiMCCollection","makeSD")),
-			sourceName(pset.get<std::string>("sourceName","Empty")){
+    TracksOutputSQL::TracksOutputSQL(fhicl::ParameterSet const& conf):
+			_conf(conf()),_verbose(conf().verbose()){
 
-				// get the source name
-				const size_t last_slash_idx = sourceName.find_last_of("\\/");
-	      if (std::string::npos != last_slash_idx)
-	      {
-	          sourceName.erase(0, last_slash_idx + 1);
-	      }
+				// initialize file index
+				fileIndex = 0;
 
 				// initialize track info
 				particleID = 0;
@@ -105,9 +109,22 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
     }
 
 		// begin job
-		void TracksOutputSQL::beginJob(){
+		void TracksOutputSQL::beginJob(){}
 
-	    std::cerr << "\nBegin Job\n";
+    // end job
+    void TracksOutputSQL::endJob(){}
+
+    // Analyzer
+    void TracksOutputSQL::analyze(const art::Event& event){
+
+			// get the source name
+			const size_t last_slash_idx = sourceName.find_last_of("\\/");
+			if (std::string::npos != last_slash_idx)
+			{
+					sourceName.erase(0, last_slash_idx + 1);
+			}
+
+			std::cerr << "\nBegin Job\n";
 	    // Below is the directory the script should be called
 	    // This absolute method should be changed if Billy want it to apply for
 	    // other people
@@ -206,16 +223,6 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 
 			sqlite3_exec(DB, sql_hits.c_str(), 0, 0, &Err);
 
-		}// end of begin job
-
-    // end job
-    void TracksOutputSQL::endJob(){
-			// close the Database
-			sqlite3_close(DB);
-    }
-
-    // Analyzer
-    void TracksOutputSQL::analyze(const art::Event& event){
 
 			// Get run, subrun, and event number
 			runNum = event.run();
@@ -223,11 +230,11 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 			eventNum = event.event();
 
       // extract StrawDigiMC collections
-      auto mcdH = event.getValidHandle<StrawDigiMCCollection>(_mcdigisTag);
+      auto mcdH = event.getValidHandle<StrawDigiMCCollection>(_conf.mcdigisTag());
       _mcdigis = mcdH.product();
 
       // extract ComboHit collections
-			auto chH = event.getValidHandle<ComboHitCollection>(_chTag);
+			auto chH = event.getValidHandle<ComboHitCollection>(_conf.chTag());
 			_chcol = chH.product();
 
 			// construct trackId --> particleId map
@@ -264,9 +271,18 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
         double z = pos_mc.z();
 				double t = spmcp->time();
 				double p = spmcp->momentum().mag();
+				StrawId strawIdMC = spmcp->strawId();
+				int stationMC = strawIdMC.getStation();
+				int planeMC = strawIdMC.getPlane();
+				int panelMC = strawIdMC.getPanel();
+				int layerMC = strawIdMC.getLayer();
+				int strawMC = strawIdMC.getStraw();
+				int uniquePanelMC = strawIdMC.uniquePanel();
+				int uniqueFaceMC = strawIdMC.uniqueFace();
+				int uniqueStrawMC = strawIdMC.uniqueStraw();
 
 				// Insert the StrawDigiMC into table
-				insert_digi(DB, strawDigiMCID, particleID, x, y, z, t, p);
+				insert_digi(DB, strawDigiMCID, particleID, x, y, z, t, p, stationMC, planeMC, panelMC, layerMC, strawMC, uniquePanelMC, uniqueFaceMC, uniqueStrawMC);
 
         // Get the reconstructed StrawHits information
 				// including:
@@ -294,6 +310,11 @@ void insert_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, dou
 
 			}// end of loop of hits
 
+			// close the Database
+			sqlite3_close(DB);
+
+			// update file index
+			fileIndex += 1;
 
     }// end of analyzer
 
