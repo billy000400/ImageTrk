@@ -118,6 +118,7 @@ namespace mu2e{
     void TracksOutputSQL::analyze(const art::Event& event){
 
 			// get the source name
+			std::string sourceName = _conf.sourceNames(fileIndex);
 			const size_t last_slash_idx = sourceName.find_last_of("\\/");
 			if (std::string::npos != last_slash_idx)
 			{
