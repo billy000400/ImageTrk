@@ -52,7 +52,7 @@ namespace mu2e{
 				using Comment=fhicl::Comment;
 				fhicl::Atom<art::InputTag> mcdigisTag{ Name("StrawDigiMCCollection"), Comment("MC digi tag")};
 				fhicl::Atom<art::InputTag> chTag{ Name("ComboHitCollection"), Comment("Use strawHit instead of comboHit")};
-				Sequence<std::string> sourceNames{Name("sourceNames"),Comment("list of files")};
+				fhicl::Sequence<std::string> sourceNames{Name("sourceNames"),Comment("list of files")};
 			};
 
 			// the following line is needed to enable art --print-description
