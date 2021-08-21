@@ -18,6 +18,7 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 // Framework includes
+#include "fhiclcpp/types/Atom.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h" // For DEFINE_ART_MODULE
@@ -56,7 +57,7 @@ namespace mu2e{
 			// the following line is needed to enable art --print-description
 			typedef art::EDAnalyzer::Table<Config> Parameters;
 
-    	explicit TracksOutputSQL(fhicl::ParameterSet const&);
+    	explicit TracksOutputSQL(const Parameters&);
       void analyze(const art::Event& event) override;
 			void beginJob() override;
       void endJob() override;
