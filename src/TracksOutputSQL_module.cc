@@ -98,7 +98,7 @@ namespace mu2e{
     };
 
   // Constructor
-  TracksOutputSQL::TracksOutputSQL(fhicl::ParameterSet const& conf):
+  TracksOutputSQL::TracksOutputSQL(const Parameters& conf):
 		_conf(conf()),_verbose(conf().verbose()){
 
 			// initialize file index
