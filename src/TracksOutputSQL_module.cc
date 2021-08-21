@@ -19,6 +19,7 @@
 #include <boost/algorithm/string.hpp>
 // Framework includes
 #include "fhiclcpp/types/Atom.h"
+#include "fhiclcpp/types/Sequence.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h" // For DEFINE_ART_MODULE
