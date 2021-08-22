@@ -98,6 +98,7 @@ namespace mu2e{
 			std::string mc_dir;
 
 			// event info
+			std::string sourceName;
 			int fileIndex;
 			int runNum;
 			int subrunNum;
@@ -123,10 +124,15 @@ namespace mu2e{
   }
 
 	// begin job
-	void TracksOutputSQL::beginJob(){}
+	void TracksOutputSQL::beginJob(){
+		sourceName = _conf.sourceNames(fileIndex);
+		create_DB(DB, sourceName);
+	}
 
   // end job
-  void TracksOutputSQL::endJob(){}
+  void TracksOutputSQL::endJob(){
+		sqlite3_close(DB);
+	}
 
   // Analyzer
   void TracksOutputSQL::analyze(const art::Event& event){
@@ -135,9 +141,6 @@ namespace mu2e{
 		particleID = 0;
 		strawDigiMCID = 0;
 
-		// get the source name
-		std::string sourceName = _conf.sourceNames(fileIndex);
-		create_DB(DB, sourceName);
 		std::cout << "The database has been created\n";
 
 		// Get run, subrun, and event number
@@ -234,7 +237,7 @@ namespace mu2e{
 		}// end of loop of hits
 
 		// close the Database
-		sqlite3_close(DB);
+
 
 		// update file index
 		fileIndex += 1;
