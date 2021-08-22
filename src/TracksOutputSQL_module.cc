@@ -121,7 +121,7 @@ namespace mu2e{
 
 	// begin job
 	void TracksOutputSQL::beginJob(){
-		dataSetName = _conf.dataSetName;
+		dataSetName = _conf.dataSetName();
 		create_DB(DB, dataSetName);
 
 		// initialize indices
@@ -231,7 +231,7 @@ namespace mu2e{
 	{
 
 		std::cout << "Creating database " << dbName << "\n";
-		
+
     // Below is the directory the script should be called
     // This absolute method should be changed if Billy want it to apply for
     // other people
