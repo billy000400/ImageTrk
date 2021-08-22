@@ -178,7 +178,7 @@ namespace mu2e{
 				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
 				std::cout << "A particle has been appended\n";
 			}
-			etd::cout << "after here\n";
+			std::cout << "after here\n";
 
 			int particleID = trackID_ParticleID_map[trackKey];
 
