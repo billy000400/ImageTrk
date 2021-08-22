@@ -1,3 +1,13 @@
+/**
+ * @Author: Billy Li <billyli>
+ * @Date:   08-21-2021
+ * @Email:  li000400@umn.edu
+ * @Last modified by:   billyli
+ * @Last modified time: 08-21-2021
+ */
+
+
+
 // This script extracts mcdigi and reco-hits' info to a SQL database.
 // Each track is represented by a particleID
 // ParticleID comply with: runID.subrunID.eventID.trackID
@@ -128,6 +138,7 @@ namespace mu2e{
 		// get the source name
 		std::string sourceName = _conf.sourceNames(fileIndex);
 		create_DB(DB, sourceName);
+		std::cout << "The database has been created\n";
 
 		// Get run, subrun, and event number
 		runNum = event.run();
@@ -164,6 +175,7 @@ namespace mu2e{
 				// append the particle into table
 				int trackId = trackKey.asInt();
 				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
+				std::cout << "A particle has been appended\n";
 			}
 
 			int particleID = trackID_ParticleID_map[trackKey];
@@ -188,6 +200,7 @@ namespace mu2e{
 
 			// append the StrawDigiMC into table
 			append_digi(DB, strawDigiMCID, particleID, x, y, z, t, p, stationMC, planeMC, panelMC, layerMC, strawMC, uniquePanelMC, uniqueFaceMC, uniqueStrawMC);
+			std::cout << "A digi has been appended\n";
 
       // Get the reconstructed StrawHits information
 			// including:
@@ -212,6 +225,7 @@ namespace mu2e{
 
 			// append the StrawHit into table
 			append_hit(DB, particleID, strawDigiMCID, x_reco, y_reco, z_reco, t_reco, station, plane, panel, layer, straw, uniquePanel, uniqueFace, uniqueStraw);
+			std::cout << "A hit has been appended\n";
 
 		}// end of loop of hits
 
