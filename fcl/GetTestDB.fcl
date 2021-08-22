@@ -44,7 +44,7 @@ physics:
           module_type : TracksOutputSQL
 					StrawDigiMCCollection : "compressDigiMCs"
           ComboHitCollection : "makeSH"
-					datasetName : "test"
+					dataSetName : "test"
         }
     }
 
