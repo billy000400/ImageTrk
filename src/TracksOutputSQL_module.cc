@@ -161,14 +161,16 @@ namespace mu2e{
 		for (unsigned istr=0; istr < nstrs; istr++){
 
       // Get the SimParticle Pointer from the collection
+			std::cout << "before here\n";
       StrawDigiMC const& mcdigi = _mcdigis->at(istr);
       StrawEnd itdc;
       art::Ptr<StepPointMC> const& spmcp = mcdigi.stepPointMC(itdc);
 			cet::map_vector_key trackKey = spmcp->trackId();
 			art::Ptr<SimParticle> const& spp = spmcp->simParticle();
 			int spID = spp->pdgId(); // Get SimParticle's pdgID
+			std::cout << "after here\n";
 
-			std::cout << "before here\n";
+
 			if (!trackID_ParticleID_map.has(trackKey)){
 				// update map
 				particleID ++;
@@ -178,7 +180,7 @@ namespace mu2e{
 				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
 				std::cout << "A particle has been appended\n";
 			}
-			std::cout << "after here\n";
+
 
 			int particleID = trackID_ParticleID_map[trackKey];
 
