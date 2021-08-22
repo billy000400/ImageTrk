@@ -103,9 +103,10 @@ namespace mu2e{
     };
 
   // Constructor
-  TracksOutputSQL::TracksOutputSQL(const Parameters& conf):
-		_conf(conf()),_verbose(conf().verbose()) {
-
+  TracksOutputSQL::TracksOutputSQL(Parameters const& conf)
+	: _conf(conf())
+	, _verbose(conf().verbose())
+	{
 			// initialize file index
 			fileIndex = 0;
   }
