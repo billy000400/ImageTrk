@@ -20,20 +20,11 @@ source:{ module_type : RootInput
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
-	fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/36/a4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",
-								"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
-	# fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/36/a4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/4e/dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/10/d0/dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/15/31/dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/18/02/dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/52/dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/fa/dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
+	fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art",
+								"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/15/31/dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art",
+								"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/52/dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art"]
+
+
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
 
 	maxEvents: -1
@@ -53,7 +44,7 @@ physics:
           module_type : TracksOutputSQL
 					StrawDigiMCCollection : "compressDigiMCs"
           ComboHitCollection : "makeSH"
-					sourceNames : @local::source.fileNames
+					datasetName : "test"
         }
     }
 

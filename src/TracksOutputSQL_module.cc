@@ -65,7 +65,7 @@ namespace mu2e{
 
 				fhicl::Atom<art::InputTag> mcdigisTag{ Name("StrawDigiMCCollection"), Comment("MC digi tag")};
 				fhicl::Atom<art::InputTag> chTag{ Name("ComboHitCollection"), Comment("Use strawHit instead of comboHit")};
-				fhicl::Sequence<std::string> sourceNames{Name("sourceNames"),Comment("list of files")};
+				fhicl::Atom<std::string> dataSetName{Name("dataSetName"), Comment("Nature of dataset")};
 			};
 
 			// the following line is needed to enable art --print-description
@@ -82,7 +82,7 @@ namespace mu2e{
     	int _verbose;
 
 			//// Database functions
-			void create_DB(sqlite3* DB, std::string &sourceName);
+			void create_DB(sqlite3* DB, std::string &dbName);
 			void append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
 			void append_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 			void append_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
@@ -98,8 +98,7 @@ namespace mu2e{
 			std::string mc_dir;
 
 			// event info
-			std::string sourceName;
-			int fileIndex;
+			std::string dataSetName;
 			int runNum;
 			int subrunNum;
 			int eventNum;
@@ -118,16 +117,16 @@ namespace mu2e{
 	: art::EDAnalyzer(conf)
 	, _conf(conf())
 	, _verbose(conf().verbose())
-	{
-			// initialize file index
-			fileIndex = 0;
-  }
+	{}
 
 	// begin job
 	void TracksOutputSQL::beginJob(){
-		sourceName = _conf.sourceNames(fileIndex);
-		create_DB(DB, sourceName);
-		fileIndex++;
+		dataSetName = _conf.dataSetName;
+		create_DB(DB, dataSetName);
+
+		// initialize indices
+		particleID = 0;
+		strawDigiMCID = 0;
 	}
 
   // end job
@@ -137,10 +136,6 @@ namespace mu2e{
 
   // Analyzer
   void TracksOutputSQL::analyze(const art::Event& event){
-
-		// initialize indices
-		particleID = 0;
-		strawDigiMCID = 0;
 
 		// Get run, subrun, and event number
 		runNum = event.run();
@@ -232,15 +227,11 @@ namespace mu2e{
 
   }// end of analyzer
 
-	void TracksOutputSQL::create_DB(sqlite3* DB, std::string &sourceName)
+	void TracksOutputSQL::create_DB(sqlite3* DB, std::string &dbName)
 	{
-		const size_t last_slash_idx = sourceName.find_last_of("\\/");
-		if (std::string::npos != last_slash_idx)
-		{
-				sourceName.erase(0, last_slash_idx + 1);
-		}
 
-		std::cerr << "\nCreating a database for " << sourceName << "\n";
+		std::cout << "Creating database " << dbName << "\n";
+		
     // Below is the directory the script should be called
     // This absolute method should be changed if Billy want it to apply for
     // other people
@@ -262,7 +253,7 @@ namespace mu2e{
     boost::filesystem::create_directory(trkDir);
 
     // Check if an old database exists
-    db_path = cwd_ideal+"/Tracking/tracks/"+sourceName+".db";
+    db_path = cwd_ideal+"/Tracking/tracks/"+dbName+".db";
     bool oldDbExist = boost::filesystem::exists(db_path);
 
     // If an old DB exists,
