@@ -127,6 +127,7 @@ namespace mu2e{
 	void TracksOutputSQL::beginJob(){
 		sourceName = _conf.sourceNames(fileIndex);
 		create_DB(DB, sourceName);
+		fileIndex++;
 	}
 
   // end job
@@ -235,12 +236,6 @@ namespace mu2e{
 			std::cout << "A hit has been appended\n";
 
 		}// end of loop of hits
-
-		// close the Database
-
-
-		// update file index
-		fileIndex += 1;
 
   }// end of analyzer
 
