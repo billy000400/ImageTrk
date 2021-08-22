@@ -104,7 +104,8 @@ namespace mu2e{
 
   // Constructor
   TracksOutputSQL::TracksOutputSQL(Parameters const& conf)
-	: _conf(conf())
+	: art::EDAnalyzer(conf)
+	, _conf(conf())
 	, _verbose(conf().verbose())
 	{
 			// initialize file index
