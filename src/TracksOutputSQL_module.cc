@@ -142,8 +142,6 @@ namespace mu2e{
 		particleID = 0;
 		strawDigiMCID = 0;
 
-		std::cout << "The database has been created\n";
-
 		// Get run, subrun, and event number
 		runNum = event.run();
 		subrunNum = event.subRun();
@@ -165,14 +163,12 @@ namespace mu2e{
 		for (unsigned istr=0; istr < nstrs; istr++){
 
       // Get the SimParticle Pointer from the collection
-			std::cout << "before here\n";
       StrawDigiMC const& mcdigi = _mcdigis->at(istr);
       StrawEnd itdc;
       art::Ptr<StepPointMC> const& spmcp = mcdigi.stepPointMC(itdc);
 			cet::map_vector_key trackKey = spmcp->trackId();
 			art::Ptr<SimParticle> const& spp = spmcp->simParticle();
 			int spID = spp->pdgId(); // Get SimParticle's pdgID
-			std::cout << "after here\n";
 
 
 			if (!trackID_ParticleID_map.has(trackKey)){
@@ -182,7 +178,6 @@ namespace mu2e{
 				// append the particle into table
 				int trackId = trackKey.asInt();
 				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
-				std::cout << "A particle has been appended\n";
 			}
 
 
@@ -208,7 +203,6 @@ namespace mu2e{
 
 			// append the StrawDigiMC into table
 			append_digi(DB, strawDigiMCID, particleID, x, y, z, t, p, stationMC, planeMC, panelMC, layerMC, strawMC, uniquePanelMC, uniqueFaceMC, uniqueStrawMC);
-			std::cout << "A digi has been appended\n";
 
       // Get the reconstructed StrawHits information
 			// including:
@@ -233,7 +227,6 @@ namespace mu2e{
 
 			// append the StrawHit into table
 			append_hit(DB, particleID, strawDigiMCID, x_reco, y_reco, z_reco, t_reco, station, plane, panel, layer, straw, uniquePanel, uniqueFace, uniqueStraw);
-			std::cout << "A hit has been appended\n";
 
 		}// end of loop of hits
 
