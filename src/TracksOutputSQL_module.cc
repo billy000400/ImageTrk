@@ -50,6 +50,9 @@ namespace mu2e{
 			struct Config {
 				using Name=fhicl::Name;
 				using Comment=fhicl::Comment;
+
+				fhicl::Atom<int> verbose{Name("verbose"), Comment("verbosity level (0-10)"), 0};
+
 				fhicl::Atom<art::InputTag> mcdigisTag{ Name("StrawDigiMCCollection"), Comment("MC digi tag")};
 				fhicl::Atom<art::InputTag> chTag{ Name("ComboHitCollection"), Comment("Use strawHit instead of comboHit")};
 				fhicl::Sequence<std::string> sourceNames{Name("sourceNames"),Comment("list of files")};
@@ -101,7 +104,7 @@ namespace mu2e{
 
   // Constructor
   TracksOutputSQL::TracksOutputSQL(const Parameters& conf):
-		_conf(conf()),_verbose(conf().verbose()){
+		_conf(conf()),_verbose(conf().verbose()) {
 
 			// initialize file index
 			fileIndex = 0;
