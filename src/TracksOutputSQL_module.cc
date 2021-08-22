@@ -168,6 +168,7 @@ namespace mu2e{
 			art::Ptr<SimParticle> const& spp = spmcp->simParticle();
 			int spID = spp->pdgId(); // Get SimParticle's pdgID
 
+			std::cout << "before here\n";
 			if (!trackID_ParticleID_map.has(trackKey)){
 				// update map
 				particleID ++;
@@ -177,6 +178,7 @@ namespace mu2e{
 				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
 				std::cout << "A particle has been appended\n";
 			}
+			etd::cout << "after here\n";
 
 			int particleID = trackID_ParticleID_map[trackKey];
 
