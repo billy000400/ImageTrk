@@ -19,7 +19,9 @@ python/evaluation/track_detection/examples_private
 
 python/rpn_mc_train
 
-
+python/*/logs
+python/*/*.pickle
+tracks/
 
 python/evaluation/track_detection/rpn/rpn_mc_00.h5
 python/evaluation/track_detection/rpn/detector_mc_RCNN_dr=0.0.h5
