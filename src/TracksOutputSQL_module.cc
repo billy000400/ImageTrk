@@ -280,6 +280,7 @@ namespace mu2e{
 			pdgId INTEGER NOT NULL)";
 
 		sqlite3_exec(DB, sql_ptcls.c_str(), 0, 0, &Err);
+		std::cerr << "Creating table Particle: "  << *Err << "\n";
 
 		sql_digis = "create table StrawDigiMC(\
 			id INTEGER PRIMARY KEY NOT NULL,\
@@ -300,6 +301,7 @@ namespace mu2e{
 			foreign key(particle) references Particle(id))";
 
 		sqlite3_exec(DB, sql_digis.c_str(), 0, 0, &Err);
+		std::cerr << "Creating table StrawDigiMC: "  << *Err << "\n";
 
 		sql_hits = "create table StrawHit(\
 			id INTEGER PRIMARY KEY NOT NULL,\
@@ -321,6 +323,7 @@ namespace mu2e{
 			foreign key(StrawDigiMC) references StrawDigiMC(id))";
 
 		sqlite3_exec(DB, sql_hits.c_str(), 0, 0, &Err);
+		std::cerr << "Creating table StrawHit: " << *Err << "\n";
 	}
 
 	// append particle
