@@ -3,7 +3,7 @@
  * @Date:   08-21-2021
  * @Email:  li000400@umn.edu
  * @Last modified by:   billyli
- * @Last modified time: 08-21-2021
+ * @Last modified time: 08-29-2021
  */
 
 
@@ -269,7 +269,7 @@ namespace mu2e{
 
 		// create tables
 		std::string sql_ptcls, sql_digis, sql_hits;
-		char* Err;
+		char Err[100];
 
 		sql_ptcls = "CREATE TABLE Particle(\
 			id INTEGER PRIMARY KEY NOT NULL,\
