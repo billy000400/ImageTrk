@@ -292,6 +292,7 @@ namespace mu2e{
 		if (error){
 			std::cerr << "Failed to create table StrawDigiMC: "  << *Err << "\n";
 		}
+		sqlite3_free(error);
 
 		sql_ptcls = "CREATE TABLE Particle(\
 			id INTEGER PRIMARY KEY NOT NULL,\
@@ -305,6 +306,7 @@ namespace mu2e{
 		if (error){
 			std::cerr << "Failed to create table Particle: "  << *Err << "\n";
 		}
+		sqlite3_free(error);
 		//
 
 
@@ -333,6 +335,7 @@ namespace mu2e{
 		if (error){
 			std::cerr << "Failed to create table StrawHit: " << *Err << "\n";
 		}
+		sqlite3_free(error);
 
 	}
 
