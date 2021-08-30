@@ -126,7 +126,6 @@ namespace mu2e{
 
   // end job
   void TracksOutputSQL::endJob(){
-		sqlite3_close(DB);
 	}
 
   // Analyzer
@@ -225,6 +224,7 @@ namespace mu2e{
 			// append the StrawHit into table
 			append_hit(DB, particleID, strawDigiMCID, x_reco, y_reco, z_reco, t_reco, station, plane, panel, layer, straw, uniquePanel, uniqueFace, uniqueStraw);
 
+			sqlite3_close(DB);
 		}// end of loop of hits
 
   }// end of analyzer
