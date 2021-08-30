@@ -279,7 +279,7 @@ namespace mu2e{
 			pdgId INTEGER NOT NULL)";
 
 		sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
-		std::cerr << "Creating table Particle: "  << *Err << "\n";
+		// std::cerr << "Creating table Particle: "  << *Err << "\n";
 
 		sql_digis = "create table StrawDigiMC(\
 			id INTEGER PRIMARY KEY NOT NULL,\
