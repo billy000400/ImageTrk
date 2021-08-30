@@ -268,7 +268,22 @@ namespace mu2e{
 
 		// create tables
 		std::string sql_ptcls, sql_digis, sql_hits;
-		char* Err;
+		char Err[100];
+
+		sql_ptcls = "CREATE TABLE Particle(\
+			id INTEGER PRIMARY KEY NOT NULL,\
+			run INTEGER NOT NULL,\
+			subRun INTEGER NOT NULL,\
+			event INTEGER NOT NULL,\
+			track INTEGER NOT NULL,\
+			pdgId INTEGER NOT NULL)";
+
+		error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err[0]);
+		if (error){
+			std::cerr << "Failed to create table Particle: "  << *Err << "\n";
+			// sqlite3_free(Err);
+		}
+
 
 		sql_digis = "CREATE TABLE StrawDigiMC(\
 			id INTEGER PRIMARY KEY NOT NULL,\
@@ -285,29 +300,15 @@ namespace mu2e{
 			straw INTEGER NOT NULL,\
 			uniquePanel INTEGER NOT NULL,\
 			uniqueFace INTEGER NOT NULL,\
-			uniqueStraw INTEGER NOT NULL)";
-			//FOREIGN KEY(particle) REFERENCES Particle(id));";
+			uniqueStraw INTEGER NOT NULL,\
+			FOREIGN KEY(particle) REFERENCES Particle(id))";
 
-		error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err);
-		if (error){
-			std::cerr << "Failed to create table StrawDigiMC: "  << *Err << "\n";
-		}
-		sqlite3_free(Err);
 
-		sql_ptcls = "CREATE TABLE Particle(\
-			id INTEGER PRIMARY KEY NOT NULL,\
-			run INTEGER NOT NULL,\
-			subRun INTEGER NOT NULL,\
-			event INTEGER NOT NULL,\
-			track INTEGER NOT NULL,\
-			pdgId INTEGER NOT NULL);";
-
-		error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
-		if (error){
-			std::cerr << "Failed to create table Particle: "  << *Err << "\n";
-		}
-		sqlite3_free(Err);
-		//
+			error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err[0]);
+			if (error){
+				std::cerr << "Failed to create table StrawDigiMC: "  << *Err << "\n";
+			}
+			// sqlite3_free(Err);
 
 
 
@@ -331,11 +332,11 @@ namespace mu2e{
 			FOREIGN KEY(particle) REFERENCES Particle(id),\
 			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id))";
 
-		error = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err);
+		error = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err[0]);
 		if (error){
 			std::cerr << "Failed to create table StrawHit: " << *Err << "\n";
 		}
-		sqlite3_free(Err);
+		// sqlite3_free(Err);
 
 	}
 
