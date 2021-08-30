@@ -276,7 +276,7 @@ namespace mu2e{
 			subRun INTEGER NOT NULL,\
 			event INTEGER NOT NULL,\
 			track INTEGER NOT NULL,\
-			pdgId INTEGER NOT NULL)";
+			pdgId INTEGER NOT NULL);";
 
 		// error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
 		if (error){
@@ -300,7 +300,7 @@ namespace mu2e{
 			uniquePanel INTEGER NOT NULL,\
 			uniqueFace INTEGER NOT NULL,\
 			uniqueStraw INTEGER NOT NULL,\
-			foreign key(particle) references Particle(id))";
+			foreign key(particle) references Particle(id));";
 
 		// error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err);
 		if (error){
@@ -327,7 +327,8 @@ namespace mu2e{
 			foreign key(particle) references Particle(id),\
 			foreign key(StrawDigiMC) references StrawDigiMC(id))";
 
-		error = sqlite3_exec(DB, (sql_ptcls+sql_digis+sql_hits).c_str(), NULL, NULL, &Err);
+		sql_tot = sql_ptcls+sql_digis+sql_hits;
+		error = sqlite3_exec(DB, sql_tot.c_str(), NULL, NULL, &Err);
 		if (error){
 			std::cerr << "Failed to create table StrawHit: " << *Err << "\n";
 		}
