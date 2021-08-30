@@ -278,7 +278,7 @@ namespace mu2e{
 			track INTEGER NOT NULL,\
 			pdgId INTEGER NOT NULL)";
 
-		error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
+		// error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
 		if (error){
 			std::cerr << "Failed to create table Particle: "  << *Err << "\n";
 		}
@@ -302,7 +302,7 @@ namespace mu2e{
 			uniqueStraw INTEGER NOT NULL,\
 			foreign key(particle) references Particle(id))";
 
-		error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err);
+		// error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err);
 		if (error){
 			std::cerr << "Failed to create table StrawDigiMC: "  << *Err << "\n";
 		}
