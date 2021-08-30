@@ -131,7 +131,7 @@ namespace mu2e{
   // Analyzer
   void TracksOutputSQL::analyze(const art::Event& event){
 
-		sqlite3* DB;
+		sqlite3* DB = malloc(sizeof(*DB));
 		create_DB(DB, dataSetName);
 
 		// initialize indices
