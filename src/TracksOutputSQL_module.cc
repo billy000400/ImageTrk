@@ -82,7 +82,7 @@ namespace mu2e{
     	int _verbose;
 
 			//// Database functions
-			void create_DB(sqlite3* DB, std::string &dbName);
+			void create_DB(std::string &dbName);
 			void append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
 			void append_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 			void append_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
@@ -122,7 +122,7 @@ namespace mu2e{
 	// begin job
 	void TracksOutputSQL::beginJob(){
 		dataSetName = _conf.dataSetName();
-		create_DB(DB, dataSetName);
+		create_DB(dataSetName);
 
 		// initialize indices
 		particleID = 0;
@@ -227,7 +227,7 @@ namespace mu2e{
 
   }// end of analyzer
 
-	void TracksOutputSQL::create_DB(sqlite3* DB, std::string &dbName)
+	void TracksOutputSQL::create_DB(std::string &dbName)
 	{
 
 		std::cout << "Creating database " << dbName << "\n";
@@ -269,7 +269,7 @@ namespace mu2e{
 
 		// create tables
 		std::string sql_ptcls, sql_digis, sql_hits;
-		char Err[100];
+		char* Err;
 
 		sql_ptcls = "CREATE TABLE Particle(\
 			id INTEGER PRIMARY KEY NOT NULL,\
