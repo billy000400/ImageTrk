@@ -82,7 +82,7 @@ namespace mu2e{
     	int _verbose;
 
 			//// Database functions
-			void create_DB(std::string &dbName);
+			void create_DB(sqlite3* DB, std::string &dbName);
 			void append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
 			void append_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 			void append_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
@@ -108,7 +108,6 @@ namespace mu2e{
 			int strawDigiMCID;
 
 			// Database
-			sqlite3* DB;
 			std::string db_path;
     };
 
@@ -122,11 +121,7 @@ namespace mu2e{
 	// begin job
 	void TracksOutputSQL::beginJob(){
 		dataSetName = _conf.dataSetName();
-		create_DB(dataSetName);
 
-		// initialize indices
-		particleID = 0;
-		strawDigiMCID = 0;
 	}
 
   // end job
@@ -136,6 +131,13 @@ namespace mu2e{
 
   // Analyzer
   void TracksOutputSQL::analyze(const art::Event& event){
+
+		sqlite3* DB;
+		create_DB(DB, dataSetName);
+
+		// initialize indices
+		particleID = 0;
+		strawDigiMCID = 0;
 
 		// Get run, subrun, and event number
 		runNum = event.run();
@@ -227,7 +229,7 @@ namespace mu2e{
 
   }// end of analyzer
 
-	void TracksOutputSQL::create_DB(std::string &dbName)
+	void TracksOutputSQL::create_DB(sqlite3* DB, std::string &dbName)
 	{
 
 		std::cout << "Creating database " << dbName << "\n";
