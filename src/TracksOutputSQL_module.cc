@@ -267,7 +267,7 @@ namespace mu2e{
 		}
 
 		// create tables
-		std::string sql_ptcls, sql_digis, sql_hits;
+		std::string sql_ptcls, sql_digis, sql_hits, sql_tot;
 		char* Err;
 
 		sql_ptcls = "CREATE TABLE Particle(\
