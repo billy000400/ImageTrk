@@ -327,7 +327,7 @@ namespace mu2e{
 			foreign key(particle) references Particle(id),\
 			foreign key(StrawDigiMC) references StrawDigiMC(id))";
 
-		error = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err);
+		error = sqlite3_exec(DB, (sql_ptcls+sql_digis+sql_hits).c_str(), NULL, NULL, &Err);
 		if (error){
 			std::cerr << "Failed to create table StrawHit: " << *Err << "\n";
 		}
