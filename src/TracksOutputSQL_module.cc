@@ -172,6 +172,15 @@ namespace mu2e{
 				trackID_ParticleID_map[trackKey] = particleID;
 				// append the particle into table
 				int trackId = trackKey.asInt();
+				append_ptcl(particleID, runNum, subrunNum, eventNum, trackId, spID);
+
+				auto ptclId = particleID;
+				auto run = runNum;
+				auto subrun = subrunNum;
+				auto event = eventNum;
+				auto track = trackId;
+				auto pdgId = spID;
+				
 				std::string sql;
 			  sqlite3_stmt* stmt;
 
