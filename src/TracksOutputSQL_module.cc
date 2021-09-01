@@ -3,7 +3,7 @@
  * @Date:   08-21-2021
  * @Email:  li000400@umn.edu
  * @Last modified by:   billyli
- * @Last modified time: 08-29-2021
+ * @Last modified time: 09-01-2021
  */
 
 
@@ -83,9 +83,9 @@ namespace mu2e{
 
 			//// Database functions
 			void create_DB(std::string &dbName);
-			void append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
-			void append_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
-			void append_hit(sqlite3* DB, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
+			void append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
+			void append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
+			void append_hit(int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 
 			// data tag
 			const ComboHitCollection* _chcol;
@@ -172,7 +172,7 @@ namespace mu2e{
 				trackID_ParticleID_map[trackKey] = particleID;
 				// append the particle into table
 				int trackId = trackKey.asInt();
-				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
+				append_ptcl(particleID, runNum, subrunNum, eventNum, trackId, spID);
 			}
 
 
@@ -197,7 +197,7 @@ namespace mu2e{
 			int uniqueStrawMC = strawIdMC.uniqueStraw();
 
 			// append the StrawDigiMC into table
-			append_digi(DB, strawDigiMCID, particleID, x, y, z, t, p, stationMC, planeMC, panelMC, layerMC, strawMC, uniquePanelMC, uniqueFaceMC, uniqueStrawMC);
+			append_digi(strawDigiMCID, particleID, x, y, z, t, p, stationMC, planeMC, panelMC, layerMC, strawMC, uniquePanelMC, uniqueFaceMC, uniqueStrawMC);
 
       // Get the reconstructed StrawHits information
 			// including:
@@ -221,7 +221,7 @@ namespace mu2e{
 			int uniqueStraw = strawId.uniqueStraw();
 
 			// append the StrawHit into table
-			append_hit(DB, particleID, strawDigiMCID, x_reco, y_reco, z_reco, t_reco, station, plane, panel, layer, straw, uniquePanel, uniqueFace, uniqueStraw);
+			append_hit(particleID, strawDigiMCID, x_reco, y_reco, z_reco, t_reco, station, plane, panel, layer, straw, uniquePanel, uniqueFace, uniqueStraw);
 		}// end of loop of hits
 
   }// end of analyzer
@@ -343,7 +343,7 @@ namespace mu2e{
 	}
 
 	// append particle
-	void TracksOutputSQL::append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
+	void TracksOutputSQL::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
 	{
 	  std::string sql;
 	  sqlite3_stmt* stmt;
@@ -359,12 +359,15 @@ namespace mu2e{
 	  sqlite3_bind_int(stmt, 4, event);
 	  sqlite3_bind_int(stmt, 5, track);
 		sqlite3_bind_int(stmt, 6, pdgId);
-	  sqlite3_step(stmt);
+	  int error = sqlite3_step(stmt);
 	  sqlite3_finalize(stmt);
+		if (error!=0){
+			std::cerr << "Appending Particle: Error: " error << std::endl;
+		}
 	}
 
 	// append StrawDigiMC
-	void TracksOutputSQL::append_digi(sqlite3* DB, int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
+	void TracksOutputSQL::append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
 	  std::string sql;
 	  sqlite3_stmt* stmt;
@@ -393,12 +396,15 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 13, uniquePanel);
 		sqlite3_bind_int(stmt, 14, uniqueFace);
 		sqlite3_bind_int(stmt, 15, uniqueStraw);
-		sqlite3_step(stmt);
+		int error = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
+		if (error!=0){
+			std::cerr << "Appending StrawDigiMC: Error: " error << std::endl;
+		}
 	}
 
 	// append StrawHit
-	void TracksOutputSQL::append_hit(sqlite3* DB, int&ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
+	void TracksOutputSQL::append_hit(int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
 		std::string sql;
 		sqlite3_stmt* stmt;
@@ -426,8 +432,11 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 12, uniquePanel);
 		sqlite3_bind_int(stmt, 13, uniqueFace);
 		sqlite3_bind_int(stmt, 14, uniqueStraw);
-		sqlite3_step(stmt);
+		int error = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
+		if (error!=0){
+			std::cerr << "Appending StrawHit: Error: " error << std::endl;
+		}
 	}
 } // end namespace mu2e
 
