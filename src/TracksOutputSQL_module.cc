@@ -172,38 +172,7 @@ namespace mu2e{
 				trackID_ParticleID_map[trackKey] = particleID;
 				// append the particle into table
 				int trackId = trackKey.asInt();
-				// append_ptcl(particleID, runNum, subrunNum, eventNum, trackId, spID);
-
-				auto ptclId = particleID;
-				auto run = runNum;
-				auto subrun = subrunNum;
-				auto event = eventNum;
-				auto track = trackId;
-				auto pdgId = spID;
-
-				std::string sql;
-			  sqlite3_stmt* stmt;
-
-			  sql = "INSERT INTO Particle (\
-			    id, run, subrun, event, track, pdgId)\
-			    VALUES (\
-			      ?, ?, ?, ?, ?, ?)";
-			  int error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
-				if (error!=SQLITE_OK){
-					std::cerr << "Appending Particle: Error 1: " << sqlite3_errmsg(DB) << std::endl;
-				}
-			  sqlite3_bind_int(stmt, 1, ptclId);
-			  sqlite3_bind_int(stmt, 2, run);
-			  sqlite3_bind_int(stmt, 3, subrun);
-			  sqlite3_bind_int(stmt, 4, event);
-			  sqlite3_bind_int(stmt, 5, track);
-				sqlite3_bind_int(stmt, 6, pdgId);
-			  error = sqlite3_step(stmt);
-				if (error!=SQLITE_OK){
-					std::cerr << "Appending Particle: Error: " << sqlite3_errmsg(DB) << std::endl;
-					std::cerr << ptclId << std::endl;
-				}
-			  sqlite3_finalize(stmt);
+				append_ptcl(particleID, runNum, subrunNum, eventNum, trackId, spID);
 			}
 
 
@@ -378,7 +347,7 @@ namespace mu2e{
 	  sqlite3_stmt* stmt;
 
 	  sql = "INSERT INTO Particle (\
-	    id, run, subrun, event, track, pdgId)\
+	    id, run, subRun, event, track, pdgId)\
 	    VALUES (\
 	      ?, ?, ?, ?, ?, ?)";
 	  int error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
