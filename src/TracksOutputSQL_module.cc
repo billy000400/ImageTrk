@@ -362,7 +362,7 @@ namespace mu2e{
 	  int error = sqlite3_step(stmt);
 	  sqlite3_finalize(stmt);
 		if (error!=0){
-			std::cerr << "Appending Particle: Error: " error << std::endl;
+			std::cerr << "Appending Particle: Error: " << error << std::endl;
 		}
 	}
 
@@ -399,7 +399,7 @@ namespace mu2e{
 		int error = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		if (error!=0){
-			std::cerr << "Appending StrawDigiMC: Error: " error << std::endl;
+			std::cerr << "Appending StrawDigiMC: Error: " << error << std::endl;
 		}
 	}
 
@@ -435,7 +435,7 @@ namespace mu2e{
 		int error = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		if (error!=0){
-			std::cerr << "Appending StrawHit: Error: " error << std::endl;
+			std::cerr << "Appending StrawHit: Error: " << error << std::endl;
 		}
 	}
 } // end namespace mu2e
