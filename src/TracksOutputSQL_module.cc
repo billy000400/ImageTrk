@@ -385,7 +385,7 @@ namespace mu2e{
 			 ?, ?, ?)";
 	  int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
 		if (error!=0){
-			std::cerr << "Appending StrawDigiMC: Error: " << error << std::endl;
+			std::cerr << "Appending StrawDigiMC: Error 1: " << error << std::endl;
 		}
 		sqlite3_bind_int(stmt, 1, digiId);
 		sqlite3_bind_int(stmt, 2, ptclId);
@@ -425,7 +425,7 @@ namespace mu2e{
 			?, ?, ?)";
 		int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
 		if (error!=0){
-			std::cerr << "Appending StrawHit: Error: " << error << std::endl;
+			std::cerr << "Appending StrawHit: Error 1: " << error << std::endl;
 		}
 		sqlite3_bind_int(stmt, 1, ptclId);
 		sqlite3_bind_int(stmt, 2, digiId);
