@@ -363,6 +363,7 @@ namespace mu2e{
 	  error = sqlite3_step(stmt);
 		if (error!=SQLITE_OK){
 			std::cerr << "Appending Particle: Error: " << sqlite3_errmsg(DB) << std::endl;
+			std::cerr << ptclId << std:endl;
 		}
 	  sqlite3_finalize(stmt);
 	}
@@ -373,7 +374,7 @@ namespace mu2e{
 	  std::string sql;
 	  sqlite3_stmt* stmt;
 
-	  sql = "INSERT INTO StrawDigiMC(\
+	  sql = "INSERT INTO StrawDigiMC (\
 	    id, particle, x, y, z, t, p,\
 			station, plane, panel, layer, straw,\
 			uniquePanel, uniqueFace, uniqueStraw)\
@@ -413,7 +414,7 @@ namespace mu2e{
 		std::string sql;
 		sqlite3_stmt* stmt;
 
-		sql = "INSERT INTO StrawHit(\
+		sql = "INSERT INTO StrawHit (\
 			particle, strawDigiMC, x_reco, y_reco, z_reco, t_reco,\
 			station, plane, panel, layer, straw,\
 			uniquePanel, uniqueFace, uniqueStraw)\
