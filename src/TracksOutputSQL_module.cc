@@ -131,7 +131,7 @@ namespace mu2e{
 
   // end job
   void TracksOutputSQL::endJob(){
-		sqlite3_close(DB);
+		//sqlite3_close(DB);
 	}
 
   // Analyzer
