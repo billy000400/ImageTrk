@@ -360,10 +360,10 @@ namespace mu2e{
 	  sqlite3_bind_int(stmt, 5, track);
 		sqlite3_bind_int(stmt, 6, pdgId);
 	  int error = sqlite3_step(stmt);
-	  sqlite3_finalize(stmt);
 		if (error!=0){
 			std::cerr << "Appending Particle: Error: " << error << std::endl;
 		}
+	  sqlite3_finalize(stmt);
 	}
 
 	// append StrawDigiMC
@@ -397,10 +397,10 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 14, uniqueFace);
 		sqlite3_bind_int(stmt, 15, uniqueStraw);
 		int error = sqlite3_step(stmt);
-		sqlite3_finalize(stmt);
 		if (error!=0){
 			std::cerr << "Appending StrawDigiMC: Error: " << error << std::endl;
 		}
+		sqlite3_finalize(stmt);
 	}
 
 	// append StrawHit
@@ -433,10 +433,10 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 13, uniqueFace);
 		sqlite3_bind_int(stmt, 14, uniqueStraw);
 		int error = sqlite3_step(stmt);
-		sqlite3_finalize(stmt);
 		if (error!=0){
 			std::cerr << "Appending StrawHit: Error: " << error << std::endl;
 		}
+		sqlite3_finalize(stmt);
 	}
 } // end namespace mu2e
 
