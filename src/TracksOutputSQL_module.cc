@@ -353,8 +353,8 @@ namespace mu2e{
 	    VALUES (\
 	      ?, ?, ?, ?, ?, ?)";
 	  int error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
-		if (error!=0){
-			std::cerr << "Appending Particle: Error 1: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle: Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
 	  sqlite3_bind_int(stmt, 1, ptclId);
 	  sqlite3_bind_int(stmt, 2, run);
@@ -363,8 +363,8 @@ namespace mu2e{
 	  sqlite3_bind_int(stmt, 5, track);
 		sqlite3_bind_int(stmt, 6, pdgId);
 	  error = sqlite3_step(stmt);
-		if (error!=0){
-			std::cerr << "Appending Particle: Error: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 	  sqlite3_finalize(stmt);
 	}
@@ -384,8 +384,8 @@ namespace mu2e{
 			 ?, ?, ?, ?, ?,\
 			 ?, ?, ?)";
 	  int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
-		if (error!=0){
-			std::cerr << "Appending StrawDigiMC: Error 1: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending StrawDigiMC: Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_bind_int(stmt, 1, digiId);
 		sqlite3_bind_int(stmt, 2, ptclId);
@@ -403,8 +403,8 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 14, uniqueFace);
 		sqlite3_bind_int(stmt, 15, uniqueStraw);
 		error = sqlite3_step(stmt);
-		if (error!=0){
-			std::cerr << "Appending StrawDigiMC: Error: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending StrawDigiMC: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
 	}
@@ -424,8 +424,8 @@ namespace mu2e{
 			?, ?, ?, ?, ?,\
 			?, ?, ?)";
 		int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
-		if (error!=0){
-			std::cerr << "Appending StrawHit: Error 1: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending StrawHit: Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_bind_int(stmt, 1, ptclId);
 		sqlite3_bind_int(stmt, 2, digiId);
@@ -442,8 +442,8 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 13, uniqueFace);
 		sqlite3_bind_int(stmt, 14, uniqueStraw);
 		error = sqlite3_step(stmt);
-		if (error!=0){
-			std::cerr << "Appending StrawHit: Error: " << error << std::endl;
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending StrawHit: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
 	}
