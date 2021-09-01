@@ -312,9 +312,7 @@ namespace mu2e{
 			// sqlite3_free(Err);
 
 
-
-
-		sql_hits = "create table StrawHit(\
+		sql_hits = "CREATE TABLE StrawHit(\
 			id INTEGER PRIMARY KEY NOT NULL,\
 			particle INTEGER NOT NULL,\
 			strawDigiMC INTEGER NOT NULL,\
@@ -348,7 +346,7 @@ namespace mu2e{
 	  std::string sql;
 	  sqlite3_stmt* stmt;
 
-	  sql = "append INTO Particle (\
+	  sql = "INSERT INTO Particle (\
 	    id, run, subrun, event, track, pdgId)\
 	    VALUES (\
 	      ?, ?, ?, ?, ?, ?)";
@@ -375,7 +373,7 @@ namespace mu2e{
 	  std::string sql;
 	  sqlite3_stmt* stmt;
 
-	  sql = "append INTO StrawDigiMC(\
+	  sql = "INSERT INTO StrawDigiMC(\
 	    id, particle, x, y, z, t, p,\
 			station, plane, panel, layer, straw,\
 			uniquePanel, uniqueFace, uniqueStraw)\
@@ -415,7 +413,7 @@ namespace mu2e{
 		std::string sql;
 		sqlite3_stmt* stmt;
 
-		sql = "append INTO StrawHit(\
+		sql = "INSERT INTO StrawHit(\
 			particle, strawDigiMC, x_reco, y_reco, z_reco, t_reco,\
 			station, plane, panel, layer, straw,\
 			uniquePanel, uniqueFace, uniqueStraw)\
