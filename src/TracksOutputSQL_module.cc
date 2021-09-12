@@ -3,7 +3,7 @@
  * @Date:   08-21-2021
  * @Email:  li000400@umn.edu
  * @Last modified by:   billyli
- * @Last modified time: 09-01-2021
+ * @Last modified time: 09-11-2021
  */
 
 
@@ -83,7 +83,7 @@ namespace mu2e{
 
 			//// Database functions
 			void create_DB(std::string &dbName);
-			void append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
+			void append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId);
 			void append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 			void append_hit(int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw);
 
@@ -172,7 +172,7 @@ namespace mu2e{
 				trackID_ParticleID_map[trackKey] = particleID;
 				// append the particle into table
 				int trackId = trackKey.asInt();
-				append_ptcl(DB, particleID, runNum, subrunNum, eventNum, trackId, spID);
+				append_ptcl(particleID, runNum, subrunNum, eventNum, trackId, spID);
 			}
 
 
@@ -340,7 +340,7 @@ namespace mu2e{
 	}
 
 	// append particle
-	void TracksOutputSQL::append_ptcl(sqlite3* DB, int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
+	void TracksOutputSQL::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
 	{
 
 	  std::string sql;
