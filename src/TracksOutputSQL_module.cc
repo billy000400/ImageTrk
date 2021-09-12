@@ -338,11 +338,18 @@ namespace mu2e{
 		}
 		// sqlite3_free(Err);
 
+		sqlite3_close(DB);
 	}
 
 	// append particle
 	void TracksOutputSQL::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
 	{
+		int error = sqlite3_open(db_path.c_str(), &DB);
+		if (error){
+			std::cerr << "Appending Particle: Failed to connect to database\n";
+			exit(0);
+		}
+
 	  std::string sql;
 	  sqlite3_stmt* stmt;
 
@@ -366,11 +373,19 @@ namespace mu2e{
 			std::cerr << ptclId << std::endl;
 		}
 	  sqlite3_finalize(stmt);
+		sqlite3_close(DB);
+
 	}
 
 	// append StrawDigiMC
 	void TracksOutputSQL::append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
+		int error = sqlite3_open(db_path.c_str(), &DB);
+		if (error){
+			std::cerr << "Appending digi: Failed to connect to database\n";
+			exit(0);
+		}
+
 	  std::string sql;
 	  sqlite3_stmt* stmt;
 
@@ -406,11 +421,18 @@ namespace mu2e{
 			std::cerr << "Appending StrawDigiMC: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
+		sqlite3_close(DB);
 	}
 
 	// append StrawHit
 	void TracksOutputSQL::append_hit(int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
+		int error = sqlite3_open(db_path.c_str(), &DB);
+		if (error){
+			std::cerr << "Appending hit: Failed to connect to database\n";
+			exit(0);
+		}
+
 		std::string sql;
 		sqlite3_stmt* stmt;
 
@@ -445,6 +467,7 @@ namespace mu2e{
 			std::cerr << "Appending StrawHit: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
+		sqlite3_close(DB);
 	}
 } // end namespace mu2e
 
