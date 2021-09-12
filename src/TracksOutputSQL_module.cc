@@ -359,7 +359,7 @@ namespace mu2e{
 	      ?, ?, ?, ?, ?, ?)";
 	  error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
 		if (error!=SQLITE_OK){
-			std::cerr << "Appending Particle: Error 1: " << sqlite3_errmsg(DB) << std::endl;
+			std::cerr << "Appending Particle (prepare): Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
 	  sqlite3_bind_int(stmt, 1, ptclId);
 	  sqlite3_bind_int(stmt, 2, run);
@@ -369,7 +369,7 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 6, pdgId);
 	  error = sqlite3_step(stmt);
 		if (error!=SQLITE_OK){
-			std::cerr << "Appending Particle: Error: " << sqlite3_errmsg(DB) << std::endl;
+			std::cerr << "Appending Particle (step): Error: " << sqlite3_errmsg(DB) << std::endl;
 			std::cerr << ptclId << std::endl;
 		}
 	  sqlite3_finalize(stmt);
