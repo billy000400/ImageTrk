@@ -359,14 +359,32 @@ namespace mu2e{
 	      ?, ?, ?, ?, ?, ?)";
 	  error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
 		if (error!=SQLITE_OK){
-			std::cerr << "Appending Particle (prepare): Error 1: " << sqlite3_errmsg(DB) << std::endl;
+			std::cerr << "Appending Particle (prepare): Error:" << sqlite3_errmsg(DB) << std::endl;
 		}
-	  sqlite3_bind_int(stmt, 1, ptclId);
-	  sqlite3_bind_int(stmt, 2, run);
-	  sqlite3_bind_int(stmt, 3, subrun);
-	  sqlite3_bind_int(stmt, 4, event);
-	  sqlite3_bind_int(stmt, 5, track);
-		sqlite3_bind_int(stmt, 6, pdgId);
+	  error = sqlite3_bind_int(stmt, 1, ptclId);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 1): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
+	  error = sqlite3_bind_int(stmt, 2, run);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 2): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
+	  error = sqlite3_bind_int(stmt, 3, subrun);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 3): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
+	  error = sqlite3_bind_int(stmt, 4, event);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 4): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
+	  error = sqlite3_bind_int(stmt, 5, track);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 5): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
+		error = sqlite3_bind_int(stmt, 6, pdgId);
+		if (error!=SQLITE_OK){
+			std::cerr << "Appending Particle (bind 6): Error: " << sqlite3_errmsg(DB) << std::endl;
+		}
 	  error = sqlite3_step(stmt);
 		if (error!=SQLITE_OK){
 			std::cerr << "Appending Particle (step): Error: " << sqlite3_errmsg(DB) << std::endl;
