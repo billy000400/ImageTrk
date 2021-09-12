@@ -379,7 +379,7 @@ namespace mu2e{
 			std::cerr << "Appending Particle (bind 6): Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 	  error = sqlite3_step(stmt);
-		if (error!=SQLITE_OK){
+		if (error!=SQLITE_DONE){
 			std::cerr << "Appending Particle (step): Error: " << sqlite3_errmsg(DB) << std::endl;
 			std::cerr << ptclId << std::endl;
 		}
@@ -426,7 +426,7 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 14, uniqueFace);
 		sqlite3_bind_int(stmt, 15, uniqueStraw);
 		error = sqlite3_step(stmt);
-		if (error!=SQLITE_OK){
+		if (error!=SQLITE_DONE){
 			std::cerr << "Appending StrawDigiMC: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
@@ -465,7 +465,7 @@ namespace mu2e{
 		sqlite3_bind_int(stmt, 13, uniqueFace);
 		sqlite3_bind_int(stmt, 14, uniqueStraw);
 		error = sqlite3_step(stmt);
-		if (error!=SQLITE_OK){
+		if (error!=SQLITE_DONE){
 			std::cerr << "Appending StrawHit: Error: " << sqlite3_errmsg(DB) << std::endl;
 		}
 		sqlite3_finalize(stmt);
