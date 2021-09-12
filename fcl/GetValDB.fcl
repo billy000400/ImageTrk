@@ -20,10 +20,10 @@ source:{ module_type : RootInput
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
-	# fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",
-	# 							"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
-	fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
+	fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",
+								"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",
+								"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
 
 	maxEvents: -1
