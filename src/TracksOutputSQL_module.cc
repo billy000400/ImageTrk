@@ -350,7 +350,7 @@ namespace mu2e{
 	    id, run, subRun, event, track, pdgId)\
 	    VALUES (\
 	      ?, ?, ?, ?, ?, ?)";
-	  error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
+	  int error = sqlite3_prepare_v2(DB, sql.c_str(), 1000, &stmt, NULL);
 		if (error!=SQLITE_OK){
 			std::cerr << "Appending Particle (prepare): Error:" << sqlite3_errmsg(DB) << std::endl;
 		}
@@ -406,7 +406,7 @@ namespace mu2e{
 	     ?, ?, ?, ?, ?, ?, ?,\
 			 ?, ?, ?, ?, ?,\
 			 ?, ?, ?)";
-	  error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
+	  int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
 		if (error!=SQLITE_OK){
 			std::cerr << "Appending StrawDigiMC: Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
@@ -446,7 +446,7 @@ namespace mu2e{
 			?, ?, ?, ?, ?, ?,\
 			?, ?, ?, ?, ?,\
 			?, ?, ?)";
-		error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
+		int error = sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, NULL);
 		if (error!=SQLITE_OK){
 			std::cerr << "Appending StrawHit: Error 1: " << sqlite3_errmsg(DB) << std::endl;
 		}
