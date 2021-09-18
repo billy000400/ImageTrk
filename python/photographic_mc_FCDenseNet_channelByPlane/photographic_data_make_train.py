@@ -143,14 +143,15 @@ def make_data_from_distribution(C):
         xs = [ [mc.x for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         ys = [ [mc.y for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         zs = [ [mc.z for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
+        uniqueFaces = [ [mc.uniqueFace for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
 
         # flatten data means destroying the 2-D list structure so that you cannot
         # tell which (x,y,z) belong to which particle.
         # They will be collections of data of all particles in this window
-        mcs_pos = [ [(x,y,z) for x, y, z in zip(xs_i, ys_i, zs_i)] for xs_i, ys_i, zs_i in zip(xs, ys, zs) ]
-        mcs_pos_flatten = [ (x,y,z) for mcs_pos_i in mcs_pos for x,y,z in mcs_pos_i ]
-        xs_flatten = [ x for x, y, z in mcs_pos_flatten]
-        ys_flatten = [ y for x, y, z in mcs_pos_flatten]
+        mcs_pos = [ [(x,y,z,uniqueFace) for x, y, z, uniqueFace in zip(xs_i, ys_i, zs_i, uniqueFaces_i)] for xs_i, ys_i, zs_i, uniqueFaces_i in zip(xs, ys, zs, uniqueFaces) ]
+        mcs_pos_flatten = [ (x,y,z,uniqueFace) for mcs_pos_i in mcs_pos for x,y,z,uniqueFace in mcs_pos_i ]
+        xs_flatten = [ x for x, y, z, uniqueFace in mcs_pos_flatten]
+        ys_flatten = [ y for x, y, z, uniqueFace in mcs_pos_flatten]
 
         bboxes = [ [min(xs_i), max(xs_i), min(ys_i), max(ys_i)] for xs_i, ys_i in zip(xs, ys) ]
 
@@ -163,12 +164,15 @@ def make_data_from_distribution(C):
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
             pos_selected_by_y = binning_objects(mcs_pos_flatten, ys_flatten, y_bins)[2]
             selected_mcs_pos = list(set(pos_selected_by_x).intersection(pos_selected_by_y))
-            selected_mcs_x = [ x for [x,y,z] in selected_mcs_pos ]
+            selected_mcs_x = [ x for [x,y,z，uniqueFace] in selected_mcs_pos ]
             sorted_selected_mcs_x = deepcopy(selected_mcs_x)
             sorted_selected_mcs_x.sort()
-            selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
+            selected_mcs_y = [ y for [x,y,z,uniqueFace] in selected_mcs_pos ]
             sorted_selected_mcs_y = deepcopy(selected_mcs_y)
             sorted_selected_mcs_y.sort()
+            selected_mcs_uniqueFace = [ uniqueFace for [x,y,z,uniqueFace] in selected_mcs_pos ]
+            sorted_selected_mcs_uniqueFace = deepcopy(selected_mcs_uniqueFace)
+            sorted_selected_mcs_uniqueFace.sort()
 
             # create the blank input photo by resolution and the xy ratio
             xmin = sorted_selected_mcs_x[0]
@@ -181,13 +185,13 @@ def make_data_from_distribution(C):
             if ratio >= 1:
                 xpixel = int(np.ceil(resolution/ratio))
                 ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,72), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
             else:
                 xpixel = resolution
                 ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
+                input_photo = np.zeros(shape=(ypixel,xpixel,72), dtype=np.uint8)
                 output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
                 output_truth[:,:,0] = 1
 
@@ -205,11 +209,12 @@ def make_data_from_distribution(C):
 
             majorDetected = 0
             for row, bin in enumerate(bins_by_row):
-                x_bin_flatten = [ x for (x,y,z) in bin]
+                x_bin_flatten = [ x for (x,y,z,uniqueFace) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
-                    density = len(square)#number density
-                    input_photo[ypixel-row-1][col] = density
+                    # density = len(square) # number density
+                    # faceIndex = bins_by_row[row][col]
+                    input_photo[ypixel-row-1][col][bins_by_row] = 1
                     if density != 0 :
                         has_major = False
                         for pos in square:

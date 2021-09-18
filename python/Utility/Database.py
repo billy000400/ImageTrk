@@ -31,6 +31,7 @@ class StrawDigiMC(Base):
     z = Column(REAL, nullable=False)
     t = Column(REAL, nullable=False)
     p = Column(REAL, nullable=False)
+    uniqueFace = Column(INTEGER. nullable=False)
 
 class StrawHit(Base):
     __tablename__ = "StrawHit"
