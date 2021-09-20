@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   08-03-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 09-19-2021
+
+
+
 ## @package Config
 # Hello this is me
 #
@@ -6,8 +14,6 @@
 # Default Configure Setup
 import sys
 from pathlib import Path
-
-from tensorflow.keras.layers import Input, Conv2D
 
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
