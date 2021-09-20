@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   09-19-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 09-19-2021
+
+
+
 """
 This script prepares input photos and output truths without random masking.
 """
@@ -164,7 +172,7 @@ def make_data_from_distribution(C):
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
             pos_selected_by_y = binning_objects(mcs_pos_flatten, ys_flatten, y_bins)[2]
             selected_mcs_pos = list(set(pos_selected_by_x).intersection(pos_selected_by_y))
-            selected_mcs_x = [ x for [x,y,z，uniqueFace] in selected_mcs_pos ]
+            selected_mcs_x = [ x for [x,y,z,uniqueFace] in selected_mcs_pos ]
             sorted_selected_mcs_x = deepcopy(selected_mcs_x)
             sorted_selected_mcs_x.sort()
             selected_mcs_y = [ y for [x,y,z,uniqueFace] in selected_mcs_pos ]
@@ -212,21 +220,20 @@ def make_data_from_distribution(C):
                 x_bin_flatten = [ x for (x,y,z,uniqueFace) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
-                    # density = len(square) # number density
-                    # faceIndex = bins_by_row[row][col]
-                    input_photo[ypixel-row-1][col][bins_by_row] = 1
-                    if density != 0 :
-                        has_major = False
-                        for pos in square:
-                            if pos in mcs_pos[i]:
-                                has_major = True
-                                majorDetected+=1
-                                break
-                        if has_major == True:
-                            output_truth[ypixel-row-1][col] = is_major
+                    has_major = False
+                    uniqueFace_square_flatten = [ uniqueFace for (x,y,z,uniqueFace) in square]
+                    if len(uniqueFace_square_flatten) == 0:
+                        continue
+                    else:
+                        has_major = True
+                        majorDetected+=1
+                        for uniqueFace in uniqueFaces_square_flatten:
+                            input_photo[ypixel-row-1][col][uniqueFace] = 1
+                    if has_major == True:
+                        output_truth[ypixel-row-1][col] = is_major
 
-                        else:
-                            output_truth[ypixel-row-1][col] = is_bg
+                    else:
+                        output_truth[ypixel-row-1][col] = is_bg
 
 
             if len(np.where(input_photo!=0)[0]) == 0:
@@ -250,6 +257,14 @@ def make_data_from_distribution(C):
                 sys.exit()
 
 
+            input_file = photographic_train_x_dir.joinpath(f'input_{str(index).zfill(6)}')
+            output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
+
+            np.save(input_file, input_photo)
+            np.save(output_file, output_truth)
+
+            index+=1
+
 
 
             # if index == 240:
@@ -259,55 +274,55 @@ def make_data_from_distribution(C):
             ### scale tensors
 
             # calculate scaled dimensions
-            res = C.resolution
-            scale_want = (res, res) # notice that this is the scale for IMAGES!
-
-            xo = input_photo
-            yo = output_truth
-            ratio = xo.shape[0]/xo.shape[1]
-            im_in = Image.fromarray(xo)
-            im_out = Image.fromarray(yo, mode='RGB')
-
-            for degree in [0]:
-
-                input_file = photographic_train_x_dir.joinpath(f'input_{str(index).zfill(6)}')
-                output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
-                input_photo_file = photo_train_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
-                output_truth_file = photo_train_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
-
-                x = im_in.resize(scale_want)
-                y = im_out.resize(scale_want)
-
-                x = x.rotate(degree)
-                y = y.rotate(degree)
-
-                x = np.array(x, dtype=np.float32)
-                y = np.array(y, dtype=np.float32)
-
-                np.save(input_file, x)
-                np.save(output_file, y)
-
-                x_max = int(x.max())
-                ratio = 255/x_max
-                for n in range(x_max+1):
-                    x[x==n] = np.uint8(255-n*ratio)
-
-                y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
-                y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
-                y[(y==[0,0,1]).all(axis=2)] = np.array([255,0,0], dtype=np.float32)
-
-                x = np.array(x, dtype=np.uint8)
-                y = np.array(y, dtype=np.uint8)
-
-                x = Image.fromarray(x)
-                y = Image.fromarray(y, mode='RGB')
-                x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
-                y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
-
-                x.save(input_photo_file, format='jpeg')
-                y.save(output_truth_file, format='jpeg')
-
-                index += 1
+            # res = C.resolution
+            # scale_want = (res, res) # notice that this is the scale for IMAGES!
+            #
+            # xo = input_photo
+            # yo = output_truth
+            # ratio = xo.shape[0]/xo.shape[1]
+            # im_in = Image.fromarray(xo)
+            # im_out = Image.fromarray(yo, mode='RGB')
+            #
+            # for degree in [0]:
+            #
+            #     input_file = photographic_train_x_dir.joinpath(f'input_{str(index).zfill(6)}')
+            #     output_file = photographic_train_y_dir.joinpath(f'output_{str(index).zfill(6)}')
+            #     input_photo_file = photo_train_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
+            #     output_truth_file = photo_train_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
+            #
+            #     x = im_in.resize(scale_want)
+            #     y = im_out.resize(scale_want)
+            #
+            #     x = x.rotate(degree)
+            #     y = y.rotate(degree)
+            #
+            #     x = np.array(x, dtype=np.float32)
+            #     y = np.array(y, dtype=np.float32)
+            #
+            #     np.save(input_file, x)
+            #     np.save(output_file, y)
+            #
+            #     x_max = int(x.max())
+            #     ratio = 255/x_max
+            #     for n in range(x_max+1):
+            #         x[x==n] = np.uint8(255-n*ratio)
+            #
+            #     y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
+            #     y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
+            #     y[(y==[0,0,1]).all(axis=2)] = np.array([255,0,0], dtype=np.float32)
+            #
+            #     x = np.array(x, dtype=np.uint8)
+            #     y = np.array(y, dtype=np.uint8)
+            #
+            #     x = Image.fromarray(x)
+            #     y = Image.fromarray(y, mode='RGB')
+            #     x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
+            #     y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
+            #
+            #     x.save(input_photo_file, format='jpeg')
+            #     y.save(output_truth_file, format='jpeg')
+            #
+            #     index += 1
 
 
     return photographic_train_x_dir, photographic_train_y_dir
@@ -340,8 +355,8 @@ if __name__ == "__main__":
     track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
     data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
 
-    track_dir = Path(track_dir_str)
-    data_dir = Path(data_dir_str)
+    track_dir = Path.cwd().parent.parent.joinpath('tracks')
+    data_dir = Path.cwd().parent.parent.joinpath('data')
 
     C = extractor_config(track_dir, data_dir)
 
