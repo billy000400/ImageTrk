@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   09-19-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 09-19-2021
+
+
+
 # This file has the mapped classes of the track database
 # Which shows the structure of the database and the relationship between objects
 # Author: Billy Haoyang Li
@@ -31,7 +39,7 @@ class StrawDigiMC(Base):
     z = Column(REAL, nullable=False)
     t = Column(REAL, nullable=False)
     p = Column(REAL, nullable=False)
-    uniqueFace = Column(INTEGER. nullable=False)
+    uniqueFace = Column(INTEGER, nullable=False)
 
 class StrawHit(Base):
     __tablename__ = "StrawHit"
