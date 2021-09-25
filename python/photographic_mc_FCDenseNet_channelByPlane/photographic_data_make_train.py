@@ -227,7 +227,7 @@ def make_data_from_distribution(C):
                     else:
                         has_major = True
                         majorDetected+=1
-                        for uniqueFace in uniqueFaces_square_flatten:
+                        for uniqueFace in uniqueFace_square_flatten:
                             input_photo[ypixel-row-1][col][uniqueFace] = 1
                     if has_major == True:
                         output_truth[ypixel-row-1][col] = is_major
@@ -361,17 +361,18 @@ if __name__ == "__main__":
     C = extractor_config(track_dir, data_dir)
 
     mode = 'normal'
-    window = 3000 # unit: number of windows
+    window = 300 # unit: number of windows
     mean = 5
     std = 2
     resolution = 256
 
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+    # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
+    #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
+    #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
+    #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
+    #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
+    #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+    dp_list = ["val"]
 
     C.set_train_dp_list(dp_list)
 
