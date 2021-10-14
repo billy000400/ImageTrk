@@ -1,0 +1,33 @@
+#include "fcl/minimalMessageService.fcl"
+#include "fcl/standardServices.fcl"
+#include "TrkHitReco/fcl/prolog.fcl"
+#include "Filters/fcl/prolog.fcl"
+
+process_name : TracksToSQL
+
+source:{ module_type : RootInput
+	fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art"]
+	maxEvents: -1
+}
+
+services : @local::Services.Reco
+
+physics:
+{
+
+		producers : {
+				@table::TrkHitReco.producers
+		}
+
+    analyzers : {
+        CHD : {
+          module_type : TracksOutputSQL
+					StrawDigiMCCollection : "compressDigiMCs"
+          ComboHitCollection : "makeSH"
+					dataSetName : "teeest"
+        }
+    }
+
+	 MyTrigPath : [ @sequence::TrkHitReco.PrepareHits]
+   MyEndPath : [CHD]
+}
