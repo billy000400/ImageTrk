@@ -6,7 +6,6 @@
 process_name : TracksToSQL
 
 source:{ module_type : RootInput
-	fileNames = []
 	maxEvents: -1
 }
 
