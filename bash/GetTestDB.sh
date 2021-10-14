@@ -1,1 +1,1 @@
-art -c GetDB.fcl -s
+art -c GetTestDB.fcl
