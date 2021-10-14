@@ -24,7 +24,7 @@ physics:
           module_type : TracksOutputSQL
 					StrawDigiMCCollection : "compressDigiMCs"
           ComboHitCollection : "makeSH"
-					dataSetName : @table::source.fileNames
+					dataSetName : @local::source.fileNames
         }
     }
 
