@@ -1744,3 +1744,86 @@ class FC_DenseNet_AveragePooling:
         # Define the model
         model = keras.Model(inputs, outputs)
         return model
+
+class FC_DenseNet_DeepInput:
+
+    def __init__(self, in_shape, num_classes, dr=0.3):
+        self.input_shape = in_shape
+        self.num_classes = num_classes
+        self.init = RandomNormal(stddev=0.01)
+        self.dr=dr
+
+    def add_TD(self,x, m):
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        x = Conv2D(m, (1,1), kernel_initializer=self.init)(x)
+        x = SpatialDropout2D(self.dr)(x)
+        x = MaxPooling2D((2,2))(x)
+        return x
+
+    def add_TU(self,x, m):
+        x = Conv2DTranspose(m, 3, strides=2, padding='same')(x)
+        return x
+
+    def add_layer(self,x, k):
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(k, (3,3), padding='same', kernel_initializer=self.init)(x)
+        x = SpatialDropout2D(self.dr)(x)
+        return x
+
+    def add_DB(self,x, lyn, k):
+        pls = []
+        for i in range(lyn):
+            x = self.add_layer(x, k)
+            pls.append(x)
+            if len(pls) < 2:
+                x = x
+            else:
+                x = concatenate(pls, axis=3)
+        return x
+
+    def get_model(self):
+
+        # parameters
+        input_shape = self.input_shape
+        m = 72 # current number of feature maps
+        lyns = [4, 5, 7, 10, 12] # layer number; one layer is a set of feature maps
+        k = 16 # growth rate of feature map due to concatenation
+
+        # input layer
+        inputs = keras.Input(shape=input_shape)
+
+        # Entry block
+        x = layers.Conv2D(m, (3,3), strides=1, padding="same", kernel_initializer=self.init)(inputs)
+
+        ### [First half of the network: downsampling inputs] ###
+        lskip = []
+        for lyn in lyns:
+            skip = x
+            x = self.add_DB(x, lyn=lyn, k=k)
+            x = concatenate([skip, x])
+            lskip.append(x)
+            m += lyn*k
+            x = self.add_TD(x, m=m)
+
+        ### [Bottle neck] ###
+        x = self.add_DB(x, lyn=15, k=k)
+        m = 15*k
+
+        ### [Second half of the network: upsampling inputs] ###
+        lyns_rvs = lyns[::-1]
+        lskip_rvs = lskip[::-1]
+        for i, lyn in enumerate(lyns_rvs):
+            x = self.add_TU(x, m=m)
+            x = concatenate([lskip_rvs[i], x])
+            x = self.add_DB(x, lyn=lyn, k=k)
+            m = lyn*k
+
+
+        # Add a per-pixel classification layer
+        outputs = layers.Conv2D(self.num_classes, 1, activation="softmax", padding="same", kernel_initializer=self.init)(x)
+
+        # Define the model
+        model = keras.Model(inputs, outputs)
+        return model
