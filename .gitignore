@@ -21,6 +21,7 @@ python/rpn_mc_train
 
 python/*/logs
 python/*/*.pickle
+python/*/__pycache__
 tracks/
 
 python/evaluation/track_detection/rpn/rpn_mc_00.h5

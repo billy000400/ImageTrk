@@ -33,7 +33,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import extractor_config
 from DataGenerator import DataGenerator as Generator
-from Architectures import FC_DenseNet
+from Architectures import FC_DenseNet_DeepInput
 from Information import *
 from Loss import *
 from Metric import *
@@ -53,8 +53,8 @@ def photographic_train(C):
     model_weights_file = weights_dir.joinpath(C.model_name+'.h5')
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
-    input_shape = (C.resolution, C.resolution, 1)
-    architecture = FC_DenseNet(input_shape, 3, dr=0.1)
+    input_shape = (C.resolution, C.resolution, 72)
+    architecture = FC_DenseNet_DeepInput(input_shape, 3, dr=0.1)
     model = architecture.get_model()
     model.summary()
 

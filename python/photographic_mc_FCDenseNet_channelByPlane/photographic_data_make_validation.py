@@ -25,7 +25,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import extractor_config
 from Abstract import binning_objects
-from Database import *
+from Database_new import *
 from Information import *
 
 
@@ -135,14 +135,15 @@ def make_data_from_distribution(C):
         xs = [ [mc.x for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         ys = [ [mc.y for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
         zs = [ [mc.z for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
+        uniqueFaces = [ [mc.uniqueFace for mc in mcs_for_ptcl] for mcs_for_ptcl in mcs ]
 
         # flatten data means destroying the 2-D list structure so that you cannot
         # tell which (x,y,z) belong to which particle.
         # They will be collections of data of all particles in this window
-        mcs_pos = [ [(x,y,z) for x, y, z in zip(xs_i, ys_i, zs_i)] for xs_i, ys_i, zs_i in zip(xs, ys, zs) ]
-        mcs_pos_flatten = [ (x,y,z) for mcs_pos_i in mcs_pos for x,y,z in mcs_pos_i ]
-        xs_flatten = [ x for x, y, z in mcs_pos_flatten]
-        ys_flatten = [ y for x, y, z in mcs_pos_flatten]
+        mcs_pos = [ [(x,y,z, uniqueFace) for x, y, z, uniqueFace in zip(xs_i, ys_i, zs_i, uniqueFaces_i)] for xs_i, ys_i, zs_i, uniqueFaces_i in zip(xs, ys, zs, uniqueFaces) ]
+        mcs_pos_flatten = [ (x,y,z, uniqueFace) for mcs_pos_i in mcs_pos for x,y,z, uniqueFace in mcs_pos_i ]
+        xs_flatten = [ x for x, y, z, uniqueFace in mcs_pos_flatten]
+        ys_flatten = [ y for x, y, z, uniqueFace in mcs_pos_flatten]
 
         bboxes = [ [min(xs_i), max(xs_i), min(ys_i), max(ys_i)] for xs_i, ys_i in zip(xs, ys) ]
 
@@ -155,12 +156,15 @@ def make_data_from_distribution(C):
             pos_selected_by_x = binning_objects(mcs_pos_flatten, xs_flatten, x_bins)[2]
             pos_selected_by_y = binning_objects(mcs_pos_flatten, ys_flatten, y_bins)[2]
             selected_mcs_pos = list(set(pos_selected_by_x).intersection(pos_selected_by_y))
-            selected_mcs_x = [ x for [x,y,z] in selected_mcs_pos ]
+            selected_mcs_x = [ x for [x,y,z, uniqueFace] in selected_mcs_pos ]
             sorted_selected_mcs_x = deepcopy(selected_mcs_x)
             sorted_selected_mcs_x.sort()
-            selected_mcs_y = [ y for [x,y,z] in selected_mcs_pos ]
+            selected_mcs_y = [ y for [x,y,z, uniqueFace] in selected_mcs_pos ]
             sorted_selected_mcs_y = deepcopy(selected_mcs_y)
             sorted_selected_mcs_y.sort()
+            selected_mcs_uniqueFace = [ uniqueFace for [x,y,z,uniqueFace] in selected_mcs_pos ]
+            sorted_selected_mcs_uniqueFace = deepcopy(selected_mcs_uniqueFace)
+            sorted_selected_mcs_uniqueFace.sort()
 
             # create the blank input photo by resolution and the xy ratio
             xmin = sorted_selected_mcs_x[0]
@@ -170,18 +174,12 @@ def make_data_from_distribution(C):
             x_delta = xmax - xmin
             y_delta = ymax - ymin
             ratio = y_delta/x_delta
-            if ratio >= 1:
-                xpixel = int(np.ceil(resolution/ratio))
-                ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
-                output_truth[:,:,0] = 1
-            else:
-                xpixel = resolution
-                ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel), dtype=np.uint8)
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
-                output_truth[:,:,0] = 1
+
+            xpixel, ypixel = resolution, resolution
+            input_photo = np.zeros(shape=(ypixel,xpixel, 72), dtype=np.uint8)
+            output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
+            output_truth[:,:,0] = 1
+
 
             # setup the x and y grids that are for sorting particles
             xstep = x_delta/xpixel
@@ -196,19 +194,24 @@ def make_data_from_distribution(C):
             bins_by_row = binning_objects(selected_mcs_pos, selected_mcs_y, ybins)[1:]
 
             for row, bin in enumerate(bins_by_row):
-                x_bin_flatten = [ x for (x,y,z) in bin]
+                x_bin_flatten = [ x for (x,y,z, uniqueFace) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
-                    density = len(square)#number density
-                    input_photo[ypixel-row-1][col] = density
-                    if density != 0 :
+                    uniqueFace_square_flatten = [ uniqueFace for (x,y,z,uniqueFace) in square]
+                    if len(uniqueFace_square_flatten) == 0:
+                        continue
+                    else:
+                        for uniqueFace in uniqueFace_square_flatten:
+                            input_photo[ypixel-row-1][col][uniqueFace] = 1
                         has_major = False
                         for pos in square:
                             if pos in mcs_pos[i]:
-                                has_major = True
+                                has_major=True
                                 break
+
                         if has_major == True:
                             output_truth[ypixel-row-1][col] = is_major
+
                         else:
                             output_truth[ypixel-row-1][col] = is_bg
 
@@ -232,62 +235,68 @@ def make_data_from_distribution(C):
                 pdebug('Empty input photo!')
                 sys.exit()
 
+            input_file = photographic_val_x_dir.joinpath(f'input_{str(index).zfill(6)}')
+            output_file = photographic_val_y_dir.joinpath(f'output_{str(index).zfill(6)}')
 
+            np.save(input_file, input_photo)
+            np.save(output_file, output_truth)
+
+            index+=1
 
 
 
             ### scale tensors
 
             # calculate scaled dimensions
-            res = C.resolution
-            scale_want = (res, res) # notice that this is the scale for IMAGES!
-
-            xo = input_photo
-            yo = output_truth
-            ratio = xo.shape[0]/xo.shape[1]
-            im_in = Image.fromarray(xo)
-            im_out = Image.fromarray(yo, mode='RGB')
-
-            for degree in [0]:
-
-                input_file = photographic_val_x_dir.joinpath(f'input_{str(index).zfill(6)}')
-                output_file = photographic_val_y_dir.joinpath(f'output_{str(index).zfill(6)}')
-                input_photo_file = photo_val_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
-                output_truth_file = photo_val_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
-
-                x = im_in.resize(scale_want)
-                y = im_out.resize(scale_want)
-
-                x = x.rotate(degree)
-                y = y.rotate(degree)
-
-                x = np.array(x, dtype=np.float32)
-                y = np.array(y, dtype=np.float32)
-
-                np.save(input_file, x)
-                np.save(output_file, y)
-
-                x_max = int(x.max())
-                ratio = 255/x_max
-                for n in range(x_max+1):
-                    x[x==n] = np.uint8(255-n*ratio)
-
-                y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
-                y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
-                y[(y==[0,0,1]).all(axis=2)] = np.array([255,0,0], dtype=np.float32)
-
-                x = np.array(x, dtype=np.uint8)
-                y = np.array(y, dtype=np.uint8)
-
-                x = Image.fromarray(x)
-                y = Image.fromarray(y, mode='RGB')
-                x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
-                y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
-
-                x.save(input_photo_file, format='jpeg')
-                y.save(output_truth_file, format='jpeg')
-
-                index += 1
+            # res = C.resolution
+            # scale_want = (res, res) # notice that this is the scale for IMAGES!
+            #
+            # xo = input_photo
+            # yo = output_truth
+            # ratio = xo.shape[0]/xo.shape[1]
+            # im_in = Image.fromarray(xo)
+            # im_out = Image.fromarray(yo, mode='RGB')
+            #
+            # for degree in [0]:
+            #
+            #     input_file = photographic_val_x_dir.joinpath(f'input_{str(index).zfill(6)}')
+            #     output_file = photographic_val_y_dir.joinpath(f'output_{str(index).zfill(6)}')
+            #     input_photo_file = photo_val_in_dir.joinpath(f'input_{str(index).zfill(6)}.jpg')
+            #     output_truth_file = photo_val_out_dir.joinpath(f'output_{str(index).zfill(6)}.jpg')
+            #
+            #     x = im_in.resize(scale_want)
+            #     y = im_out.resize(scale_want)
+            #
+            #     x = x.rotate(degree)
+            #     y = y.rotate(degree)
+            #
+            #     x = np.array(x, dtype=np.float32)
+            #     y = np.array(y, dtype=np.float32)
+            #
+            #     np.save(input_file, x)
+            #     np.save(output_file, y)
+            #
+            #     x_max = int(x.max())
+            #     ratio = 255/x_max
+            #     for n in range(x_max+1):
+            #         x[x==n] = np.uint8(255-n*ratio)
+            #
+            #     y[(y==[1,0,0]).all(axis=2)] = np.array([255,255,255], dtype=np.float32)
+            #     y[(y==[0,1,0]).all(axis=2)] = np.array([0,0,255], dtype=np.float32)
+            #     y[(y==[0,0,1]).all(axis=2)] = np.array([255,0,0], dtype=np.float32)
+            #
+            #     x = np.array(x, dtype=np.uint8)
+            #     y = np.array(y, dtype=np.uint8)
+            #
+            #     x = Image.fromarray(x)
+            #     y = Image.fromarray(y, mode='RGB')
+            #     x = x.resize( [scale_want[0]*5, scale_want[1]*5] )
+            #     y = y.resize( [scale_want[0]*5, scale_want[1]*5] )
+            #
+            #     x.save(input_photo_file, format='jpeg')
+            #     y.save(output_truth_file, format='jpeg')
+            #
+            #     index += 1
 
     return photographic_val_x_dir, photographic_val_y_dir
 
@@ -322,9 +331,7 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('photographic.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
 
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    dp_list = ["val"]
     C.set_val_dp_list(dp_list)
 
     start = timeit.default_timer()

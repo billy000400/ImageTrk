@@ -35,7 +35,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import extractor_config
 from Abstract import binning_objects
-from Database import *
+from Database_new import *
 from Information import *
 
 def make_data_from_distribution(C):
@@ -190,18 +190,11 @@ def make_data_from_distribution(C):
             x_delta = xmax - xmin
             y_delta = ymax - ymin
             ratio = y_delta/x_delta
-            if ratio >= 1:
-                xpixel = int(np.ceil(resolution/ratio))
-                ypixel = resolution
-                input_photo = np.zeros(shape=(ypixel,xpixel,72), dtype=np.uint8)
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
-                output_truth[:,:,0] = 1
-            else:
-                xpixel = resolution
-                ypixel = int(np.ceil(resolution*ratio))
-                input_photo = np.zeros(shape=(ypixel,xpixel,72), dtype=np.uint8)
-                output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
-                output_truth[:,:,0] = 1
+
+            xpixel, ypixel = resolution, resolution
+            input_photo = np.zeros(shape=(ypixel,xpixel,72), dtype=np.uint8)
+            output_truth = np.zeros(shape=(ypixel,xpixel,3), dtype=np.uint8)
+            output_truth[:,:,0] = 1
 
             # setup the x and y grids that are for sorting particles
             xstep = x_delta/xpixel
@@ -220,20 +213,23 @@ def make_data_from_distribution(C):
                 x_bin_flatten = [ x for (x,y,z,uniqueFace) in bin]
                 squares_by_column = binning_objects(bin, x_bin_flatten, xbins)[1:]
                 for col, square in enumerate(squares_by_column):
-                    has_major = False
                     uniqueFace_square_flatten = [ uniqueFace for (x,y,z,uniqueFace) in square]
                     if len(uniqueFace_square_flatten) == 0:
                         continue
                     else:
-                        has_major = True
-                        majorDetected+=1
                         for uniqueFace in uniqueFace_square_flatten:
                             input_photo[ypixel-row-1][col][uniqueFace] = 1
-                    if has_major == True:
-                        output_truth[ypixel-row-1][col] = is_major
+                        has_major = False
+                        for pos in square:
+                            if pos in mcs_pos[i]:
+                                has_major=True
+                                break
 
-                    else:
-                        output_truth[ypixel-row-1][col] = is_bg
+                        if has_major == True:
+                            output_truth[ypixel-row-1][col] = is_major
+
+                        else:
+                            output_truth[ypixel-row-1][col] = is_bg
 
 
             if len(np.where(input_photo!=0)[0]) == 0:
@@ -361,7 +357,7 @@ if __name__ == "__main__":
     C = extractor_config(track_dir, data_dir)
 
     mode = 'normal'
-    window = 300 # unit: number of windows
+    window = 3000 # unit: number of windows
     mean = 5
     std = 2
     resolution = 256
@@ -372,7 +368,7 @@ if __name__ == "__main__":
     #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
     #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
     #             "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
-    dp_list = ["val"]
+    dp_list = ["train"]
 
     C.set_train_dp_list(dp_list)
 
