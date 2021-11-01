@@ -88,7 +88,7 @@ def photographic_train(C):
     earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_weighted_unmasked_binary_accuracy', patience=10)
 
     ModelCallback = tf.keras.callbacks.ModelCheckpoint(model_weights_file,\
-                        monitor='val_top2_categorical_accuracy', verbose=1,\
+                        monitor='val_weighted_unmasked_binary_accuracy', verbose=1,\
                         save_weights_only=True,\
                         save_best_only=True, mode='auto', save_freq='epoch')
 
