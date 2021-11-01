@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   10-31-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 10-31-2021
+
+
+
 # Loss functions for training the Mu2e Faster R-CNN system
 import sys
 from pathlib import Path
@@ -21,6 +29,8 @@ from tensorflow.keras.backend import print_tensor
 util_dir = Path.cwd().parent.joinpath('util')
 sys.path.insert(1, str(util_dir))
 from Information import*
+
+bce = BinaryCrossentropy(reduction=Reduction.SUM)
 
 
 def log_loss(y, p):
@@ -240,17 +250,26 @@ def top2_weighted_cce(y_real, y_predict):
     return score
 
 def weighted_unmasked_bce(y_real, y_predict):
-    mask = ~tf.math.is_nan(y_real)
+    major_mask = (y_real==1)
+    bg_mask = (y_real==0)
 
-    # my: masked y
-    my_real = tf.boolean_mask(y_real, mask)
-    my_predict = tf.boolean_mask(y_predict, mask)
-    bce = BinaryCrossentropy(reduction=Reduction.SUM)
-    score = bce(my_real, my_predict)
-    N = tf.size(my_real)
-    N = tf.cast(N, tf.float32)
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
 
-    return score/N
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+    score_major_avg = bce(y_real_major, y_predict_major)
+    score_bg_avg = bce(y_real_bg, y_predict_bg)
+
+    N_major = tf.size(y_real_major)
+    N_major = tf.cast(N_major, tf.float32)
+    N_bg = tf.size(y_real_bg)
+    N_bg = tf.cast(N_bg, tf.float32)
+
+    sum = N_major + N_bg
+
+    return (score_major_avg*N_major+score_bg_avg*N_bg)/sum
 
 def WeightedCCE(Y):
     num_class = Y.shape[-1]

@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   10-31-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 10-31-2021
+
+
+
 # This script's purpose is to train a preliminary CNN for tracking by Keras
 # Author: Billy Li
 # Email: li000400@umn.edu
@@ -62,7 +70,7 @@ def photographic_train(C):
     weights = C.weights
     assert weights.all()!=None, "The weight is None! You need to calculate the weights first!"
     # cce = categorical_focal_loss(alpha=weights, gamma=2)
-    bce = unmasked_bce
+    bce = weighted_unmasked_bce
 
     # setup metric
     ba = weighted_unmasked_binary_accuracy
