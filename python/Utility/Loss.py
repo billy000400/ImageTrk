@@ -239,7 +239,7 @@ def top2_weighted_cce(y_real, y_predict):
 
     return score
 
-def unmasked_bce(y_real, y_predict):
+def weighted_unmasked_bce(y_real, y_predict):
     mask = ~tf.math.is_nan(y_real)
 
     # my: masked y
