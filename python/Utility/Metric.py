@@ -85,6 +85,30 @@ def top2_categorical_accuracy(y_real, y_predict):
 
     return (score_major+score_bg)/sum*100
 
+def weighted_unmasked_binary_accuracy(y_real, y_predict):
+
+    major_mask = (y_real==1)
+    bg_mask = (y_real==0)
+
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+
+    score_major_avg = binary_accuracy(y_real_major, y_predict_major)
+    score_bg_avg = binary_accuracy(y_real_bg, y_predict_bg)
+
+    N_major = tf.size(y_real_major)
+    N_major = tf.cast(N_major, tf.float32)
+    N_bg = tf.size(y_real_bg)
+    N_bg = tf.cast(N_bg, tf.float32)
+
+    sum = N_major + N_bg
+
+    return (score_major_avg*N_major+score_bg_avg*N_bg)/sum*100
+
 def unmasked_IoU(t_r, t_p):
 
     mask = ~tf.math.is_nan(t_r)

@@ -239,6 +239,19 @@ def top2_weighted_cce(y_real, y_predict):
 
     return score
 
+def unmasked_bce(y_real, y_predict):
+    mask = ~tf.math.is_nan(y_real)
+
+    # my: masked y
+    my_real = tf.boolean_mask(y_real, mask)
+    my_predict = tf.boolean_mask(y_predict, mask)
+    bce = BinaryCrossentropy(reduction=Reduction.SUM)
+    score = bce(my_real, my_predict)
+    N = tf.size(my_real)
+    N = tf.cast(N, tf.float32)
+
+    return score/N
+
 def WeightedCCE(Y):
     num_class = Y.shape[-1]
 
@@ -292,6 +305,7 @@ def categorical_focal_loss(alpha, gamma=2.):
         return score/N
 
     return categorical_focal_loss_fixed
+
 # test benches
 def test_rpn_class_loss():
     # test tensorship is (1,3,3,1)

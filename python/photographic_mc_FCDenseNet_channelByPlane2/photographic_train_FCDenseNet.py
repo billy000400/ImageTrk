@@ -33,7 +33,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import extractor_config
 from DataGenerator import DataGenerator as Generator
-from Architectures import FC_DenseNet_DeepInput
+from Architectures import FC_DenseNet_DeepInOut
 from Information import *
 from Loss import *
 from Metric import *
@@ -54,17 +54,18 @@ def photographic_train(C):
     record_file = data_dir.joinpath(C.record_name+'.csv')
 
     input_shape = (C.resolution, C.resolution, 72)
-    architecture = FC_DenseNet_DeepInput(input_shape, 3, dr=0.1)
+    architecture = FC_DenseNet_DeepInOut(input_shape, dr=0.1)
     model = architecture.get_model()
     model.summary()
 
     # setup loss
     weights = C.weights
     assert weights.all()!=None, "The weight is None! You need to calculate the weights first!"
-    cce = categorical_focal_loss(alpha=weights, gamma=2)
+    # cce = categorical_focal_loss(alpha=weights, gamma=2)
+    bce = unmasked_bce
 
     # setup metric
-    ca = top2_categorical_accuracy
+    ba = weighted_unmasked_binary_accuracy
 
     # setup optimizer
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -76,7 +77,7 @@ def photographic_train(C):
     # setup callback
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
 
-    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_top2_categorical_accuracy', patience=10)
+    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_weighted_unmasked_binary_accuracy', patience=10)
 
     ModelCallback = tf.keras.callbacks.ModelCheckpoint(model_weights_file,\
                         monitor='val_top2_categorical_accuracy', verbose=1,\
@@ -88,8 +89,8 @@ def photographic_train(C):
 
     # print(cnn.summary())
     model.compile(optimizer=adam,\
-                metrics = ca,\
-                loss=cce)
+                metrics = ba,\
+                loss=bce)
 
 
 

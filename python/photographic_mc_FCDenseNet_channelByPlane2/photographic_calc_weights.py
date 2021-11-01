@@ -19,25 +19,21 @@ from Information import *
 def calc_weights(Y_dir):
     pinfo('Calculating class weights by median frequency')
     Y_list = [child for child in C.Y_train_dir.iterdir()]
-    BlankNum = 0
     BgNum = 0
     MajorNum = 0
     fileNum = len(Y_list)
     for i, file in enumerate(Y_list):
         sys.stdout.write(t_info(f'Parsing windows {i+1}/{fileNum}', special='\r'))
         y = np.load(file)
-        blankNum = np.count_nonzero( (y==np.array([1,0,0])).all(axis=2) )
-        bgNum = np.count_nonzero( (y==np.array([0,1,0])).all(axis=2) )
-        majorNum = np.count_nonzero( (y==np.array([0,0,1])).all(axis=2) )
+        bgNum = np.count_nonzero( (y==0) )
+        majorNum = np.count_nonzero( (y==1) )
 
-        BlankNum += blankNum
         BgNum += bgNum
         MajorNum += majorNum
 
-    pinfo(f'Frequency: major {MajorNum}, bg {BgNum}, blank {BlankNum}')
-    numArr = np.array([MajorNum, BgNum, BlankNum])
-    md = np.median(numArr)
-    weights = md/numArr
+    pinfo(f'Frequency: major {MajorNum}, bg {BgNum}')
+    numArr = np.array([MajorNum, BgNum])
+    weights = numArr/np.sqrt(MajorNum*BgNum)
     pinfo(f'Weight array = {weights}')
 
     return weights
