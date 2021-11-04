@@ -11,6 +11,6 @@ for file in file_list:
     z, x, y = input_photo.nonzero()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x, y, z, c=z, alpha=1)
+    ax.scatter(x, y, z, c='b', alpha=1)
     plt.show()
     plt.close()
