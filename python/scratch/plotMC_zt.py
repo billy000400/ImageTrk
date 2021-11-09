@@ -20,6 +20,10 @@ dist = norm(loc=mean, scale=1/std)
 # dist, db_files, hitNumCut=20):
 gen = Stochastic(dist, db_files)
 
+resoultion = 200
+
+def
+
 for i in range(20):
     hit_all, track_all = gen.generate(mode='eval')
 
