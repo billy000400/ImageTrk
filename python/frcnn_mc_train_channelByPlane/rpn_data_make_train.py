@@ -32,17 +32,29 @@ from Configuration import frcnn_config
 from Abstract import binning_objects
 from Information import *
 
-def pos2index(pos):
-    return
-def make3DArray(xs, ys, uniqueFaces, resolution):
+def x2colIdx(x, resolution):
     # Hard coded parameters
-    fNum = 72
     step = 1620/resolution
+    result = (x+810)//step
+    return int(result)
 
+def y2rowIdx(y, resolution):
+    # Hard coded parameters
+    step = 1620/resolution
+    result = (y+810)//step
+    result = (resolution-result)
+    return int(result)
+
+def make3DArray(xs, ys, uniqueFaces, resolution):
     # initialize result
-    result = np.zeros(shape=(256, 256, 72), dtype=np.float)
+    result = np.zeros(shape=(resolution, resolution, 72), dtype=np.float)
 
     # filling data into the zero array
+    for x, y, f in zip(xs, ys, uniqueFaces):
+        colIdx = x2colIdx(x, resolution)
+        rowIdx = y2rowIdx(y, resolution)
+        result[rowIdx, colIdx, f] = 1.0
+
     return result
 
 # This branch is outdated
@@ -206,9 +218,9 @@ def make_data_from_distribution(C):
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('mc_imgs_train')
-    shutil.rmtree(img_dir, ignore_errors=True)
-    img_dir.mkdir(parents=True, exist_ok=True)
+    arr_dir = data_dir.joinpath('mc_arrays_train')
+    shutil.rmtree(arr_dir, ignore_errors=True)
+    arr_dir.mkdir(parents=True, exist_ok=True)
 
     csv_name = "mc_bbox_proposal_train.csv"
     bbox_file = data_dir.joinpath(csv_name)
@@ -240,12 +252,14 @@ def make_data_from_distribution(C):
             sys.stdout.write('\n')
         sys.stdout.flush()
 
-        img_name = str(idx+1).zfill(5)+'.png'
-        img_file = img_dir.joinpath(img_name)
+        arr_name = str(idx+1).zfill(5)+'.npy'
+        arr_file = arr_dir.joinpath(arr_name)
 
         x_all = []
         y_all = []
         uniqueFace_all = []
+
+        table_cache = []
 
         track_found_num = 0
 
@@ -266,8 +280,12 @@ def make_data_from_distribution(C):
                 ptcls = session.query(Particle).all()
                 ptcl_iter = iter(ptcls)
                 ptcl = next(ptcl_iter)
-                track_box = [ptcl]
-                track_found_number = 1
+                # Empty cache
+                x_all = []
+                y_all = []
+                uniqueFace_all = []
+                table_cache = []
+                track_found_number = 0
 
             strawHit_qrl = session.query(StrawDigiMC).filter(StrawDigiMC.particle==ptcl.id)
             hitNum = strawHit_qrl.count()
@@ -275,7 +293,7 @@ def make_data_from_distribution(C):
                 strawHits = strawHit_qrl.all()
                 xs = [hit.x for hit in strawHits]
                 ys = [hit.y for hit in strawHits]
-                uniqueFaces = [hit.uniqueFace for hit in StrawHits]
+                uniqueFaces = [hit.uniqueFace for hit in strawHits]
                 x_all = x_all + xs
                 y_all = y_all + ys
                 uniqueFace_all = uniqueFace_all + uniqueFaces
@@ -296,7 +314,7 @@ def make_data_from_distribution(C):
                 ymin = YMin/1620 + 0.5 -0.01
                 ymax = YMax/1620 + 0.5 +0.01
                 pdgId = session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
-                dict_for_df[bbox_table_row_num] = {'FileName':img_name,\
+                dict_for_df[bbox_table_row_num] = {'FileName':arr_name,\
                                         'XMin':xmin,\
                                         'XMax':xmax,\
                                         'YMin':ymin,\
@@ -311,23 +329,16 @@ def make_data_from_distribution(C):
         x_all = np.array(x_all)
         y_all = np.array(y_all)
         uniqueFace_all = np.array(uniqueFace_all)
-        layout = {'pad':0, 'h_pad':0, 'w_pad':0, 'rect':(0,0,1,1) }
-        plt.figure(figsize=(8,8), dpi=resolution/8, frameon=False, tight_layout=layout)
-        plt.scatter(x_all, y_all, c='b', s=1)
-        plt.axis('scaled')
-        plt.axis('off')
-        plt.xlim([-810, 810])
-        plt.ylim([-810, 810])
-        # for rect in rects:
-        #     plt.gca().add_patch(rect)
-        # plt.show()
-        plt.savefig(img_file, bbox_inches='tight', pad_inches=0)
-        plt.close()
+
+        Array = make3DArray(xs, ys, uniqueFaces, resolution)
+
+
+        np.save(arr_file, Array)
 
     train_df = pd.DataFrame.from_dict(dict_for_df, "index")
     train_df.to_csv(bbox_file)
 
-    return bbox_file, img_dir
+    return bbox_file, arr_dir
 
 def make_data(C, mode='dp'):
 
@@ -363,7 +374,7 @@ def make_data(C, mode='dp'):
         sys.exit()
 
     ### Setup configurations
-    C.set_raw_training_data(bbox_file, img_dir)
+    C.set_raw_training_data(bbox_file, img_dir, depth=72)
 
     pcheck_point('Images and the bbox table')
     return C
@@ -374,22 +385,17 @@ if __name__ == "__main__":
     pmode('Training')
 
     # initialize parameters
-    track_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/tracks'
-    data_dir_str = '/home/Billy/Mu2e/analysis/DLTracking/data'
+    track_dir_str = '../../tracks'
+    data_dir_str = '../../data'
     # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
     # window = 20 # unit: ns
-    window = 3000 # unit: number of windows
+    window = 30 # unit: number of windows
     resolution = 512
     mode = 'normal'
     mean = 5
     std = 2
 
-    dp_list =  ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",\
-            "dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+    dp_list =  ["val"]
 
     ## parameter handling
     # argv = sys.argv

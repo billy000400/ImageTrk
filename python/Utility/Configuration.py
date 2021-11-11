@@ -169,20 +169,8 @@ class frcnn_config:
     def set_resolution(self, resolution):
         self.resolution = resolution
 
-    def set_raw_training_data(self, bbox_file, img_dir):
-        import pandas as pd
-        import cv2
-        df = pd.read_csv(bbox_file,index_col=0)
-        img_names = df['FileName'].unique()
-        files = [str(img_dir.joinpath(img)) for img in img_names]
-        files_itr = iter(files)
-        shape = cv2.imread(next(files_itr),cv2.IMREAD_UNCHANGED).shape
-        for i in range(1,len(files)):
-            shape_new = cv2.imread(next(files_itr), cv2.IMREAD_UNCHANGED).shape
-            if shape_new != shape:
-                print("[ERROR] Training images' shapes are not consistent")
-                raise ValueError
-        self.input_shape = shape
+    def set_raw_training_data(self, bbox_file, img_dir, depth=3):
+        self.input_shape = (self.resolution, self.resolution, depth)
         self.train_bbox_reference_file = bbox_file
         self.train_img_dir = img_dir
         return
