@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   11-14-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 11-14-2021
+
+
+
 import sys
 from pathlib import Path
 import shutil
@@ -43,10 +51,6 @@ def preprocess(C):
     shutil.rmtree(np_dir, ignore_errors=True)
     np_dir.mkdir(parents=True)
 
-    input_dir = np_dir.joinpath('inputs_npy')
-    shutil.rmtree(input_dir, ignore_errors=True)
-    input_dir.mkdir(parents=True)
-
     label_dir = np_dir.joinpath('labels_npy')
     shutil.rmtree(label_dir, ignore_errors=True)
     label_dir.mkdir(parents=True)
@@ -68,9 +72,6 @@ def preprocess(C):
     bbox_idx = 0
     file_idx = 0
     for arr_name, bbox_list in img_bbox_list:
-        # get input
-        arr_path = C.train_img_dir.joinpath(arr_name)
-        input = np.load(arr_path)
 
         # make truth table for RPN classifier
         score_bbox_map = make_score_bbox_map(anchors)
@@ -91,7 +92,6 @@ def preprocess(C):
         trainable = labels_trainable and deltas_trainable
         if trainable:
 
-            input_file = input_dir.joinpath(f'input_{ str(file_idx).zfill(7) }.npy')
             label_file = label_dir.joinpath(f'label_{ str(file_idx).zfill(7) }.npy')
             delta_file = delta_dir.joinpath(f'delta_{ str(file_idx).zfill(7) }.npy')
 
@@ -99,7 +99,6 @@ def preprocess(C):
                 perr('I found the bug!')
                 sys.exit()
 
-            np.save(input_file, input)
             np.save(label_file, sampled_label_map)
             np.save(delta_file, delta_map)
 
@@ -113,7 +112,7 @@ def preprocess(C):
             df.to_csv(C.train_bbox_reference_file)
 
     # setup configuration
-    C.set_rpn_training_data(input_dir, label_dir, delta_dir)
+    C.set_rpn_training_data(C.train_img_dir, label_dir, delta_dir)
 
     pcheck_point('Preprocessed data')
     return C
