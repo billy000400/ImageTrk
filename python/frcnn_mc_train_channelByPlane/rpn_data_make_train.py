@@ -199,6 +199,7 @@ def make_data_from_dp(track_dir, dp_name, window, resolution, mode='first'):
     return bbox_file, img_dir
 
 def make_data_from_distribution(C):
+
     track_dir = C.track_dir
     mean = C.trackNum_mean
     std = C.trackNum_std
@@ -260,7 +261,6 @@ def make_data_from_distribution(C):
         uniqueFace_all = []
 
         table_cache = []
-
         track_found_num = 0
 
         rects = []
@@ -314,24 +314,29 @@ def make_data_from_distribution(C):
                 ymin = YMin/1620 + 0.5 -0.01
                 ymax = YMax/1620 + 0.5 +0.01
                 pdgId = session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
-                dict_for_df[bbox_table_row_num] = {'FileName':arr_name,\
-                                        'XMin':xmin,\
-                                        'XMax':xmax,\
-                                        'YMin':ymin,\
-                                        'YMax':ymax,\
-                                        'ClassName':pdgId}
 
-                bbox_table_row_num += 1
+                table_cache.append([arr_name, xmin, xmax, ymin, ymax, pdgId])
                 track_found_num += 1
+
             else:
                 continue
+
+        for arr_name, xmin, xmax, ymin, ymax, pdgId in table_cache:
+            dict_for_df[bbox_table_row_num] = {'FileName':arr_name,\
+                                    'XMin':xmin,\
+                                    'XMax':xmax,\
+                                    'YMin':ymin,\
+                                    'YMax':ymax,\
+                                    'ClassName':pdgId}
+
+            bbox_table_row_num += 1
+
 
         x_all = np.array(x_all)
         y_all = np.array(y_all)
         uniqueFace_all = np.array(uniqueFace_all)
 
-        Array = make3DArray(xs, ys, uniqueFaces, resolution)
-
+        Array = make3DArray(x_all, y_all, uniqueFace_all, resolution)
 
         np.save(arr_file, Array)
 
@@ -389,13 +394,13 @@ if __name__ == "__main__":
     data_dir_str = '../../data'
     # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
     # window = 20 # unit: ns
-    window = 30 # unit: number of windows
+    window = 3000 # unit: number of windows
     resolution = 512
     mode = 'normal'
     mean = 5
     std = 2
 
-    dp_list =  ["val"]
+    dp_list =  ["train"]
 
     ## parameter handling
     # argv = sys.argv

@@ -57,22 +57,20 @@ def preprocess(C):
     # Get anchors
     anchors = make_anchors(C.input_shape, C.base_net.ratio, C.anchor_scales, C.anchor_ratios) # anchors have been normalized
 
-    # Get bbox dicts. A bbox dict is {img_name: bboxes_list}
+    # Get bbox dicts. A bbox dict is {arr_name: bboxes_list}
     pinfo('Making the image-bbox dictionary')
     img_bbox_dict = make_img_bbox_dict(C.validation_img_dir, C.validation_bbox_reference_file)
 
     # loop through img_bbox list
-    img_bbox_list = [ [img_name, bbox_list] for img_name, bbox_list in img_bbox_dict.items() ]
+    img_bbox_list = [ [arr_name, bbox_list] for arr_name, bbox_list in img_bbox_dict.items() ]
     bbox_Num = len(pd.read_csv(C.validation_bbox_reference_file, index_col=0).index)
     bbox_idx = 0
     file_idx = 0
-    for img_name, bbox_list in img_bbox_list:
+    for arr_name, bbox_list in img_bbox_list:
         # get input
-        img_path_str = str(C.validation_img_dir.joinpath(img_name))
-        input = cv2.imread(img_path_str, cv2.IMREAD_UNCHANGED)
-        input = cv2.cvtColor(input, cv2.COLOR_BGRA2RGBA)
-        if input.any() == None:
-            perr(f'{img_path_str} is invalid')
+        arr_path = C.validation_img_dir.joinpath(arr_name)
+        input = np.load(arr_path)
+
         # make truth table for RPN classifier
         score_bbox_map = make_score_bbox_map(anchors)
         for bbox in bbox_list:
@@ -91,12 +89,6 @@ def preprocess(C):
         deltas_trainable = (~np.isnan(delta_map)).any()
         trainable = labels_trainable and deltas_trainable
         if trainable:
-            # save data to local
-            input = input/255.0
-
-            if (np.count_nonzero(~np.isnan(delta_map))%4)!=0:
-                perr('I found the bug!')
-                sys.exit()
 
             input_file = input_dir.joinpath(f'input_{ str(file_idx).zfill(7) }.npy')
             label_file = label_dir.joinpath(f'label_{ str(file_idx).zfill(7) }.npy')
@@ -109,10 +101,10 @@ def preprocess(C):
             file_idx += 1
 
         else:
-            pwarn(f'{img_name} is discarded as it has untrainable data', special = '\n')
+            pwarn(f'{arr_name} is discarded as it has untrainable data', special = '\n')
             pwarn(f'Details: labels_trainable:{labels_trainable}, deltas_trainable:{deltas_trainable}')
             df = pd.read_csv(C.validation_bbox_reference_file, index_col=0)
-            df = df[df['FileName']!=img_name]
+            df = df[df['FileName']!=arr_name]
             df.to_csv(C.validation_bbox_reference_file)
 
     # setup configuration

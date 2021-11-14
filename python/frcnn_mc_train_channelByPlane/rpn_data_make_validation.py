@@ -27,10 +27,35 @@ from sqlalchemy import *
 
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Database import *
+from Database_new import *
 from Configuration import frcnn_config
 from Abstract import binning_objects
 from Information import *
+
+def x2colIdx(x, resolution):
+    # Hard coded parameters
+    step = 1620/resolution
+    result = (x+810)//step
+    return int(result)
+
+def y2rowIdx(y, resolution):
+    # Hard coded parameters
+    step = 1620/resolution
+    result = (y+810)//step
+    result = (resolution-result)
+    return int(result)
+
+def make3DArray(xs, ys, uniqueFaces, resolution):
+    # initialize result
+    result = np.zeros(shape=(resolution, resolution, 72), dtype=np.float)
+
+    # filling data into the zero array
+    for x, y, f in zip(xs, ys, uniqueFaces):
+        colIdx = x2colIdx(x, resolution)
+        rowIdx = y2rowIdx(y, resolution)
+        result[rowIdx, colIdx, f] = 1.0
+
+    return result
 
 def make_data_from_dp(track_dir, dp_name, window, resolution, mode='first'):
 
@@ -193,9 +218,9 @@ def make_data_from_distribution(C):
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('mc_imgs_validation')
-    shutil.rmtree(img_dir, ignore_errors=True)
-    img_dir.mkdir(parents=True, exist_ok=True)
+    arr_dir = data_dir.joinpath('mc_arrays_validation')
+    shutil.rmtree(arr_dir, ignore_errors=True)
+    arr_dir.mkdir(parents=True, exist_ok=True)
 
     csv_name = "mc_bbox_proposal_validation.csv"
     bbox_file = data_dir.joinpath(csv_name)
@@ -227,12 +252,14 @@ def make_data_from_distribution(C):
             sys.stdout.write('\n')
         sys.stdout.flush()
 
-        img_name = str(idx+1).zfill(5)+'.png'
-        img_file = img_dir.joinpath(img_name)
+        arr_name = str(idx+1).zfill(5)+'.npy'
+        arr_file = arr_dir.joinpath(arr_name)
 
         x_all = []
         y_all = []
+        uniqueFace_all = []
 
+        table_cache = []
         track_found_num = 0
 
         rects = []
@@ -252,8 +279,12 @@ def make_data_from_distribution(C):
                 ptcls = session.query(Particle).all()
                 ptcl_iter = iter(ptcls)
                 ptcl = next(ptcl_iter)
-                track_box = [ptcl]
-                track_found_number = 1
+                # Empty cache
+                x_all = []
+                y_all = []
+                uniqueFace_all = []
+                table_cache = []
+                track_found_number = 0
 
             strawHit_qrl = session.query(StrawDigiMC).filter(StrawDigiMC.particle==ptcl.id)
             hitNum = strawHit_qrl.count()
@@ -261,8 +292,10 @@ def make_data_from_distribution(C):
                 strawHits = strawHit_qrl.all()
                 xs = [hit.x for hit in strawHits]
                 ys = [hit.y for hit in strawHits]
+                uniqueFaces = [hit.uniqueFace for hit in strawHits]
                 x_all = x_all + xs
                 y_all = y_all + ys
+                uniqueFace_all = uniqueFace_all + uniqueFaces
 
                 xs = np.array(xs)
                 ys = np.array(ys)
@@ -280,37 +313,35 @@ def make_data_from_distribution(C):
                 ymin = YMin/1620 + 0.5 -0.01
                 ymax = YMax/1620 + 0.5 +0.01
                 pdgId = session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
-                dict_for_df[bbox_table_row_num] = {'FileName':img_name,\
-                                        'XMin':xmin,\
-                                        'XMax':xmax,\
-                                        'YMin':ymin,\
-                                        'YMax':ymax,\
-                                        'ClassName':pdgId}
 
-                bbox_table_row_num += 1
+                table_cache.append([arr_name, xmin, xmax, ymin, ymax, pdgId])
                 track_found_num += 1
+
             else:
                 continue
 
+        for arr_name, xmin, xmax, ymin, ymax, pdgId in table_cache:
+            dict_for_df[bbox_table_row_num] = {'FileName':arr_name,\
+                                    'XMin':xmin,\
+                                    'XMax':xmax,\
+                                    'YMin':ymin,\
+                                    'YMax':ymax,\
+                                    'ClassName':pdgId}
+
+            bbox_table_row_num += 1
+
         x_all = np.array(x_all)
         y_all = np.array(y_all)
-        layout = {'pad':0, 'h_pad':0, 'w_pad':0, 'rect':(0,0,1,1) }
-        plt.figure(figsize=(8,8), dpi=resolution/8, frameon=False, tight_layout=layout)
-        plt.scatter(x_all, y_all, c='b', s=1)
-        plt.axis('scaled')
-        plt.axis('off')
-        plt.xlim([-810, 810])
-        plt.ylim([-810, 810])
-        # for rect in rects:
-        #     plt.gca().add_patch(rect)
-        # plt.show()
-        plt.savefig(img_file, bbox_inches='tight', pad_inches=0)
-        plt.close()
+        uniqueFace_all = np.array(uniqueFace_all)
+
+        Array = make3DArray(x_all, y_all, uniqueFace_all, resolution)
+
+        np.save(arr_file, Array)
 
     train_df = pd.DataFrame.from_dict(dict_for_df, "index")
     train_df.to_csv(bbox_file)
 
-    return bbox_file, img_dir
+    return bbox_file, arr_dir
 
 def make_data(C, mode='dp'):
 
@@ -360,9 +391,7 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
 
-    dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art",\
-                "dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+    dp_list = ["val"]
 
     C.set_val_dp_list(dp_list)
 
