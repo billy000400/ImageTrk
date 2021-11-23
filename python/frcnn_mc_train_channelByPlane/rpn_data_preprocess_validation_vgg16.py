@@ -18,7 +18,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import frcnn_config
 from Abstract import*
-from Architectures import VGG16
+from Architectures import VGG16_var1
 from Information import*
 
 

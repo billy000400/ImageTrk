@@ -18,7 +18,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import frcnn_config
 from Abstract import*
-from Architectures import VGG16
+from Architectures import VGG16_var1
 from Information import*
 
 
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     pickle_path = cwd.joinpath('frcnn.train.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
-    vgg16  = VGG16()
+    vgg16  = VGG16_var1()
     C.set_base_net(vgg16)
     C.set_anchor(anchor_scales, anchor_ratios)
     C.set_label_limit(lower_limit, upper_limit)
