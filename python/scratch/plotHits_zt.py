@@ -26,7 +26,7 @@ std = 2.0
 dist = norm(loc=mean, scale=1/std)
 
 # dist, db_files, hitNumCut=20):
-gen = Event(dist, db_files, 20)
+gen = Event(db_files, 20)
 
 for i in range(20):
     hit_all, track_all = gen.generate(mode='eval')
