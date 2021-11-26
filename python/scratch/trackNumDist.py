@@ -21,7 +21,7 @@ db_files = [track_dir.joinpath('train.db')]
 # dist, db_files, hitNumCut=20):
 gen = Event(db_files, 10)
 
-windowNum = 30
+windowNum = 3000
 trackNums = []
 for idx in range(windowNum):
     sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
@@ -37,5 +37,5 @@ trackNums = np.array(trackNums, dtype=int)
 fig, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=(15,5))
 ax1.hist(trackNums)
 ax2.hist(trackNums[trackNums>0])
-ax2.hist(trackNums[trackNums>1])
+ax3.hist(trackNums[trackNums>1])
 plt.show()
