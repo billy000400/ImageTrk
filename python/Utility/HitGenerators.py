@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   11-03-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 11-25-2021
+
+
+
 import sys
 from pathlib import Path
 import pickle
@@ -156,6 +164,89 @@ class Stochastic_reco:
                 trackFoundNum += 1
             else:
                 continue
+        if mode == 'eval':
+            return hits, tracks
+        else:
+            return hits
+
+class Event:
+    def __init__(self, db_files, hitNumCut=0):
+        self.dist = dist
+        self.dbs = db_files
+        self.hitNumCut = hitNumCut
+
+        self.db_iter = iter(db_files)
+
+        self.current_db = None
+        self.session = None
+        self.__update_db()
+
+        self.events = []
+        self.event_iter = None
+        self.__make_event_iter()
+
+    def __connect_db(self):
+        engine = create_engine('sqlite:///'+str(self.current_db))
+        Session = sessionmaker(bind=engine) # session factory
+        session = Session() # session object
+        self.session = session
+
+    def __update_db(self):
+        self.current_db = next(self.db_iter)
+        self.__connect_db()
+
+    def __find_events(self):
+        runs = self.session.query(Particle.run).distinct().all()
+        for run in runs:
+            subRuns = self.session.query(Particle.subRun).filter(Particle.run==run).distinct().all()
+            for subRun in subRuns:
+                events = self.session.query(Particle.event).filter(Particle.run==run).\
+                    filter(Particle.subRun==subRun).distinct().all()
+                for event in events:
+                    self.events.append((run, subRun, event))
+
+    def __make_event_iter(self):
+        self.__find_events()
+        self.event_iter = iter(self.events)
+
+    def generate(self, mode='eval'):
+        tracks = {}
+        hits = {}
+
+        try:
+            event = next(self.event_iter)
+        except:
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            pinfo('Run out of particles')
+            pinfo('Connecting to the next track database')
+            self.__update_db()
+            self.__make_event_iter()
+            event = next(self.event_iter)
+
+        runId, subRunId, eventId = event
+        ptcls = self.session.query(Particle).filter(Particle.run==runId).\
+            filter(Particle.subRun==subRunId).\
+            filter(Particle.event==eventId).all()
+
+        for ptcl in ptcls:
+            strawHit_qrl = self.session.query(StrawHit).filter(StrawHit.particle==ptcl.id)
+            hitNum = strawHit_qrl.count()
+
+            if hitNum < self.hitNumCut:
+                continue
+
+            tracks[ptcl.id] = []
+            track = tracks[ptcl.id]
+
+            strawHits = strawHit_qrl.all()
+            for hit in strawHits:
+                track.append(hit.id)
+                hits[hit.id] = (hit.x_reco, hit.y_reco, hit.z_reco, hit.t_reco)
+
+            pdgId = self.session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
+            track.append(pdgId)
+
         if mode == 'eval':
             return hits, tracks
         else:

@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   11-03-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 11-25-2021
+
+
+
 import sys
 from pathlib import Path
 
@@ -8,7 +16,7 @@ from matplotlib import pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
-from HitGenerators import Stochastic_reco
+from HitGenerators import Event
 
 track_dir = Path("../../tracks")
 db_files = [track_dir.joinpath('train.db')]
@@ -18,7 +26,7 @@ std = 2.0
 dist = norm(loc=mean, scale=1/std)
 
 # dist, db_files, hitNumCut=20):
-gen = Stochastic_reco(dist, db_files)
+gen = Event(dist, db_files, 20)
 
 for i in range(20):
     hit_all, track_all = gen.generate(mode='eval')
