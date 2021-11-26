@@ -21,7 +21,7 @@ db_files = [track_dir.joinpath('train.db')]
 # dist, db_files, hitNumCut=20):
 gen = Event(db_files, 10)
 
-windowNum = 1000
+windowNum = 3000
 trackNums = []
 for idx in range(windowNum):
     sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
