@@ -171,7 +171,6 @@ class Stochastic_reco:
 
 class Event:
     def __init__(self, db_files, hitNumCut=0):
-        self.dist = dist
         self.dbs = db_files
         self.hitNumCut = hitNumCut
 
