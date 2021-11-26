@@ -197,12 +197,16 @@ class Event:
     def __find_events(self):
         runs = self.session.query(Particle.run).distinct().all()
         for run in runs:
-            subRuns = self.session.query(Particle.subRun).filter(Particle.run==run).distinct().all()
+            run = run[0]
+            ptcl_subset = self.session.query(Particle).filter(Particle.run==run).all()
+            subRuns = {ptcl.subRun for ptcl in ptcl_subset}
             for subRun in subRuns:
-                events = self.session.query(Particle.event).filter(Particle.run==run).\
-                    filter(Particle.subRun==subRun).distinct().all()
+                ptcl_subset = self.session.query(Particle).filter(Particle.run==run).\
+                    filter(Particle.subRun==subRun).all()
+                events = {ptcl.event for ptcl in ptcl_subset}
                 for event in events:
                     self.events.append((run, subRun, event))
+        return
 
     def __make_event_iter(self):
         self.__find_events()
