@@ -2,7 +2,7 @@
 # @Date:   11-14-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 11-14-2021
+# @Last modified time: 12-01-2021
 
 
 
@@ -18,7 +18,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Configuration import frcnn_config
 from Abstract import*
-from Architectures import VGG16_var1
+from Architectures import VGG16_bottleNeck
 from Information import*
 
 

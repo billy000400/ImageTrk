@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   11-25-2021
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 12-01-2021
+
+
+
 from tensorflow import keras
 from tensorflow.keras import layers, initializers, Model
 from tensorflow.keras.initializers import RandomNormal
@@ -94,6 +102,66 @@ class VGG16_var1:
         x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2', trainable=trainable)(x)
         #x = SpatialDropout2D(0.3)(x)
         x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3', trainable=trainable)(x)
+        return x
+
+    def get_model(self, in_shape, num_classes):
+        return
+
+class VGG16_bottleNeck:
+    def __init__(self):
+        # same padding, so size only shrinks when pooling
+        # pooling by 2 for 4 times: ratio = 2^4 = 16
+        self.type = 'VGG16'
+        self.ratio = 16
+        self.final_chanel = 512
+
+    def get_base_net(self, input_layer, trainable=True):
+
+        # Block 1
+        x = Conv2D(36, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=trainable)(input_layer)
+        x = Conv2D(36, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=trainable)(x)
+
+        x = Conv2D(18, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=trainable)(x)
+        x = Conv2D(18, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=trainable)(x)
+
+        x = Conv2D(3, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=trainable)(x)
+        x = Conv2D(3, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=trainable)(x)
+
+        # Block 2
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=trainable)(x)
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+
+        # Block 3
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block3_conv1', trainable=trainable)(x)
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block3_conv2', trainable=trainable)(x)
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block3_conv3', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+
+        # Block 4
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block4_conv1', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block4_conv2', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block4_conv3', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+
+
+        # Block 5
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3', trainable=trainable)(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2', trainable=trainable)(x)
+        #x = SpatialDropout2D(0.3)(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3', trainable=trainable)(x)
+
         return x
 
     def get_model(self, in_shape, num_classes):
