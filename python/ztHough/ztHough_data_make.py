@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
-from HitGenerators import Stochastic_reco
+from HitGenerators import Event
 
 def discretize(x, min, max, res):
     # Hard coded parameters
@@ -65,12 +65,12 @@ def plot_zt(generator, windowNum=100):
         map = zt2map(zs,ts,100)
         ax2.imshow(map)
 
-        out, angles, d = hough_line(map)
+        out, angles, d = hough_line(map, theta=np.linspace(0, 1, num=3))
 
-        angle_step = 0.5 * np.rad2deg(np.diff(angles).mean())
+        angle_step = 0.01
         d_step = 0.5 * np.diff(d).mean()
-        bounds = (np.rad2deg(angles[0]) - angle_step,\
-            np.rad2deg(angles[-1]) + angle_step,\
+        bounds = (0,\
+            1,\
             d[-1] + d_step, d[0] - d_step)
 
         ax3.imshow(out, cmap=plt.cm.bone, extent=bounds)
@@ -98,13 +98,9 @@ if __name__ == "__main__":
     pmode('Generating z-t pictures')
 
     track_dir = Path("../../tracks")
-    db_files = [track_dir.joinpath('val.db')]
-
-    mean = 5.0
-    std = 2.0
-    dist = norm(loc=mean, scale=1/std)
+    db_files = [track_dir.joinpath('train_CeEndpoint-mix.db')]
 
     # dist, db_files, hitNumCut=20):
-    gen = Stochastic_reco(dist, db_files)
+    gen = Event(db_files, 10)
 
     plot_zt(generator=gen, windowNum=100)

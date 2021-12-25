@@ -1,9 +1,3 @@
-# @Author: Billy Li <billyli>
-# @Date:   11-25-2021
-# @Email:  li000400@umn.edu
-# @Last modified by:   billyli
-# @Last modified time: 11-25-2021
-
 import sys
 from pathlib import Path
 
@@ -29,13 +23,20 @@ for idx in range(windowNum):
         sys.stdout.write('\n')
     sys.stdout.flush()
     hit_all, track_all = gen.generate(mode='eval')
-    trackNum = len(track_all)
-    trackNums.append(trackNum)
 
-trackNums = np.array(trackNums, dtype=int)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-fig, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=(15,5))
-ax1.hist(trackNums)
-ax2.hist(trackNums[trackNums>0])
-ax3.hist(trackNums[trackNums>1])
-plt.show()
+    for trkIdx, hitIdcPdgId in track_all.items():
+        hitIdc = hitIdcPdgId[0:-1]
+        hits = [hit_all[hitIdx] for hitIdx in hitIdc]
+        xs = [coord[0] for coord in hits]
+        ys = [coord[1] for coord in hits]
+        zs = [coord[2] for coord in hits]
+        ax.scatter(xs, zs, ys, alpha=1, label=trkIdx)
+
+    ax.legend()
+    ax.set(xlim=[-810, 810], ylim=[-1600, 1600], zlim=[-810, 810])
+
+    plt.show()
+    plt.close()
