@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
-from Database import *
+from Database_new import *
 from Information import *
 
 class Stochastic:
@@ -185,6 +185,7 @@ class Event:
         self.__make_event_iter()
 
     def __connect_db(self):
+        print(str(self.current_db))
         engine = create_engine('sqlite:///'+str(self.current_db))
         Session = sessionmaker(bind=engine) # session factory
         session = Session() # session object
