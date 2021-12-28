@@ -257,9 +257,10 @@ class Event:
 
 
 class Event_V2:
-    def __init__(self, db_files, hitNumCut=0):
+    def __init__(self, db_files, hitNumCut=0, eventNum=None):
         self.dbs = db_files
         self.hitNumCut = hitNumCut
+        self.eventNum = eventNum
 
         self.db_iter = iter(db_files)
 
@@ -267,14 +268,17 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.hitNums = []
+        self.ptclNums = []
         self.pdgIds = []
         self.strawHits = []
 
-        self.hitNumIter = None
+        self.ptclNumIter = None
         self.pdgIdIter = None
         self.strawHitIter = None
         self.__make_iters()
+
+        self.current_ptclId = 1
+        self.current_hitId = 1
 
     def __connect_db(self):
         engine = create_engine('sqlite:///'+str(self.current_db))
@@ -289,51 +293,52 @@ class Event_V2:
     def __make_iters(self):
 
         ptcls = self.session.query(Particle).order_by(Particle.run, Particle.subRun, Particle.event).all()
+        ptclIter = iter(ptcls)
 
-        event_tuples = []
         runs = self.session.query(Particle.run).distinct().order_by(Particle.run).all()
-        pinfo("Getting all event identifications in the database")
+        scanEvtNum = 0
         for run in runs:
+            if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                break
             run = run[0]
-            ptcl_subset = ptcls_qry.filter(Particle.run==run).all()
-            subRuns = {ptcl.subRun for ptcl in ptcl_subset}
+            subRuns = self.session.query(Particle.subRun)\
+                .filter(Particle.run==run)\
+                .distinct()\
+                .order_by(Particle.subRun)\
+                .all()
             for subRun in subRuns:
-                ptcl_subset = self.session.query(Particle).filter(Particle.run==run).\
-                    filter(Particle.subRun==subRun).all()
-                events = {ptcl.event for ptcl in ptcl_subset}
+                if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                    break
+                subRun = subRun[0]
+                events = self.session.query(Particle.event)\
+                    .filter(Particle.run==run)\
+                    .filter(Particle.subRun==subRun)\
+                    .distinct()\
+                    .order_by(Particle.event)\
+                    .all()
                 for event in events:
-                    event_tuples.append((run, subRun, event))
-
-        pinfo("Identifying Particles for each event")
-
-        eventNum = len(event_tuples)
-        idx = 0
-        for runId, subRunId, eventId in event_tuples:
-            sys.stdout.write(t_info(f'Parsing event: {idx+1}/{eventNum}', special='\r'))
-            sys.stdout.flush()
-            ptcls = self.session.query(Particle).filter(Particle.run==runId).\
-                filter(Particle.subRun==subRunId).\
-                filter(Particle.event==eventId).all()
-            ptclIds = [ptcl.id for ptcl in ptcls]
-            pdgIdsInWindow = [ptcl.pdgId for ptcl in ptcls]
-            self.pdgIds.append(pdgIdsInWindow)
-
-            hitNumsInWindow = []
-            for ptclId in ptclIds:
-                hitNum = self.session.query(StrawHit).filter(StrawHit.particle==ptclId).count()
-                hitNumsInWindow.append(hitNum)
-            self.hitNums.append(hitNumsInWindow)
-
-            idx += 1
-
+                    if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                        break
+                    sys.stdout.write(t_info(f'Getting ids for event: {scanEvtNum+1}', special='\r'))
+                    sys.stdout.flush()
+                    event = event[0]
+                    ptclsInWindow = self.session.query(Particle)\
+                        .filter(Particle.run==run)\
+                        .filter(Particle.subRun==subRun)\
+                        .filter(Particle.event==event).all()
+                    ptclNumInWindow = len(ptclsInWindow)
+                    self.ptclNums.append(ptclNumInWindow)
+                    self.pdgIds.append([ptcl.pdgId for ptcl in ptclsInWindow])
+                    scanEvtNum += 1
         sys.stdout.write('\n')
         sys.stdout.flush()
 
+
         pinfo("Constructing iterators")
-        self.hitNumIter = iter(self.hitNums)
+        self.ptclNumIter = iter(self.ptclNums)
         self.pdgIdIter = iter(self.pdgIds)
 
-        self.strawHits = self.session.query(StrawHit).order_by(StrawHit.ptcl).all()
+        self.strawHits = self.session.query(StrawHit).order_by(StrawHit.particle).all()
         self.strawHitIter = iter(self.strawHits)
         return
 
@@ -342,8 +347,8 @@ class Event_V2:
         hits = {}
 
         try:
-            hitNumsInWindow = next(self.hitNumIter)
-            pdgIdsInWindow = next(self.pdgIds)
+            ptclNumInWindow = next(self.ptclNumIter)
+            pdgIdsInWindow = next(self.pdgIdIter)
         except:
             sys.stdout.write('\n')
             sys.stdout.flush()
@@ -351,25 +356,32 @@ class Event_V2:
             pinfo('Connecting to the next track database')
             self.__update_db()
             self.__find_iters()
-            hitNumsInWindow = next(self.hitNumIter)
-            pdgIdsInWindow = next(self.pdgIds)
+            ptclNumInWindow = next(self.ptclNumIter)
+            pdgIdsInWindow = next(self.pdgIdIter)
 
-        for trkIdx, hitNum in enumerate(hitNumsInWindow):
+        pdgIdIter = iter(pdgIdsInWindow)
+
+        trkIdx = 0
+        for i in range(ptclNumInWindow):
+            hitsPerPtcl = []
+            while self.strawHits[self.current_hitId].particle == self.current_ptclId:
+                hit = self.strawHits[self.current_hitId]
+                hitsPerPtcl.append(hit)
+                self.current_hitId += 1
+            self.current_ptclId += 1
+            hitNum = len(hitsPerPtcl)
             if hitNum < self.hitNumCut:
-                for i in range(hitNum):
-                    next(strawHitIter)
+                next(pdgIdIter)
                 continue
-
             tracks[trkIdx] = []
             track = tracks[trkIdx]
-
-            for i in range(hitNum):
-                hit = next(strawHitIter)
+            for hit in hitsPerPtcl:
                 track.append(hit.id)
                 hits[hit.id] = (hit.x_reco, hit.y_reco, hit.z_reco, hit.t_reco)
 
-            pdgId = pdgIdsInWindow[trkIdx]
+            pdgId = next(pdgIdIter)
             track.append(pdgId)
+            trkIdx += 1
 
         if mode == 'eval':
             return hits, tracks

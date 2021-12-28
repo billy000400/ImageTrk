@@ -23,7 +23,7 @@ def mean(ls):
 
 
 def hist():
-    windowNum = 100
+    windowNum = 500
     ptclNumPerWindows = []
 
     start = timeit.default_timer()
@@ -40,7 +40,7 @@ def hist():
             hits = [hit_all[hitIdx] for hitIdx in hitIdc]
             ts = [coord[3] for coord in hits]
             t_avgs.append(mean(ts))
-        entries, _ = np.histogram(t_avgs, 128)
+        entries, _ = np.histogram(t_avgs, 256)
         ptclNumPerWindow = entries[entries>0].tolist()
         ptclNumPerWindows += ptclNumPerWindow
 
