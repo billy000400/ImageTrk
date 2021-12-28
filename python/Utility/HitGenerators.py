@@ -2,7 +2,7 @@
 # @Date:   11-03-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 12-27-2021
+# @Last modified time: 12-28-2021
 
 
 
@@ -267,9 +267,14 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.ptclId_groups = []
-        self.ptclIdsIter = None
-        self.__make_ptclIdsIter()
+        self.hitlNums = []
+        self.pdgIds = []
+        self.strawHits = []
+
+        self.hitNumIter = None
+        self.pdgIdIter = None
+        self.strawHitIter = None
+        self.__make_iters()
 
     def __connect_db(self):
         engine = create_engine('sqlite:///'+str(self.current_db))
@@ -281,7 +286,7 @@ class Event_V2:
         self.current_db = next(self.db_iter)
         self.__connect_db()
 
-    def __find_ptclGroups(self):
+    def __make_iters(self):
 
         event_tuples = []
         runs = self.session.query(Particle.run).distinct().all()
@@ -297,51 +302,61 @@ class Event_V2:
                 for event in events:
                     event_tuples.append((run, subRun, event))
 
-        pinfo("Grouping particles by event identification")
+        pinfo("Identifying Particles for each event")
         for runId, subRunId, eventId in event_tuples:
-            ptclId_tuples = self.session.query(Particle.id).filter(Particle.run==runId).\
+            ptcls = self.session.query(Particle).filter(Particle.run==runId).\
                 filter(Particle.subRun==subRunId).\
                 filter(Particle.event==eventId).all()
-            ptclIds = [ptclId for ptclId_tuple in ptclId_tuples for ptclId in ptclId_tuple]
-            self.ptclId_groups.append(ptclIds)
+            ptclIds = [ptcl.id for ptcl in ptcls]
+            pdgIdsInWindow = [ptcl.pdgId for ptcl in ptcls]
+            self.pdgIds.append(pdgIdsInWindow)
 
+            hitNumsInWindow = []
+            for ptclId in ptclIds:
+                hitNum = self.session.query(StrawHit).filter(StrawHit.particle==ptclId).count()
+                hitNumsInWindow.append(hitNum)
+            self.hitNums.append(hitNumsInWindow)
+
+        pinfo("Constructing iterators")
+        self.hitNumIter = iter(self.hitNums)
+        self.pdgIdIter = iter(self.pdgIds)
+
+        self.strawHits = self.session.query(StrawHit).order_by(StrawHit.ptcl).all()
+        self.strawHitIter = iter(self.strawHits)
         return
-
-    def __make_ptclIdsIter(self):
-        self.__find_ptclGroups()
-        self.ptclIdsIter = iter(self.ptclId_groups)
 
     def generate(self, mode='eval'):
         tracks = {}
         hits = {}
 
         try:
-            ptclIds = next(self.ptclIdsIter)
+            hitNumsInWindow = next(self.hitNumIter)
+            pdgIdsInWindow = next(self.pdgIds)
         except:
             sys.stdout.write('\n')
             sys.stdout.flush()
             pinfo('Run out of particles')
             pinfo('Connecting to the next track database')
             self.__update_db()
-            self.__find_ptclGroups()
-            ptclIds = next(self.ptclIdsIter)
+            self.__find_iters()
+            hitNumsInWindow = next(self.hitNumIter)
+            pdgIdsInWindow = next(self.pdgIds)
 
-        for ptclId in ptclIds:
-            strawHit_qrl = self.session.query(StrawHit).filter(StrawHit.particle==ptclId)
-            hitNum = strawHit_qrl.count()
-
+        for trkIdx, hitNum in enumerate(hitNumsInWindow):
             if hitNum < self.hitNumCut:
+                for i in range(hitNum):
+                    next(strawHitIter)
                 continue
 
-            tracks[ptclId] = []
-            track = tracks[ptclId]
+            tracks[trkIdx] = []
+            track = tracks[trkIdx]
 
-            strawHits = strawHit_qrl.all()
-            for hit in strawHits:
+            for i in range(hitNum):
+                hit = next(strawHitIter)
                 track.append(hit.id)
                 hits[hit.id] = (hit.x_reco, hit.y_reco, hit.z_reco, hit.t_reco)
 
-            pdgId = self.session.query(Particle.pdgId).filter(Particle.id==ptclId).one_or_none()[0]
+            pdgId = pdgIdsInWindow[trkIdx]
             track.append(pdgId)
 
         if mode == 'eval':
