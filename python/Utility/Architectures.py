@@ -2,7 +2,7 @@
 # @Date:   11-25-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 12-01-2021
+# @Last modified time: 12-27-2021
 
 
 
@@ -13,6 +13,60 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.layers import *
 
 ### feature extraction networks
+class Img2Vec:
+    def __init__(self, input_shape):
+        self.input_layer = Input(shape=(128, 128, 1))
+
+    def get_model(self):
+        # (128, 128, 1)
+        x = Conv2D(4, (3,3), activation='relu', padding='same')(input_layer)
+        x = Conv2D(4, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 64, 4)
+        x = Conv2D(8, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(8, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 32, 8)
+        x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 16, 16)
+        x = Conv2D(32, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(32, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 8, 32)
+        x = Conv2D(64, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(64, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 4, 64)
+        x = Conv2D(128, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(128, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 2, 128)
+        x = Conv2D(256, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(256, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        # (128, 1, 256)
+        x = Conv2D(512, (3,3), activation='relu', padding='same')(x)
+        x = Conv2D(512, (3,3), activation='relu', padding='same')(x)
+        x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
+
+        classifier = Conv2D(1, (1,1), activation='relu', padding='same')(x)
+        regressor = Conv2D(1, (1,1), activation='relu', padding='same')(x)
+
+        return [classifier, regressor]
+
+
+
+
+
 class VGG16:
     def __init__(self):
         # same padding, so size only shrinks when pooling
