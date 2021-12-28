@@ -267,7 +267,7 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.hitlNums = []
+        self.hitNums = []
         self.pdgIds = []
         self.strawHits = []
 
@@ -288,12 +288,14 @@ class Event_V2:
 
     def __make_iters(self):
 
+        ptcls = self.session.query(Particle).order_by(Particle.run, Particle.subRun, Particle.event).all()
+
         event_tuples = []
-        runs = self.session.query(Particle.run).distinct().all()
+        runs = self.session.query(Particle.run).distinct().order_by(Particle.run).all()
         pinfo("Getting all event identifications in the database")
         for run in runs:
             run = run[0]
-            ptcl_subset = self.session.query(Particle).filter(Particle.run==run).all()
+            ptcl_subset = ptcls_qry.filter(Particle.run==run).all()
             subRuns = {ptcl.subRun for ptcl in ptcl_subset}
             for subRun in subRuns:
                 ptcl_subset = self.session.query(Particle).filter(Particle.run==run).\
@@ -303,7 +305,12 @@ class Event_V2:
                     event_tuples.append((run, subRun, event))
 
         pinfo("Identifying Particles for each event")
+
+        eventNum = len(event_tuples)
+        idx = 0
         for runId, subRunId, eventId in event_tuples:
+            sys.stdout.write(t_info(f'Parsing event: {idx+1}/{eventNum}', special='\r'))
+            sys.stdout.flush()
             ptcls = self.session.query(Particle).filter(Particle.run==runId).\
                 filter(Particle.subRun==subRunId).\
                 filter(Particle.event==eventId).all()
@@ -316,6 +323,11 @@ class Event_V2:
                 hitNum = self.session.query(StrawHit).filter(StrawHit.particle==ptclId).count()
                 hitNumsInWindow.append(hitNum)
             self.hitNums.append(hitNumsInWindow)
+
+            idx += 1
+
+        sys.stdout.write('\n')
+        sys.stdout.flush()
 
         pinfo("Constructing iterators")
         self.hitNumIter = iter(self.hitNums)
