@@ -9,7 +9,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Database_new import *
 from Information import *
-from HitGenerators import Event
+from HitGenerators import Event_V2 as Event
 
 track_dir = Path("../../tracks")
 db_files = [track_dir.joinpath('train_CeEndpoint-mix.db')]
@@ -25,7 +25,7 @@ def mean(ls):
 def hist():
     windowNum = 100
     ptclNumPerWindows = []
-    
+
     start = timeit.default_timer()
     for idx in range(windowNum):
         sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
