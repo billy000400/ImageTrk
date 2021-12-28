@@ -2,7 +2,7 @@
 # @Date:   11-03-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 11-25-2021
+# @Last modified time: 12-27-2021
 
 
 
@@ -267,9 +267,8 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.events = []
         self.event_iter = None
-        self.__make_event_iter()
+        self.__make_ptclIdsIter()
 
     def __connect_db(self):
         engine = create_engine('sqlite:///'+str(self.current_db))
@@ -281,7 +280,8 @@ class Event_V2:
         self.current_db = next(self.db_iter)
         self.__connect_db()
 
-    def __find_events(self):
+    def __find_ptclGroups(self):
+        event_tuples = []
         runs = self.session.query(Particle.run).distinct().all()
         for run in runs:
             run = run[0]
@@ -292,35 +292,39 @@ class Event_V2:
                     filter(Particle.subRun==subRun).all()
                 events = {ptcl.event for ptcl in ptcl_subset}
                 for event in events:
-                    self.events.append((run, subRun, event))
+                    event_tuples.append((run, subRun, event))
+        for runId, subRunId, eventId in event_tuples:
+            ptcls = self.session.query(Particle).filter(Particle.run==runId).\
+                filter(Particle.subRun==subRunId).\
+                filter(Particle.event==eventId).all()
+
+        ptcl_groups = self.session.query(Particle).group_by([Particle.run, Particle.subrun, Particle.event])
+        ptclId_groups = [ [ptcl.id for ptcl in group] for group in ptcl_groups]
+
+        self.ptclId_groups = []
         return
 
-    def __make_event_iter(self):
-        self.__find_events()
-        self.event_iter = iter(self.events)
+    def __make_ptclIdsIter(self):
+        self.__find_ptclGroups()
+        self.ptclIdsIter = iter(self.ptclId_groups)
 
     def generate(self, mode='eval'):
         tracks = {}
         hits = {}
 
         try:
-            event = next(self.event_iter)
+            ptclIds = next(self.ptclIdsIter)
         except:
             sys.stdout.write('\n')
             sys.stdout.flush()
             pinfo('Run out of particles')
             pinfo('Connecting to the next track database')
             self.__update_db()
-            self.__make_event_iter()
-            event = next(self.event_iter)
+            self.__find_ptclGroups()
+            ptclIds = next(self.ptclIdsIter)
 
-        runId, subRunId, eventId = event
-        ptcls = self.session.query(Particle).filter(Particle.run==runId).\
-            filter(Particle.subRun==subRunId).\
-            filter(Particle.event==eventId).all()
-
-        for ptcl in ptcls:
-            strawHit_qrl = self.session.query(StrawHit).filter(StrawHit.particle==ptcl.id)
+        for ptclId in ptclIds:
+            strawHit_qrl = self.session.query(StrawHit).filter(StrawHit.particle==ptclId)
             hitNum = strawHit_qrl.count()
 
             if hitNum < self.hitNumCut:
