@@ -267,7 +267,8 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.event_iter = None
+        self.ptclId_groups = []
+        self.ptclIdsIter = None
         self.__make_ptclIdsIter()
 
     def __connect_db(self):
@@ -281,8 +282,10 @@ class Event_V2:
         self.__connect_db()
 
     def __find_ptclGroups(self):
+
         event_tuples = []
         runs = self.session.query(Particle.run).distinct().all()
+        pinfo("Getting all event identifications in the database")
         for run in runs:
             run = run[0]
             ptcl_subset = self.session.query(Particle).filter(Particle.run==run).all()
@@ -293,15 +296,15 @@ class Event_V2:
                 events = {ptcl.event for ptcl in ptcl_subset}
                 for event in events:
                     event_tuples.append((run, subRun, event))
+
+        pinfo("Grouping particles by event identification")
         for runId, subRunId, eventId in event_tuples:
-            ptcls = self.session.query(Particle).filter(Particle.run==runId).\
+            ptclId_tuples = self.session.query(Particle.id).filter(Particle.run==runId).\
                 filter(Particle.subRun==subRunId).\
                 filter(Particle.event==eventId).all()
+            ptclIds = [ptclId for ptclId_tuple in ptclId_tuples for ptclId in ptclId_tuple]
+            self.ptclId_groups.append(ptclIds)
 
-        ptcl_groups = self.session.query(Particle).group_by([Particle.run, Particle.subrun, Particle.event])
-        ptclId_groups = [ [ptcl.id for ptcl in group] for group in ptcl_groups]
-
-        self.ptclId_groups = []
         return
 
     def __make_ptclIdsIter(self):
@@ -330,15 +333,15 @@ class Event_V2:
             if hitNum < self.hitNumCut:
                 continue
 
-            tracks[ptcl.id] = []
-            track = tracks[ptcl.id]
+            tracks[ptclId] = []
+            track = tracks[ptclId]
 
             strawHits = strawHit_qrl.all()
             for hit in strawHits:
                 track.append(hit.id)
                 hits[hit.id] = (hit.x_reco, hit.y_reco, hit.z_reco, hit.t_reco)
 
-            pdgId = self.session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
+            pdgId = self.session.query(Particle.pdgId).filter(Particle.id==ptclId).one_or_none()[0]
             track.append(pdgId)
 
         if mode == 'eval':
