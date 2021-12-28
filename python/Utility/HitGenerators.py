@@ -185,7 +185,93 @@ class Event:
         self.__make_event_iter()
 
     def __connect_db(self):
-        print(str(self.current_db))
+        engine = create_engine('sqlite:///'+str(self.current_db))
+        Session = sessionmaker(bind=engine) # session factory
+        session = Session() # session object
+        self.session = session
+
+    def __update_db(self):
+        self.current_db = next(self.db_iter)
+        self.__connect_db()
+
+    def __find_events(self):
+        runs = self.session.query(Particle.run).distinct().all()
+        for run in runs:
+            run = run[0]
+            ptcl_subset = self.session.query(Particle).filter(Particle.run==run).all()
+            subRuns = {ptcl.subRun for ptcl in ptcl_subset}
+            for subRun in subRuns:
+                ptcl_subset = self.session.query(Particle).filter(Particle.run==run).\
+                    filter(Particle.subRun==subRun).all()
+                events = {ptcl.event for ptcl in ptcl_subset}
+                for event in events:
+                    self.events.append((run, subRun, event))
+        return
+
+    def __make_event_iter(self):
+        self.__find_events()
+        self.event_iter = iter(self.events)
+
+    def generate(self, mode='eval'):
+        tracks = {}
+        hits = {}
+
+        try:
+            event = next(self.event_iter)
+        except:
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            pinfo('Run out of particles')
+            pinfo('Connecting to the next track database')
+            self.__update_db()
+            self.__make_event_iter()
+            event = next(self.event_iter)
+
+        runId, subRunId, eventId = event
+        ptcls = self.session.query(Particle).filter(Particle.run==runId).\
+            filter(Particle.subRun==subRunId).\
+            filter(Particle.event==eventId).all()
+
+        for ptcl in ptcls:
+            strawHit_qrl = self.session.query(StrawHit).filter(StrawHit.particle==ptcl.id)
+            hitNum = strawHit_qrl.count()
+
+            if hitNum < self.hitNumCut:
+                continue
+
+            tracks[ptcl.id] = []
+            track = tracks[ptcl.id]
+
+            strawHits = strawHit_qrl.all()
+            for hit in strawHits:
+                track.append(hit.id)
+                hits[hit.id] = (hit.x_reco, hit.y_reco, hit.z_reco, hit.t_reco)
+
+            pdgId = self.session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
+            track.append(pdgId)
+
+        if mode == 'eval':
+            return hits, tracks
+        else:
+            return hits
+
+
+class Event_V2:
+    def __init__(self, db_files, hitNumCut=0):
+        self.dbs = db_files
+        self.hitNumCut = hitNumCut
+
+        self.db_iter = iter(db_files)
+
+        self.current_db = None
+        self.session = None
+        self.__update_db()
+
+        self.events = []
+        self.event_iter = None
+        self.__make_event_iter()
+
+    def __connect_db(self):
         engine = create_engine('sqlite:///'+str(self.current_db))
         Session = sessionmaker(bind=engine) # session factory
         session = Session() # session object
