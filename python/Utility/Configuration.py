@@ -414,3 +414,95 @@ class extractor_config:
 
     def set_prediction(self, prediction_file):
         self.test_Y_file_prediction = prediction_file
+
+class wcnn_config:
+    def __init__(self, track_sql_dir, data_dir):
+        assert Path.exists(track_sql_dir), \
+            t_error('The directory for track SQLits database does not exist')
+
+        # source member
+        self.track_dir = track_sql_dir
+        self.data_dir = data_dir
+        self.sub_data_dir = None
+
+        self.resolution = None
+
+        # alternative source: distribution
+        self.train_dp_list = None
+        self.val_dp_list = None
+
+        # input member
+        self.train_dir = None
+        self.iou_dir = None
+        self.X_file = None
+        self.Y_file = None
+
+        # alternate input member for large data
+        self.X_train_dir = None
+        self.Y_train_dir = None
+        self.X_val_dir = None
+        self.Y_val_dir = None
+
+
+        self.weights = None
+
+        # model and record_name
+        self.model_name = None
+        self.record_name = None
+
+        # test data
+        self.test_source = None
+        self.test_dir = None
+        self.test_X_file = None
+        self.test_Y_file_reference = None
+        self.test_Y_file_prediction = None
+
+    def set_source(self, source):
+        for file in source:
+            assert Path.exists(self.track_dir.joinpath(file+'.db')), \
+                t_error(f'{file}.db does not exist')
+        self.source = source
+
+    def set_resolution(self, resolution):
+        self.resolution = resolution
+
+    def set_train_dp_list(self, dp_list):
+        self.train_dp_list = dp_list
+
+    def set_val_dp_list(self, dp_list):
+        self.val_dp_list = dp_list
+
+    def set_inputs(self, extractor_train_dir, X_file, Y_file):
+        self.train_dir = extractor_train_dir
+        self.X_file = X_file
+        self.Y_file = Y_file
+
+    def set_train_dir(self, train_x_dir, train_y_dir, iou_dir=None):
+        self.X_train_dir = train_x_dir
+        self.Y_train_dir = train_y_dir
+        self.iou_dir=iou_dir
+
+    def set_val_dir(self, val_x_dir, val_y_dir):
+        self.X_val_dir = val_x_dir
+        self.Y_val_dir = val_y_dir
+
+    def set_weights(self, weights):
+        self.weights = weights
+
+    def set_outputs(self, model_name, record_name):
+        self.model_name = model_name
+        self.record_name = record_name
+
+    def set_test_source(self, source):
+        for file in source:
+            assert Path.exists(self.track_dir.joinpath(file+'.db')), \
+                t_error(f'{file}.db does not exist')
+        self.test_source = source
+
+    def set_test_data(self, extractor_test_dir, X_file, Y_file):
+        self.test_dir = extractor_test_dir
+        self.test_X_file = X_file
+        self.test_Y_file_reference = Y_file
+
+    def set_prediction(self, prediction_file):
+        self.test_Y_file_prediction = prediction_file
