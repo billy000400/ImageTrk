@@ -78,22 +78,22 @@ def make_data(C):
     data_dir.mkdir(parents=True, exist_ok=True)
 
     ### directories for numpy data
-    train_x_dir = data_dir.joinpath('X')
-    train_y1_dir = data_dir.joinpath('Y1')
-    train_y2_dir = data_dir.joinpath('Y2')
+    val_x_dir = data_dir.joinpath('X')
+    val_y1_dir = data_dir.joinpath('Y1')
+    val_y2_dir = data_dir.joinpath('Y2')
 
-    shutil.rmtree(train_x_dir, ignore_errors=True)
-    shutil.rmtree(train_y1_dir, ignore_errors=True)
-    shutil.rmtree(train_y2_dir, ignore_errors=True)
+    shutil.rmtree(val_x_dir, ignore_errors=True)
+    shutil.rmtree(val_y1_dir, ignore_errors=True)
+    shutil.rmtree(val_y2_dir, ignore_errors=True)
 
-    train_x_dir.mkdir(parents=True, exist_ok=True)
-    train_y1_dir.mkdir(parents=True, exist_ok=True)
-    train_y2_dir.mkdir(parents=True, exist_ok=True)
+    val_x_dir.mkdir(parents=True, exist_ok=True)
+    val_y1_dir.mkdir(parents=True, exist_ok=True)
+    val_y2_dir.mkdir(parents=True, exist_ok=True)
 
     ## prepare event generator
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 10
-    gen = Event(C.train_db_files, hitNumCut=hitNumCut, eventNum=C.eventNum)
+    gen = Event(C.val_db_files, hitNumCut=hitNumCut, eventNum=C.eventNum)
 
     maps = []
     vec1s = []
@@ -141,36 +141,30 @@ def make_data(C):
     vec1s = np.concatenate(vec1s)
     vec2s = np.concatenate(vec2s)
 
-    maps_file = train_x_dir.joinpath('X.npy')
-    vec1s_file = train_y1_dir.joinpath('Y1.npy')
-    vec2s_file = train_y2_dir.joinpath('Y2.npy')
+    maps_file = val_x_dir.joinpath('X.npy')
+    vec1s_file = val_y1_dir.joinpath('Y1.npy')
+    vec2s_file = val_y2_dir.joinpath('Y2.npy')
 
     np.save(maps_file, maps)
     np.save(vec1s_file, vec1s)
     np.save(vec2s_file, vec2s)
 
-    C.set_train_dir(train_x_dir, train_y1_dir, train_y2_dir)
+    C.set_val_dir(val_x_dir, val_y1_dir, val_y2_dir)
 
     return C
 
 if __name__ == "__main__":
     pbanner()
     psystem('Window-based Convolutional Neural Network')
-    pmode('Generating training data')
+    pmode('Generating validating data')
     pinfo('Input DType for testing: StrawHit')
 
-    track_dir = Path.cwd().parent.parent.joinpath('tracks')
-    data_dir = Path.cwd().parent.parent.joinpath('data')
+    cwd = Path.cwd()
+    pickle_path = cwd.joinpath('wcnn.config.pickle')
+    C = pickle.load(open(pickle_path,'rb'))
 
-    C = wcnn_config(track_dir, data_dir)
-
-    dp_list = ['train_CeEndpoint-mix']
-    resolution = 256
-    eventNum = 500
-
-    C.set_train_dp_list(dp_list)
-    C.set_resolution(resolution)
-    C.set_eventNum(eventNum)
+    dp_list = ['val_CeEndpoint-mix']
+    C.set_val_dp_list(dp_list)
 
     start = timeit.default_timer()
     C = make_data(C)
@@ -178,5 +172,4 @@ if __name__ == "__main__":
     print('\n')
     pinfo(f'Elapsed time: {total_time}(sec)')
 
-    pickle_path = Path.cwd().joinpath('wcnn.config.pickle')
     pickle.dump(C, open(pickle_path, 'wb'))

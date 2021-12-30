@@ -435,9 +435,11 @@ class wcnn_config:
 
         # input members
         self.X_train_dir = None
-        self.Y_train_dir = None
+        self.Y1_train_dir = None
+        self.Y2_train_dir = None
         self.X_val_dir = None
-        self.Y_val_dir = None
+        self.Y1_val_dir = None
+        self.Y2_val_dir = None
 
 
         self.weights = None
@@ -471,15 +473,18 @@ class wcnn_config:
 
     def set_val_dp_list(self, dp_list):
         self.val_dp_list = dp_list
+        self.val_db_files = [self.track_dir.joinpath(f'{dp}'+'.db') for dp in dp_list]
 
-    def set_train_dir(self, train_x_dir, train_y_dir, iou_dir=None):
+
+    def set_train_dir(self, train_x_dir, train_y1_dir, train_y2_dir):
         self.X_train_dir = train_x_dir
-        self.Y_train_dir = train_y_dir
-        self.iou_dir=iou_dir
+        self.Y1_train_dir = train_y1_dir
+        self.Y2_train_dir = train_y2_dir
 
-    def set_val_dir(self, val_x_dir, val_y_dir):
+    def set_val_dir(self, val_x_dir, val_y1_dir):
         self.X_val_dir = val_x_dir
-        self.Y_val_dir = val_y_dir
+        self.Y1_val_dir = val_y1_dir
+        self.Y2_val_dir = val_y2_dir
 
     def set_weights(self, weights):
         self.weights = weights
