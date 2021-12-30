@@ -29,6 +29,8 @@ def statistics_windows():
             delta_t = ts.max()-ts.min()
             delta_ts.append(delta_t)
 
+    entries, _ = np.histogram(delta_ts, 50)
+    print(entries)
     plt.hist(delta_ts, 50)
     plt.show()
     return

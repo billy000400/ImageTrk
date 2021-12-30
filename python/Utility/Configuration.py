@@ -425,19 +425,15 @@ class wcnn_config:
         self.data_dir = data_dir
         self.sub_data_dir = None
 
+        self.eventNum = None
         self.resolution = None
 
-        # alternative source: distribution
+        # source
         self.train_dp_list = None
         self.val_dp_list = None
+        self.train_db_files = None
 
-        # input member
-        self.train_dir = None
-        self.iou_dir = None
-        self.X_file = None
-        self.Y_file = None
-
-        # alternate input member for large data
+        # input members
         self.X_train_dir = None
         self.Y_train_dir = None
         self.X_val_dir = None
@@ -466,16 +462,15 @@ class wcnn_config:
     def set_resolution(self, resolution):
         self.resolution = resolution
 
+    def set_eventNum(self, eventNum):
+        self.eventNum = eventNum
+
     def set_train_dp_list(self, dp_list):
         self.train_dp_list = dp_list
+        self.train_db_files = [self.track_dir.joinpath(f'{dp}'+'.db') for dp in dp_list]
 
     def set_val_dp_list(self, dp_list):
         self.val_dp_list = dp_list
-
-    def set_inputs(self, extractor_train_dir, X_file, Y_file):
-        self.train_dir = extractor_train_dir
-        self.X_file = X_file
-        self.Y_file = Y_file
 
     def set_train_dir(self, train_x_dir, train_y_dir, iou_dir=None):
         self.X_train_dir = train_x_dir
