@@ -22,7 +22,7 @@ from HitGenerators import Event
 def discretize(x, min, max, res):
     # Hard coded parameters
     step = (max-min)/res
-    result = (x+min)//step
+    result = (x-min)//step
     return int(result)
 
 def zt2map(zs, ts, res):
@@ -40,7 +40,6 @@ def zt2map(zs, ts, res):
     return map
 
 
-    return
 def plot_zt(generator, windowNum=100):
 
     for i in range(windowNum):
