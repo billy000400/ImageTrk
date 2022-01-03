@@ -49,7 +49,7 @@ def log_loss(y, p):
     """
     return -( y*log(p) + (1-y)*log(1-p) )
 
-def define_rpn_class_loss(reg):
+def define_rpn_class_loss(reg, weight=None):
     def rpn_class_loss(p_r, p_p):
 
 
@@ -61,7 +61,11 @@ def define_rpn_class_loss(reg):
         #tf.keras.backend.print_tensor(tf.math.reduce_any(~tf.math.is_nan(mp_r)),'[mp_r]')
 
         bce = BinaryCrossentropy(reduction=Reduction.SUM)
-        score = bce(mp_r, mp_p)
+        if weight != None:
+            weight_batch = tf.where(mp_r==1, weight[0], weight[1])
+            score = bce(mp_r, mp_p, sample_weight=weight_batch)
+        else:
+            score = bce(mp_r, mp_p)
         #tf.keras.backend.print_tensor(score,'[sum score]')
 
         N_cls = tf.size(mp_r)

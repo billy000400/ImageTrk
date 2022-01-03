@@ -15,54 +15,79 @@ from tensorflow.keras.layers import *
 ### feature extraction networks
 class Img2Vec:
     def __init__(self, input_shape):
-        self.input_layer = Input(shape=(128, 128, 1))
+        self.input_layer = Input(shape=input_shape)
 
     def get_model(self):
-        # (128, 128, 1)
-        x = Conv2D(4, (3,3), activation='relu', padding='same')(input_layer)
+        # (256, 256, 1)
+        x = Conv2D(4, (3,3), activation='relu', padding='same')(self.input_layer)
         x = Conv2D(4, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 64, 4)
+        # (256, 128, 4)
+        #x = BatchNormalization()(x)
         x = Conv2D(8, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(8, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 32, 8)
+        # (256, 64, 8)
+        #x = BatchNormalization()(x)
         x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 16, 16)
+        # (256, 32, 16)
+        #x = BatchNormalization()(x)
         x = Conv2D(32, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(32, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 8, 32)
+        # (256, 16, 32)
+        #x = BatchNormalization()(x)
         x = Conv2D(64, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(64, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 4, 64)
+        # (256, 8, 64)
+        #x = BatchNormalization()(x)
         x = Conv2D(128, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(128, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 2, 128)
+        # (256, 4, 128)
+        #x = BatchNormalization()(x)
         x = Conv2D(256, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(256, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        # (128, 1, 256)
+        # (256, 2, 256)
+        #x = BatchNormalization()(x)
         x = Conv2D(512, (3,3), activation='relu', padding='same')(x)
         x = Conv2D(512, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(1,2), strides=(1,2), padding='valid')(x)
 
-        classifier = Conv2D(1, (1,1), activation='relu', padding='same')(x)
-        regressor = Conv2D(1, (1,1), activation='relu', padding='same')(x)
+        # x = BatchNormalization()(x)
+        # x = Conv2D(1024, (3,3), activation='relu', padding='same')(x)
+        # x = Conv2D(1024, (3,3), activation='relu', padding='same')(x)
 
-        return [classifier, regressor]
+        class_prev = Conv2D(256, (1,1), activation='relu', padding='same')(x)
+        class_prev = Conv2D(128, (1,1), activation='relu', padding='same')(class_prev)
+        class_prev = Conv2D(64, (1,1), activation='relu', padding='same')(class_prev)
+        class_prev = Conv2D(32, (1,1), activation='relu', padding='same')(class_prev)
+        class_prev = Conv2D(8, (1,1), activation='relu', padding='same')(class_prev)
 
+        classifier = Conv2D(1, (1,1), activation='relu', padding='same', name='classifier')(class_prev)
+
+        regress_prev = Conv2D(256, (1,1), activation='relu', padding='same')(x)
+        regress_prev = Conv2D(128, (1,1), activation='relu', padding='same')(regress_prev)
+        regress_prev = Conv2D(64, (1,1), activation='relu', padding='same')(regress_prev)
+        regress_prev = Conv2D(32, (1,1), activation='relu', padding='same')(regress_prev)
+        regress_prev = Conv2D(16, (1,1), activation='relu', padding='same')(regress_prev)
+
+        regressor = Conv2D(2, (1,1), activation='relu', padding='same', name='regressor')(regress_prev)
+
+        model = Model(inputs=self.input_layer, outputs = [classifier,regressor])
+
+        return model
 
 
 

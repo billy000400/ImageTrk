@@ -47,21 +47,32 @@ def zt2map(zs, ts, res):
 
 def zt2vecs(hitsInTracks, tmin, tmax, res):
     step = (tmax-tmin)/res
-    vec1 = np.zeros(shape=(res), dtype=np.float)
-    vec2 = np.zeros(shape=(res,2), dtype=np.float)
+    vec1 = np.zeros(shape=(res,1,1), dtype=np.float)
+    vec2 = np.zeros(shape=(res,1,2), dtype=np.float)
+    vec2[:] = np.nan
 
     for hitPerTrack in hitsInTracks:
         tsPerTrack = [hit[3] for hit in hitPerTrack]
-        t_avg = sum(tsPerTrack)/len(tsPerTrack)
-        delta_t = max(tsPerTrack)-min(tsPerTrack)
-        tIdx = discretize(t_avg, tmin, tmax, res)
-        vec1[tIdx] = 1.0
+        ts_max, ts_min = max(tsPerTrack), min(tsPerTrack)
+        ts_cen = (ts_max+ts_min)/2
+        dt = ts_max-ts_min
+        tIdx = discretize(ts_cen, tmin, tmax, res)
+        vec1[tIdx][0] = 1.0
 
-        if vec2[tIdx][1] > delta_t:
-            continue
+        if np.isnan(vec2[tIdx][0][1]):
+            vec2[tIdx][0][0] = residue(ts_cen, tmin, tmax, res)/step
+            vec2[tIdx][0][1] = math.log(dt/step)
         else:
-            vec2[tIdx][0] = residue(t_avg, tmin, tmax, res)/step
-            vec2[tIdx][1] = math.log(delta_t/step)
+            t_cen_prev = vec2[tIdx][0][0]
+            dt_prev = vec2[tIdx][0][1]
+            ts_max_prev = t_cen_prev + dt_prev/2
+            ts_min_prev = t_cen_prev - dt_prev/2
+            ts_max = max([ts_max, ts_max_prev])
+            ts_min = min([ts_min, ts_min_prev])
+            ts_cen = (ts_max+ts_min)/2
+            dt = ts_max-ts_min
+            vec2[tIdx][0][0] = residue(ts_cen, tmin, tmax, res)/step
+            vec2[tIdx][0][1] = math.log(dt/step)
 
     return [vec1, vec2]
 
@@ -93,13 +104,13 @@ def make_data(C):
     ## prepare event generator
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 10
-    gen = Event(C.val_db_files, hitNumCut=hitNumCut, eventNum=C.eventNum)
+    gen = Event(C.val_db_files, hitNumCut=hitNumCut)
 
     maps = []
     vec1s = []
     vec2s = []
-    for i in range(C.eventNum):
-        sys.stdout.write(t_info(f'Parsing events: {i+1}/{C.eventNum}', special='\r'))
+    for i in range(C.eventNum//3):
+        sys.stdout.write(t_info(f'Parsing events: {i+1}/{C.eventNum//3}', special='\r'))
         if i+1 == C.eventNum:
             sys.stdout.write('\n')
         sys.stdout.flush()
@@ -124,30 +135,30 @@ def make_data(C):
         map = zt2map(zs, ts, C.resolution)
         [vec1, vec2] = zt2vecs(hitsInTracks, tmin, tmax, C.resolution)
 
-        # fileName = str(i).zfill(5)+'.npy'
-        # x_file = train_x_dir.joinpath(fileName)
-        # y1_file = train_y1_dir.joinpath(fileName)
-        # y2_file = train_y2_dir.joinpath(fileName)
-        #
-        # np.save(x_file, map)
-        # np.save(y1_file, vec1)
-        # np.save(y2_file, vec2)
+        fileName = str(i).zfill(5)+'.npy'
+        x_file = val_x_dir.joinpath(fileName)
+        y1_file = val_y1_dir.joinpath(fileName)
+        y2_file = val_y2_dir.joinpath(fileName)
 
-        maps.append(map)
-        vec1s.append(vec1)
-        vec2s.append(vec2)
+        np.save(x_file, map)
+        np.save(y1_file, vec1)
+        np.save(y2_file, vec2)
 
-    maps = np.concatenate(maps)
-    vec1s = np.concatenate(vec1s)
-    vec2s = np.concatenate(vec2s)
-
-    maps_file = val_x_dir.joinpath('X.npy')
-    vec1s_file = val_y1_dir.joinpath('Y1.npy')
-    vec2s_file = val_y2_dir.joinpath('Y2.npy')
-
-    np.save(maps_file, maps)
-    np.save(vec1s_file, vec1s)
-    np.save(vec2s_file, vec2s)
+    #     maps.append(map)
+    #     vec1s.append(vec1)
+    #     vec2s.append(vec2)
+    #
+    # maps = np.concatenate(maps)
+    # vec1s = np.concatenate(vec1s)
+    # vec2s = np.concatenate(vec2s)
+    #
+    # maps_file = val_x_dir.joinpath('X.npy')
+    # vec1s_file = val_y1_dir.joinpath('Y1.npy')
+    # vec2s_file = val_y2_dir.joinpath('Y2.npy')
+    #
+    # np.save(maps_file, maps)
+    # np.save(vec1s_file, vec1s)
+    # np.save(vec2s_file, vec2s)
 
     C.set_val_dir(val_x_dir, val_y1_dir, val_y2_dir)
 

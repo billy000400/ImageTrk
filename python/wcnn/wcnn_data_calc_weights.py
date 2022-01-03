@@ -18,26 +18,22 @@ from Database_new import *
 from Configuration import wcnn_config
 from Information import *
 
+
 def preprocess(C):
 
     xfs = [f for f in C.X_train_dir.glob('*')]
     y1fs = [f for f in C.Y1_train_dir.glob('*')]
-
-    xs_file = xfs[0]
-    y1s_file = y1fs[0]
-
-    xs = np.load(xs_file)
-
-    xs_mean = xs.mean()
-    xs_std = xs.std()
-    xs = (xs-xs_mean)/xs_std
-
-    np.save(xs_file, xs)
+    y2fs = [f for f in C.Y2_train_dir.glob('*')]
 
     pos = 0.0
     neg = 0.0
-    y1s = np.load(y1s_file)
-    for y1 in y1s:
+    fNum = len(y1fs)
+    for i, y1f in enumerate(y1fs):
+        sys.stdout.write(t_info(f'Calculating weight: {(i+1)/float(fNum)*100}%', special='\r'))
+        if i+1 == fNum:
+            sys.stdout.write('\n')
+        sys.stdout.flush()
+        y1 = np.load(y1f)
         neg += np.sum(y1==0)
         pos += np.sum(y1==1)
 
@@ -45,7 +41,7 @@ def preprocess(C):
     weights = [pos/geo_avg, neg/geo_avg]
     pinfo(f"calculated weights: {weights}")
     C.set_weights(weights)
-    
+
     return C
 
 if __name__ == "__main__":

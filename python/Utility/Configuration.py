@@ -432,6 +432,7 @@ class wcnn_config:
         self.train_dp_list = None
         self.val_dp_list = None
         self.train_db_files = None
+        self.val_db_files = None
 
         # input members
         self.X_train_dir = None
@@ -441,6 +442,8 @@ class wcnn_config:
         self.Y1_val_dir = None
         self.Y2_val_dir = None
 
+        self.mean = None
+        self.std = None
 
         self.weights = None
 
@@ -475,16 +478,19 @@ class wcnn_config:
         self.val_dp_list = dp_list
         self.val_db_files = [self.track_dir.joinpath(f'{dp}'+'.db') for dp in dp_list]
 
-
     def set_train_dir(self, train_x_dir, train_y1_dir, train_y2_dir):
         self.X_train_dir = train_x_dir
         self.Y1_train_dir = train_y1_dir
         self.Y2_train_dir = train_y2_dir
 
-    def set_val_dir(self, val_x_dir, val_y1_dir):
+    def set_val_dir(self, val_x_dir, val_y1_dir, val_y2_dir):
         self.X_val_dir = val_x_dir
         self.Y1_val_dir = val_y1_dir
         self.Y2_val_dir = val_y2_dir
+
+    def set_normalization(self, mean, std):
+        self.mean = mean
+        self.std = std
 
     def set_weights(self, weights):
         self.weights = weights
