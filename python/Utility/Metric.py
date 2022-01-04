@@ -43,8 +43,8 @@ def intersection1D(intv_a, intv_b):
     return result
 
 def iou1D(intv_a, intv_b):
-    overlap = intersection1D(rec_a, rec_b)
-    sum = union1D(rec_a, rec_b, overlap)
+    overlap = intersection1D(intv_a, intv_b)
+    sum = union1D(intv_a, intv_b, overlap)
     return overlap/sum
 
 def unmasked_binary_accuracy(p_r, p_p):
@@ -246,7 +246,7 @@ def unmasked_IoU1D(t_r, t_p):
     pt2 = pc+pw/2
     intv_p = tf.stack([pt1, pt2], axis=1)
 
-    rowNum = tf.shape(rec_r)[0]
+    rowNum = tf.shape(intv_r)[0]
     i = 0
     iou_tot = 0.0
 
