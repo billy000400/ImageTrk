@@ -29,6 +29,23 @@ def iou(rec_a, rec_b):
     sum = union(rec_a, rec_b, overlap)
     return overlap/sum
 
+def union1D(intv_a, intv_b, intersection):
+    w_a = intv_a[1]-intv_a[0]
+    w_b = intv_b[1]-intv_b[0]
+    return w_a+w_b-intersection
+
+def intersection1D(intv_a, intv_b):
+    # rec_a(b) should be (xmin, xmax, ymin, ymax)
+    w = tf.math.reduce_min([intv_a[1], intv_b[1]]) - tf.math.reduce_max([intv_a[0], intv_b[0]])
+    def f1(): return 0.0
+    def f2(): return w
+    result = tf.cond(tf.less(w,0.0), f1, f2)
+    return result
+
+def iou1D(intv_a, intv_b):
+    overlap = intersection1D(rec_a, rec_b)
+    sum = union1D(rec_a, rec_b, overlap)
+    return overlap/sum
 
 def unmasked_binary_accuracy(p_r, p_p):
     mask = ~tf.math.is_nan(p_r)
@@ -196,6 +213,45 @@ def unmasked_IoUV2(t_r, t_p):
     def add_i(i, rowNum, iou_tot):
         iou_val = iou(rec_r[i], rec_p[i])
         return [tf.add(i,1), rowNum, tf.add(iou_tot, iou_val) ]
+
+    def c(i, rowNum, iou_tot):
+        return tf.less(i,rowNum)
+
+    i, rowNum, iou_tot = tf.while_loop(c, add_i, [i, rowNum, iou_tot])
+
+    rowNum = tf.cast(rowNum, tf.float32)
+    return iou_tot/rowNum
+
+def unmasked_IoU1D(t_r, t_p):
+
+    mask = ~tf.math.is_nan(t_r)
+
+    mt_r = tf.boolean_mask(t_r, mask=mask) # shape = (batch, 256, 1, 2)
+    mt_p = tf.boolean_mask(t_p, mask=mask)
+
+    mt_r_2 = tf.reshape(mt_r, [tf.size(mt_r)/2, 2])
+    mt_p_2 = tf.reshape(mt_p, [tf.size(mt_p)/2, 2])
+
+    rc = tf.gather(mt_r_2, 0, axis=1)
+    log_rw = tf.gather(mt_p_2, 1, axis=1)
+    rw = exp(log_rw)
+    rt1 = rc-rw/2
+    rt2 = rc+rw/2
+    intv_r = tf.stack([rt1, rt2], axis=1)
+
+    pc = tf.gather(mt_p_2, 0, axis=1)
+    log_pw = tf.gather(mt_p_2, 1, axis=1)
+    pw = exp(log_pw)
+    pt1 = pc-pw/2
+    pt2 = pc+pw/2
+    intv_p = tf.stack([pt1, pt2], axis=1)
+
+    rowNum = tf.shape(rec_r)[0]
+    i = 0
+    iou_tot = 0.0
+
+    def add_i(i, rowNum, iou_tot):
+        return [tf.add(i,1), rowNum, tf.add(iou_tot, iou1D(intv_r[i], intv_p[i])) ]
 
     def c(i, rowNum, iou_tot):
         return tf.less(i,rowNum)
