@@ -74,7 +74,7 @@ def train(C):
                 validation_data=val_generator,\
                 shuffle=True,\
                 callbacks = [CsvCallback, ModelCallback, tensorboard_callback],\
-                epochs=2)
+                epochs=4000)
 
     pinfo(f"Weights are saved to {str(model_weights_file)}")
     pcheck_point('Finished Training')
