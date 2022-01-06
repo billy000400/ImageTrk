@@ -19,143 +19,150 @@ More details.
 
 import sys
 from pathlib import Path
-import random
 import shutil
 import timeit
 import pickle
-from collections import Counter
 
 import numpy as np
-np.random.seed(0)
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from sqlalchemy import *
+import tensorflow as tf
 
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Database import *
+from HitGenerators import Event_V2 as Event
+from Abstract import zt2map
 from Configuration import frcnn_config
-from Abstract import binning_objects
 from Information import *
+
+
+
+labels_spec = tf.TensorSpec(shape=(32,32,18), dtype=tf.float32)
+deltas_spec = tf.TensorSpec(shape=(32,32,72), dtype=tf.float32)
+@tf.function(input_signature=[labels_spec, deltas_spec])
+def rpn_to_roi_1D(acs, lbs, dts):
+    # acs: anchors; lbs: labels; dts: deltas
+    h,w,d = lbs.shape
+    dts_flat = tf.reshape(dts, shape=(h,w,d,4))
+    indices = tf.where(tf.math.greater(lbs,0.5))
+    scores = tf.gather_nd(params=lbs, indices=indices)
+    acs_want = tf.gather_nd(params=acs, indices=indices)
+    dts_want = tf.gather_nd(params=dts_flat, indices=indices)
+
+    rois = delta_to_roi(acs_want, dts_want)
+
+    rois_want = tf.gather(params=rois, indices=selected_indices)
+    rois_xywh = diagonal_to_xywh(rois_want)
+    return rois_xywh, selected_scores
 
 def make_data_from_generator(C):
 
+    ### prepare parameters
     windowNum = C.window
     resolution = C.resolution
-
     hitNumCut = 10
 
-    ### Construct Path Objects
+    ### prepare event generators
     dp_list = C.train_dp_list
-    dp_name_iter = iter(dp_list)
-    dp_name = next(dp_name_iter)
-    db_file = track_dir.joinpath(dp_name+".db")
+    gen = Event(dp_list, hitNumCut)
 
+    ### construct Path objects
     data_dir = C.data_dir
     C.sub_data_dir = data_dir.joinpath(Path.cwd().name)
     data_dir = C.sub_data_dir
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    img_dir = data_dir.joinpath('mc_imgs_train')
+    weight_dir = Path.cwd()
+    weight_path = weight_dir.joinpath('wcnn_00.h5')
+
+    img_dir = data_dir.joinpath('imgs_train')
     shutil.rmtree(img_dir, ignore_errors=True)
     img_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_name = "mc_bbox_proposal_train.csv"
+    csv_name = "bbox_proposal_train.csv"
     bbox_file = data_dir.joinpath(csv_name)
 
-    ### initialize sqlite session
-    # Connect to the database
-    pinfo('Connecting to the track database')
-    engine = create_engine('sqlite:///'+str(db_file))
-    # make session
-    from sqlalchemy.orm import sessionmaker
-    Session = sessionmaker(bind=engine) # session factory
-    session = Session() # session object
+    ### build wcnn for window proposals
+    wcnn = Img2Vec(input_shape=(256, 256, 1)).get_model()
+    wcnn.load_weights(\
+            str(cwd.joinpath(weight_path)), by_name=True)
 
-    # get a distribution of integers
-    floats = np.random.normal(loc=mean, scale=std, size=windowNum)
-    float_type_ints = np.around(floats)
-    track_numbers = float_type_ints.astype(int)
 
-    # get all particles
-    ptcls = session.query(Particle).all()
-    ptcl_iter = iter(ptcls)
-
-    # get major tracks for each
+    # get tracks for each event
     bbox_table_row_num = 0
     dict_for_df = {}
-    for idx, track_number in enumerate(track_numbers):
+    for idx in range(windowNum):
         sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
         if idx+1 == windowNum:
             sys.stdout.write('\n')
         sys.stdout.flush()
 
+        # initialize parameters
         img_name = str(idx+1).zfill(5)+'.png'
         img_file = img_dir.joinpath(img_name)
 
         x_all = []
         y_all = []
 
-        track_found_num = 0
-
         rects = []
-        while track_found_num < track_number:
-            try:
-                ptcl = next(ptcl_iter)
-            except:
-                sys.stdout.write('\n')
-                sys.stdout.flush()
-                pinfo('Run out of particles')
-                dp_name = next(dp_name_iter)
-                db_file = track_dir.joinpath(dp_name+".db")
-                pinfo('Connecting to the next track database')
-                engine = create_engine('sqlite:///'+str(db_file))
-                Session = sessionmaker(bind=engine) # session factory
-                session = Session() # session object
-                ptcls = session.query(Particle).all()
-                ptcl_iter = iter(ptcls)
-                ptcl = next(ptcl_iter)
-                track_box = [ptcl]
-                track_found_number = 1
 
-            strawHit_qrl = session.query(StrawDigiMC).filter(StrawDigiMC.particle==ptcl.id)
-            hitNum = strawHit_qrl.count()
-            if (hitNum >= hitNumCut) and (ptcl.pdgId == 11):
-                strawHits = strawHit_qrl.all()
-                xs = [hit.x for hit in strawHits]
-                ys = [hit.y for hit in strawHits]
-                x_all = x_all + xs
-                y_all = y_all + ys
+        # generate an event
+        hit_all, track_all = gen.generate(mode='eval')
 
-                xs = np.array(xs)
-                ys = np.array(ys)
-
-                XMin = xs.min()
-                XMax = xs.max()
-                YMin = ys.min()
-                YMax = ys.max()
-
-                rect = Rectangle((XMin,YMin), XMax-XMin, YMax-YMin,linewidth=1,edgecolor='r',facecolor='none')
-                rects.append(rect)
-
-                xmin = XMin/1620 + 0.5 -0.01
-                xmax = XMax/1620 + 0.5 + 0.01
-                ymin = YMin/1620 + 0.5 -0.01
-                ymax = YMax/1620 + 0.5 +0.01
-                pdgId = session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
-                dict_for_df[bbox_table_row_num] = {'FileName':img_name,\
-                                        'XMin':xmin,\
-                                        'XMax':xmax,\
-                                        'YMin':ymin,\
-                                        'YMax':ymax,\
-                                        'ClassName':pdgId}
-
-                bbox_table_row_num += 1
-                track_found_num += 1
-            else:
+        # filter out long staying particle
+        hitsInTracks = []
+        for trkIdx, hitIdcPdgId in track_all.items():
+            hitIdc = hitIdcPdgId[:-1]
+            hitsPerTrack = [hit_all[idx] for idx in hitIdc]
+            tsPerTrack = [hit[3] for hit in hitsPerTrack]
+            delta_t= max(tsPerTrack)-min(tsPerTrack)
+            if delta_t > 1000:
                 continue
+            hitsInTracks.append(hitsPerTrack)
+
+        # make zt maps to propose tracking windows
+        hits = [hit for hitsPerTrack in hitsInTracks for hit in hitsPerTrack]
+        zs = [hit[2] for hit in hits]
+        ts = [hit[3] for hit in hits]
+        map = zt2map(zs, ts, resolution)
+
+        # wcnn proposing tracking windows
+        vec1, vec2 = wcnn.predict_on_batch(map)
+        windows = delta_to_roi_1D(vec1, vec2)
+
+            xs = [hit.x for hit in strawHits]
+            ys = [hit.y for hit in strawHits]
+            x_all = x_all + xs
+            y_all = y_all + ys
+
+            xs = np.array(xs)
+            ys = np.array(ys)
+
+            XMin = xs.min()
+            XMax = xs.max()
+            YMin = ys.min()
+            YMax = ys.max()
+
+            rect = Rectangle((XMin,YMin), XMax-XMin, YMax-YMin,linewidth=1,edgecolor='r',facecolor='none')
+            rects.append(rect)
+
+            xmin = XMin/1620 + 0.5 -0.01
+            xmax = XMax/1620 + 0.5 + 0.01
+            ymin = YMin/1620 + 0.5 -0.01
+            ymax = YMax/1620 + 0.5 +0.01
+            pdgId = session.query(Particle.pdgId).filter(Particle.id==ptcl.id).one_or_none()[0]
+            dict_for_df[bbox_table_row_num] = {'FileName':img_name,\
+                                    'XMin':xmin,\
+                                    'XMax':xmax,\
+                                    'YMin':ymin,\
+                                    'YMax':ymax,\
+                                    'ClassName':pdgId}
+
+            bbox_table_row_num += 1
+            track_found_num += 1
 
         x_all = np.array(x_all)
         y_all = np.array(y_all)
@@ -196,24 +203,11 @@ if __name__ == "__main__":
     # initialize parameters
     track_dir_str = '../../tracks'
     data_dir_str = '../../data'
-    # dp_list = ["dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art","dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
-    # window = 20 # unit: ns
+
     window = 700 # unit: number of windows
     resolution = 512
 
     dp_list =  ["train"]
-
-    ## parameter handling
-    # argv = sys.argv
-    # if len(argv) == 1:
-    #     pass
-    # elif len(argv) >= 3:
-    #     track_str = argv[1]
-    #     dp_list = argv[2:]
-    # else:
-    #     perr("Invalid number of argument!")
-    #     perr("extra argv num = 0: track_DB_dir and data_product_list are set inside the script")
-    #     perr("extra argv num >= 2: first extra argv is track_DB_dir, and other are data product names")
 
     # setup parameters
     track_dir = Path(track_dir_str)

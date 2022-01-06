@@ -457,3 +457,55 @@ def propose_score_bbox_list(anchors, score_map, delta_map):
             score_bbox_list.append([score, bbox])
 
     return score_bbox_list
+
+def discretize(x, min, max, res):
+    # return the discretized index of a value given a range and resolution
+    step = (max-min)/res
+    result = (x-min)//step
+    if result == res:
+        result = res-1
+    return int(result)
+
+def residue(x, min, max, res):
+    step = (max-min)/res
+    res_val = (x-min)%step
+    return res_val
+
+def zt2map(zs, ts, res):
+    # return a z-t ptcl number map
+    map = np.zeros(shape=(res,res), dtype=float)
+    zmin = min(zs)
+    zmax = max(zs)
+    tmin, tmax = min(ts), max(ts)
+
+    for z, t in zip(zs, ts):
+        zIdx = discretize(z, zmin, zmax, res)
+        tIdx = discretize(t, tmin, tmax, res)
+        map[tIdx, zIdx] += 1
+
+    map_max = map.max()
+    map = map/map_max
+    return map
+
+def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
+    return
+    
+def make_anchors_1D(resolution, anchor_scales):
+
+    # Calculate the shape of the anchor map
+    num_anchors_per_cell = len(anchor_scales)
+    num_anchors = int(num_row_anchor)
+
+    # register memory for anchors
+    anchors = np.zeros(shape=(num_row_anchor, num_col_anchor, num_anchors, 4), dtype=np.float32)
+
+    # fill in data to empty arrays
+    num_anchor_area = num_row_anchor * num_col_anchor
+    for i in range(num_row_anchor):
+        for j in range(num_col_anchor):
+            x_center = j*ratio/img_width
+            y_center = 1 - i*ratio/img_height
+            pos_center = (x_center, y_center)
+            anchors[i][j] = make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center)
+
+    return anchors
