@@ -268,7 +268,7 @@ namespace mu2e{
 
 		// create tables
 		std::string sql_ptcls, sql_digis, sql_hits;
-		char* Err;
+		char* Err, Err1, Err2;
 
 		sql_ptcls = "CREATE TABLE Particle(\
 			id INTEGER PRIMARY KEY NOT NULL,\
@@ -304,10 +304,10 @@ namespace mu2e{
 			FOREIGN KEY(particle) REFERENCES Particle(id))";
 
 
-			error = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err);
-			if (error){
-				fprintf(stderr, "Error when create table StrawDigiMC: %s\n", Err);
-				sqlite3_free(Err);
+			int error1 = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err1);
+			if (error1){
+				fprintf(stderr, "Error when create table StrawDigiMC: %s\n", Err1);
+				sqlite3_free(Err1);
 			}
 			// sqlite3_free(Err);
 
@@ -331,10 +331,10 @@ namespace mu2e{
 			FOREIGN KEY(particle) REFERENCES Particle(id),\
 			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id))";
 
-		error = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err);
-		if (error){
-			fprintf(stderr, "Error when create table StrawHit: %s\n", Err);
-			sqlite3_free(Err);
+		int error2 = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err2);
+		if (error2){
+			fprintf(stderr, "Error when create table StrawHit: %s\n", Err2);
+			sqlite3_free(Err2);
 		}
 		// sqlite3_free(Err);
 	}
