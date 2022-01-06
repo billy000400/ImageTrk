@@ -303,7 +303,7 @@ namespace mu2e{
 			uniquePanel INTEGER NOT NULL,\
 			uniqueFace INTEGER NOT NULL,\
 			uniqueStraw INTEGER NOT NULL,\
-			FOREIGN KEY(particle) REFERENCES Particle(id))";
+			FOREIGN KEY(particle) REFERENCES Particle(id));";
 
 
 			int error1 = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err1);
@@ -331,7 +331,7 @@ namespace mu2e{
 			uniqueFace INTEGER NOT NULL,\
 			uniqueStraw INTEGER NOT NULL,\
 			FOREIGN KEY(particle) REFERENCES Particle(id),\
-			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id))";
+			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id));";
 
 		int error2 = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err2);
 		if (error2){
