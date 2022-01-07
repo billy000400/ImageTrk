@@ -234,7 +234,7 @@ namespace mu2e{
     // Below is the directory the script should be called
     // This absolute method should be changed if Billy want it to apply for
     // other people
-    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite/";
+    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite";
 
     // Get the current calling directory
 		cwd = boost::filesystem::current_path().string();
@@ -252,7 +252,7 @@ namespace mu2e{
     boost::filesystem::create_directory(trkDir);
 
     // Check if an old database exists
-    db_path = cwd_ideal+dbName+".db";
+    db_path = cwd_ideal+"/"+dbName+".db";
     bool oldDbExist = boost::filesystem::exists(db_path);
 
     // If an old DB exists,
