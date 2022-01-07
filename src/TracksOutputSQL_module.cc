@@ -248,7 +248,7 @@ namespace mu2e{
 		}
 
     // Construct Tracking/tracks if not constructed
-    std::string trkDir = cwd_ideal+"tracks/";
+    std::string trkDir = cwd_ideal+"/Tracking/tracks/";
     boost::filesystem::create_directory(trkDir);
 
     // Check if an old database exists
