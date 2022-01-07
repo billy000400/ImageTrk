@@ -252,7 +252,7 @@ namespace mu2e{
     boost::filesystem::create_directory(trkDir);
 
     // Check if an old database exists
-    db_path = cwd_ideal+"/"+dbName+".db";
+    db_path = trkDir+dbName+".db";
     bool oldDbExist = boost::filesystem::exists(db_path);
 
     // If an old DB exists,
