@@ -253,6 +253,7 @@ namespace mu2e{
 
     // Check if an old database exists
     db_path = trkDir+dbName+".db";
+		std::cout << db_path << std::endl;
     bool oldDbExist = boost::filesystem::exists(db_path);
 
     // If an old DB exists,
