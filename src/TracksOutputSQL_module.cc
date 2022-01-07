@@ -278,7 +278,7 @@ namespace mu2e{
 			subRun INTEGER NOT NULL,\
 			event INTEGER NOT NULL,\
 			track INTEGER NOT NULL,\
-			pdgId INTEGER NOT NULL);";
+			pdgId INTEGER NOT NULL)";
 
 		error = sqlite3_exec(DB, sql_ptcls.c_str(), NULL, NULL, &Err);
 		if (error){
@@ -303,7 +303,7 @@ namespace mu2e{
 			uniquePanel INTEGER NOT NULL,\
 			uniqueFace INTEGER NOT NULL,\
 			uniqueStraw INTEGER NOT NULL,\
-			FOREIGN KEY(particle) REFERENCES Particle(id));";
+			FOREIGN KEY(particle) REFERENCES Particle(id))";
 
 
 			int error1 = sqlite3_exec(DB, sql_digis.c_str(), NULL, NULL, &Err1);
@@ -331,7 +331,7 @@ namespace mu2e{
 			uniqueFace INTEGER NOT NULL,\
 			uniqueStraw INTEGER NOT NULL,\
 			FOREIGN KEY(particle) REFERENCES Particle(id),\
-			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id));";
+			FOREIGN KEY(StrawDigiMC) REFERENCES StrawDigiMC(id))";
 
 		int error2 = sqlite3_exec(DB, sql_hits.c_str(), NULL, NULL, &Err2);
 		if (error2){
