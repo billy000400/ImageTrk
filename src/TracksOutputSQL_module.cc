@@ -234,7 +234,7 @@ namespace mu2e{
     // Below is the directory the script should be called
     // This absolute method should be changed if Billy want it to apply for
     // other people
-    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite";
+    cwd_ideal = "/nashome/h/haoyang/mu2e/working/Satellite/";
 
     // Get the current calling directory
 		cwd = boost::filesystem::current_path().string();
