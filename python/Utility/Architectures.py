@@ -5,12 +5,17 @@
 # @Last modified time: 12-27-2021
 
 
-
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, initializers, Model
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.layers import *
+
+from tensorflow.keras.backend import print_tensor
+
+from Abstract import *
+from Information import *
 
 ### feature extraction networks
 class Img2Vec:
@@ -89,6 +94,69 @@ class Img2Vec:
 
         return model
 
+labels_spec=\
+    tf.TensorSpec(shape=(256, 1, 1),\
+                dtype=tf.float32)
+deltas_spec=\
+    tf.TensorSpec(shape=(256, 1, 2),\
+                    dtype=tf.float32)
+class WCNN:
+    def __init__(self, resolution, anchor_scales, weight_path):
+        pinfo("WCNN: Building the model")
+        self.model = Img2Vec(input_shape=(256, 256, 1)).get_model()
+        pinfo("WCNN: Loading weights")
+        self.model.load_weights(str(weight_path), by_name=True)
+        pinfo("WCNN: Preparing 1-D anchors")
+        self.anchors = tf.constant(make_anchors_1D(resolution, anchor_scales),\
+                                    dtype=tf.float32)
+        self.anchors = tf.reshape(self.anchors, shape=(resolution, 1, len(anchor_scales), 2))
+
+
+    @tf.function(experimental_relax_shapes=True)
+    def __delta_to_roi_1D(self, acs, dts):
+        dt_centers, dt_widths = tf.unstack(dts, axis=1)
+        anchor_mins, anchor_maxs = tf.unstack(acs, axis=1)
+        anchor_centers = tf.math.divide(tf.math.add(anchor_mins,anchor_maxs), 2.0) # center ts
+        anchor_widths = tf.math.subtract(anchor_maxs,anchor_mins) # widths
+
+        window_centers = tf.math.add(\
+                tf.math.multiply(dt_centers, anchor_widths), anchor_centers)
+        window_widths = tf.math.multiply(\
+                tf.math.exp(dt_widths), anchor_widths)
+
+        tmins = tf.math.subtract(window_centers, tf.math.divide(window_widths, 2.0))
+        tmaxs = tf.math.add(window_centers, tf.math.divide(window_widths, 2.0))
+
+        windows = tf.stack([tmins, tmaxs], axis=1)
+        windows = tf.clip_by_value(t=windows, clip_value_min=0, clip_value_max=1)
+        return windows
+
+
+    @tf.function(input_signature=[labels_spec, deltas_spec])
+    def __rpn_to_roi_1D(self, lbs, dts):
+        # acs: anchors; lbs: labels; dts: deltas
+        acs = self.anchors
+        h,w,d = lbs.shape
+        dts_flat = tf.reshape(dts, shape=(h,w,d,2))
+        indices = tf.where(tf.math.greater(lbs,0.5))
+        scores = tf.gather_nd(params=lbs, indices=indices)
+        acs_want = tf.gather_nd(params=acs, indices=indices)
+        dts_want = tf.gather_nd(params=dts_flat, indices=indices)
+
+        print(indices)
+        print(acs_want)
+        print(dts_want)
+        windows = self.__delta_to_roi_1D(acs_want, dts_want)
+        return windows, scores
+
+    def propose(self, map):
+        lbs, dts = self.model.predict_on_batch(map)
+        # so far we let the batch_size=1
+        lbs = tf.squeeze(lbs, axis=0)
+        dts = tf.squeeze(dts, axis=0)
+
+        windows, scores = self.__rpn_to_roi_1D(lbs, dts)
+        return windows, scores
 
 
 
