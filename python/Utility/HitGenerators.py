@@ -260,13 +260,15 @@ class Event_V2:
     def __init__(self, db_files, hitNumCut=0, eventNum=None):
         self.dbs = db_files
         self.hitNumCut = hitNumCut
-        self.eventNum = eventNum
 
         self.db_iter = iter(db_files)
 
         self.current_db = None
         self.session = None
         self.__update_db()
+
+        self.eventNum = eventNum
+        self.__count_event()
 
         self.ptclNums = []
         self.pdgIds = []
@@ -289,6 +291,14 @@ class Event_V2:
     def __update_db(self):
         self.current_db = next(self.db_iter)
         self.__connect_db()
+
+    def __count_event(self):
+        eventNumMax = self.session.query(Particle.run, Particle.subRun, Particle.event).distinct().count()
+        if eventNumMax < self.eventNum:
+            pwarn(f"The required event number: {self.eventNum}\
+             is greater than the maximum: {eventNumMax}")
+            pwarn(f"Changing event number to maximum")
+            self.eventNum = eventNumMax
 
     def __make_iters(self):
 
@@ -319,7 +329,7 @@ class Event_V2:
                 for event in events:
                     if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
                         break
-                    sys.stdout.write(t_info(f'Getting ids for event: {scanEvtNum+1}', special='\r'))
+                    sys.stdout.write(t_info(f'Getting ids for event: {scanEvtNum+1}/{self.eventNum}', special='\r'))
                     sys.stdout.flush()
                     event = event[0]
                     ptclsInWindow = self.session.query(Particle)\
