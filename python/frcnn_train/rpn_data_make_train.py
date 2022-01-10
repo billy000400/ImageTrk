@@ -40,23 +40,8 @@ from Information import *
 
 
 
-labels_spec = tf.TensorSpec(shape=(32,32,18), dtype=tf.float32)
-deltas_spec = tf.TensorSpec(shape=(32,32,72), dtype=tf.float32)
-@tf.function(input_signature=[labels_spec, deltas_spec])
-def rpn_to_roi_1D(acs, lbs, dts):
-    # acs: anchors; lbs: labels; dts: deltas
-    h,w,d = lbs.shape
-    dts_flat = tf.reshape(dts, shape=(h,w,d,4))
-    indices = tf.where(tf.math.greater(lbs,0.5))
-    scores = tf.gather_nd(params=lbs, indices=indices)
-    acs_want = tf.gather_nd(params=acs, indices=indices)
-    dts_want = tf.gather_nd(params=dts_flat, indices=indices)
 
-    rois = delta_to_roi(acs_want, dts_want)
 
-    rois_want = tf.gather(params=rois, indices=selected_indices)
-    rois_xywh = diagonal_to_xywh(rois_want)
-    return rois_xywh, selected_scores
 
 def make_data_from_generator(C):
 
