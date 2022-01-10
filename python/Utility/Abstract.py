@@ -462,7 +462,7 @@ def discretize(x, min, max, res):
     # return the discretized index of a value given a range and resolution
     step = (max-min)/res
     result = (x-min)//step
-    if result == res:
+    if result >= res:
         result = res-1
     return int(result)
 
@@ -474,9 +474,10 @@ def residue(x, min, max, res):
 def zt2map(zs, ts, res):
     # return a z-t ptcl number map
     map = np.zeros(shape=(res,res), dtype=float)
-    zmin = min(zs)
-    zmax = max(zs)
-    tmin, tmax = min(ts), max(ts)
+    # zmin, zmax = min(zs), max(zs)
+    # tmin, tmax = min(ts), max(ts)
+    zmin, zmax = -1520, 1520
+    tmin, tmax = -40, 1800
 
     for z, t in zip(zs, ts):
         zIdx = discretize(z, zmin, zmax, res)
@@ -487,25 +488,37 @@ def zt2map(zs, ts, res):
     map = map/map_max
     return map
 
-def make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center):
-    return
-    
+def hit2ztmap(hit_all, resolution):
+    zs, ts = [], []
+    for idx, hit in hit_all.items():
+        zs.append(hit[2])
+        ts.append(hit[3])
+    map = zt2map(zs, ts, resolution)
+    return np.expand_dims(map, axis=[0,-1])
+
+def make_anchor_pyramid_1D(anchor_scales, t_base):
+    num_anchors = len(anchor_scales)
+    pyramid = np.zeros(shape=(num_anchors, 2))
+    for i, scale in enumerate(anchor_scales):
+        tmin = t_base-scale/2
+        tmax = t_base+scale/2
+        pyramid[i][0] = tmin
+        pyramid[i][1] = tmax
+
+    return pyramid
+
 def make_anchors_1D(resolution, anchor_scales):
 
     # Calculate the shape of the anchor map
     num_anchors_per_cell = len(anchor_scales)
-    num_anchors = int(num_row_anchor)
+    num_cell = resolution
 
     # register memory for anchors
-    anchors = np.zeros(shape=(num_row_anchor, num_col_anchor, num_anchors, 4), dtype=np.float32)
+    anchors = np.zeros(shape=(num_cell, num_anchors_per_cell, 2), dtype=np.float)
 
     # fill in data to empty arrays
-    num_anchor_area = num_row_anchor * num_col_anchor
-    for i in range(num_row_anchor):
-        for j in range(num_col_anchor):
-            x_center = j*ratio/img_width
-            y_center = 1 - i*ratio/img_height
-            pos_center = (x_center, y_center)
-            anchors[i][j] = make_anchor_pyramid(anchor_scales, anchor_ratios, pos_center)
+    for i in range(num_cell):
+        t_base = i/float(resolution)
+        anchors[i] = make_anchor_pyramid_1D(anchor_scales, t_base)
 
     return anchors
