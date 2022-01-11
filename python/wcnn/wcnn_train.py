@@ -92,8 +92,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = 'wcnn_01_strict_lim'
-    record_name = 'wcnn_record_01_strict_lim'
+    model_name = 'wcnn_02_tanh'
+    record_name = 'wcnn_record_02_tanh'
     C.set_outputs(model_name, record_name)
 
     C = train(C)

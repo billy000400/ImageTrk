@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     res = 256
     scales = [float(1/256)]
-    weight_path = "wcnn_00.h5"
+    weight_path = "wcnn_02_tanh.h5"
     wcnn = WCNN(resolution=256, anchor_scales=scales, weight_path=weight_path)
     testNum = 10
 

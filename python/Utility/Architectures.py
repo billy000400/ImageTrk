@@ -80,7 +80,7 @@ class Img2Vec:
         class_prev = Conv2D(32, (1,1), activation='relu', padding='same')(class_prev)
         class_prev = Conv2D(8, (1,1), activation='relu', padding='same')(class_prev)
 
-        classifier = Conv2D(1, (1,1), activation='relu', padding='same', name='classifier')(class_prev)
+        classifier = Conv2D(1, (1,1), activation='tanh', padding='same', name='classifier')(class_prev)
 
         regress_prev = Conv2D(256, (1,1), activation='relu', padding='same')(x)
         regress_prev = Conv2D(128, (1,1), activation='relu', padding='same')(regress_prev)
