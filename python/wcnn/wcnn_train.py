@@ -44,7 +44,7 @@ def train(C):
     model = Img2Vec(input_shape=(256, 256, 1)).get_model()
     model.summary()
 
-    classifier_loss = define_rpn_class_loss(10)
+    classifier_loss = define_rpn_class_loss(10, weight=C.weights)
     regressor_loss = define_rpn_regr_loss(1)
 
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
