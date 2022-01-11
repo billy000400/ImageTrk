@@ -45,6 +45,8 @@ def train(C):
     model.summary()
 
     classifier_loss = define_rpn_class_loss(10, weight=C.weights)
+    # print(C.weights)
+    # sys.exit()
     regressor_loss = define_rpn_regr_loss(1)
 
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -66,7 +68,7 @@ def train(C):
     # compile the model
     model.compile(optimizer=adam, loss={'classifier': classifier_loss,\
                                         'regressor': regressor_loss},
-                                    metrics={'classifier': [weighted_unmasked_binary_accuracy, positive_number],\
+                                    metrics={'classifier': [unmasked_precision, unmasked_recall, positive_number],\
                                             'regressor': unmasked_IoU1D})
 
     # initialize fit parameters
@@ -92,8 +94,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = 'wcnn_02_tanh'
-    record_name = 'wcnn_record_02_tanh'
+    model_name = 'wcnn_00'
+    record_name = 'wcnn_record_00'
     C.set_outputs(model_name, record_name)
 
     C = train(C)
