@@ -57,12 +57,15 @@ def define_rpn_class_loss(reg, weight=None):
         #mask.set_shape([None,32,32,18])
         mp_r = tf.boolean_mask(p_r, mask=mask)
         mp_p = tf.boolean_mask(p_p, mask=mask)
+        mp_r = tf.reshape(mp_r, shape=[tf.size(mp_r)])
+        mp_p = tf.reshape(mp_p, shape=[tf.size(mp_p)])
         #tf.keras.backend.print_tensor(tf.math.reduce_any(~tf.math.is_nan(mp_r)))
         #tf.keras.backend.print_tensor(tf.math.reduce_any(~tf.math.is_nan(mp_r)),'[mp_r]')
 
         bce = BinaryCrossentropy(reduction=Reduction.SUM)
         if weight != None:
             weight_batch = tf.where(mp_r==1, weight[0], weight[1])
+            weight_batch = tf.reshape(weight_batch, [tf.size(weight_batch),1])
             score = bce(mp_r, mp_p, sample_weight=weight_batch)
         else:
             score = bce(mp_r, mp_p)
