@@ -496,6 +496,16 @@ def hit2ztmap(hit_all, resolution):
     map = zt2map(zs, ts, resolution)
     return np.expand_dims(map, axis=[0,-1])
 
+def trk2windows(hit_all, track_all):
+    windows = []
+    for trkIdx, hitIdc in track_all.items():
+        hitsPerTrack = [hit_all[idx] for idx in hitIdc]
+        tsPerTrack = [hit[3] for hit in hitsPerTrack]
+        tmin = (min(tsPerTrack)+40)/1840
+        tmax = (max(tsPerTrack)+40)/1840
+        windows.append([tmin, tmax])
+    return windows
+
 def make_anchor_pyramid_1D(anchor_scales, t_base):
     num_anchors = len(anchor_scales)
     pyramid = np.zeros(shape=(num_anchors, 2))
