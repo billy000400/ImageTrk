@@ -66,7 +66,7 @@ def train(C):
     # compile the model
     model.compile(optimizer=adam, loss={'classifier': classifier_loss,\
                                         'regressor': regressor_loss},
-                                    metrics={'classifier': [unmasked_binary_accuracy, positive_number],\
+                                    metrics={'classifier': [weighted_unmasked_binary_accuracy, positive_number],\
                                             'regressor': unmasked_IoU1D})
 
     # initialize fit parameters
