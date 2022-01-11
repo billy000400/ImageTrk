@@ -143,9 +143,6 @@ class WCNN:
         acs_want = tf.gather_nd(params=acs, indices=indices)
         dts_want = tf.gather_nd(params=dts_flat, indices=indices)
 
-        print(indices)
-        print(acs_want)
-        print(dts_want)
         windows = self.__delta_to_roi_1D(acs_want, dts_want)
         return windows, scores
 
