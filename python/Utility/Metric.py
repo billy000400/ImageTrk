@@ -5,10 +5,10 @@ import tensorflow as tf
 from tensorflow.math import exp
 from tensorflow.keras.metrics import (
     binary_accuracy,
-    categorical_accuracy
+    categorical_accuracy,
+    Precision
 )
 from tensorflow.keras.backend import print_tensor
-
 
 def union(rec_a, rec_b, intersection):
     area_a = (rec_a[1]-rec_a[0])*(rec_a[3]-rec_a[2])
@@ -61,6 +61,57 @@ def unmasked_binary_accuracy(p_r, p_p):
 
     return score/N_cls*100.0
 
+def weighted_unmasked_binary_accuracy(y_real, y_predict):
+
+    major_mask = (y_real==1)
+    bg_mask = (y_real==0)
+
+    y_real_major = tf.boolean_mask(y_real, major_mask)
+    y_predict_major = tf.boolean_mask(y_predict, major_mask)
+
+    y_real_bg = tf.boolean_mask(y_real, bg_mask)
+    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
+
+
+    score_major_avg = binary_accuracy(y_real_major, y_predict_major)
+    score_bg_avg = binary_accuracy(y_real_bg, y_predict_bg)
+
+    N_major = tf.size(y_real_major)
+    N_major = tf.cast(N_major, tf.float32)
+    N_bg = tf.size(y_real_bg)
+    N_bg = tf.cast(N_bg, tf.float32)
+
+    sum = N_major + N_bg
+
+    return (score_major_avg*N_bg+score_bg_avg*N_major)/sum*100
+
+
+def unmasked_precision(p_r, p_p):
+    mask = ~tf.math.is_nan(p_r)
+    #mask.set_shape([None,32,32,18])
+    mp_r = tf.boolean_mask(p_r, mask=mask)
+    mp_p = tf.boolean_mask(p_p, mask=mask)
+
+    pred_positive_mask = (mp_p>=0.5)
+    pred_positive = tf.math.reduce_sum(tf.cast(pred_positive_mask, tf.float32))
+    mmp_r = tf.boolean_mask(mp_r, mask=pred_positive_mask)
+    true_positive = tf.math.reduce_sum(tf.cast(mmp_r==1, tf.float32))
+
+    return true_positive/pred_positive*100
+
+def unmasked_recall(p_r, p_p):
+    mask = ~tf.math.is_nan(p_r)
+    #mask.set_shape([None,32,32,18])
+    mp_r = tf.boolean_mask(p_r, mask=mask)
+    mp_p = tf.boolean_mask(p_p, mask=mask)
+
+    tot_positive_mask = (mp_r==1)
+    tot_positive = tf.math.reduce_sum(tf.cast(tot_positive_mask,tf.float32))
+    mmp_p = tf.boolean_mask(mp_p, mask=tot_positive_mask)
+    true_positive = tf.math.reduce_sum(tf.cast(mmp_p>=0.5,tf.float32))
+
+    return true_positive/tot_positive*100.0
+
 def unmasked_categorical_accuracy(p_r, p_p):
     # p_real_sl = p_r[:,:,:,0]
     # mask = ~tf.math.is_nan(p_real_sl)
@@ -101,30 +152,6 @@ def top2_categorical_accuracy(y_real, y_predict):
     sum = N_major + N_bg
 
     return (score_major+score_bg)/sum*100
-
-def weighted_unmasked_binary_accuracy(y_real, y_predict):
-
-    major_mask = (y_real==1)
-    bg_mask = (y_real==0)
-
-    y_real_major = tf.boolean_mask(y_real, major_mask)
-    y_predict_major = tf.boolean_mask(y_predict, major_mask)
-
-    y_real_bg = tf.boolean_mask(y_real, bg_mask)
-    y_predict_bg = tf.boolean_mask(y_predict, bg_mask)
-
-
-    score_major_avg = binary_accuracy(y_real_major, y_predict_major)
-    score_bg_avg = binary_accuracy(y_real_bg, y_predict_bg)
-
-    N_major = tf.size(y_real_major)
-    N_major = tf.cast(N_major, tf.float32)
-    N_bg = tf.size(y_real_bg)
-    N_bg = tf.cast(N_bg, tf.float32)
-
-    sum = N_major + N_bg
-
-    return (score_major_avg*N_major+score_bg_avg*N_bg)/sum*100
 
 def unmasked_IoU(t_r, t_p):
 
