@@ -38,7 +38,7 @@ def preprocess(C):
         pos += np.sum(y1==1)
 
     geo_avg = np.sqrt(pos*neg)
-    weights = [pos/geo_avg, neg/geo_avg]
+    weights = [neg/geo_avg, pos/geo_avg]
     pinfo(f"calculated weights: {weights}")
     C.set_weights(weights)
 
