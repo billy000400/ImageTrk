@@ -44,10 +44,10 @@ def train(C):
     model = Img2Vec(input_shape=(256, 256, 1)).get_model()
     model.summary()
 
-    classifier_loss = define_rpn_class_loss(10, weight=C.weights)
+    classifier_loss = define_rpn_class_loss(1, weight=C.weights)
     # print(C.weights)
     # sys.exit()
-    regressor_loss = define_rpn_regr_loss(1)
+    regressor_loss = define_rpn_regr_loss(10)
 
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=1e-4,
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = 'wcnn_00'
-    record_name = 'wcnn_record_00'
+    model_name = 'wcnn_01_weight_1_10'
+    record_name = 'wcnn_record_01_weight_1_10'
     C.set_outputs(model_name, record_name)
 
     C = train(C)
