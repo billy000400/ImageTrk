@@ -57,10 +57,10 @@ def train(C):
 
     # setup callbacks
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
-    ModelCallback = tf.keras.callbacks.ModelCheckpoint(model_weights_file,\
-                        monitor='val_loss', verbose=1,\
+    ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(model_weights_file),\
+                        monitor='loss', verbose=1,\
                         save_weights_only=True,\
-                        save_best_only=True, mode='auto', save_freq='epoch')
+                        save_best_only=True, mode='min', save_freq='epoch')
 
     logdir="logs/fit/" + "wcnn_" + datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
@@ -77,6 +77,10 @@ def train(C):
                 shuffle=True,\
                 callbacks = [CsvCallback, ModelCallback, tensorboard_callback],\
                 epochs=4000)
+
+    model.evaluate(x=train_generator)
+
+    # model.save(model_weights_file, overwrite=True)
 
     pinfo(f"Weights are saved to {str(model_weights_file)}")
     pcheck_point('Finished Training')
