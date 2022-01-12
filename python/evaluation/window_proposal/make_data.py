@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   01-11-2022
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 01-11-2022
+
+
+
 import sys
 from pathlib import Path
 import shutil
@@ -47,8 +55,8 @@ def zt2map(zs, ts, res):
 
 def zt2vecs(hitsInTracks, tmin, tmax, res):
     step = (tmax-tmin)/res
-    vec1 = np.zeros(shape=(res,1,1), dtype=np.float)
-    vec2 = np.zeros(shape=(res,1,2), dtype=np.float)
+    vec1 = np.zeros(shape=(res,1,1), dtype=float)
+    vec2 = np.zeros(shape=(res,1,2), dtype=float)
     vec2[:] = np.nan
 
     for hitPerTrack in hitsInTracks:
