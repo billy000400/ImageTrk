@@ -2,7 +2,7 @@
 # @Date:   11-03-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 12-28-2021
+# @Last modified time: 01-11-2022
 
 
 
@@ -294,7 +294,9 @@ class Event_V2:
 
     def __count_event(self):
         eventNumMax = self.session.query(Particle.run, Particle.subRun, Particle.event).distinct().count()
-        if eventNumMax < self.eventNum:
+        if self.eventNum is None:
+            self.eventNum = eventNumMax
+        elif eventNumMax < self.eventNum:
             pwarn(f"The required event number: {self.eventNum}\
              is greater than the maximum: {eventNumMax}")
             pwarn(f"Changing event number to maximum")
