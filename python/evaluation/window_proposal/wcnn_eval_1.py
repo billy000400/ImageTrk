@@ -78,7 +78,7 @@ if __name__ == "__main__":
     model.load_weights(Path.cwd().joinpath(weight_file_name))
 
     # for layer in model.layers: print(layer.get_config(), layer.get_weights())
-    result = model.evaluate(x=val_generator, return_dict=True)
+    result = model.evaluate(x=val_generator)
     # result = {key:[value] for key, value in result.items()}
     # df = pd.DataFrame.from_dict(result)
     # df.to_csv(Path.cwd().joinpath('result.csv'), index=None)
