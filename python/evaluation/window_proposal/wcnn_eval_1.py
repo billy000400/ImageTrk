@@ -44,7 +44,6 @@ if __name__ == "__main__":
 
     # load model weights
     weight_file_name = 'wcnn_01_weight_1_10.h5'
-    print(Path.cwd().joinpath(weight_file_name))
     # model.load_weights(Path.cwd().joinpath(weight_file_name))
     model.summary()
     # set data generator
@@ -79,6 +78,9 @@ if __name__ == "__main__":
 
     # for layer in model.layers: print(layer.get_config(), layer.get_weights())
     result = model.evaluate(x=val_generator)
+    print(C.X_train_dir)
+    print(C.Y1_train_dir)
+    print(C.Y2_train_dir)
     # result = {key:[value] for key, value in result.items()}
     # df = pd.DataFrame.from_dict(result)
     # df.to_csv(Path.cwd().joinpath('result.csv'), index=None)
