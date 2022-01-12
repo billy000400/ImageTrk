@@ -2,7 +2,7 @@
 # @Date:   01-11-2022
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 01-11-2022
+# @Last modified time: 01-12-2022
 
 
 
@@ -45,13 +45,17 @@ if __name__ == "__main__":
     # load model weights
     weight_file_name = 'wcnn_01_weight_1_10.h5'
     print(Path.cwd().joinpath(weight_file_name))
-    model.load_weights(Path.cwd().joinpath(weight_file_name), by_name=True)
+    # model.load_weights(Path.cwd().joinpath(weight_file_name))
     model.summary()
     # set data generator
     val_generator = DataGeneratorV2(C.X_train_dir, C.Y1_train_dir, C.Y2_train_dir, batch_size=1)
 
     # evaluate model
-    adam = Adam()
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate=1e-4,
+        decay_steps=10000,
+        decay_rate=0.9)
+    adam = Adam(learning_rate=lr_schedule)
 
     class StdCallback(tf.keras.callbacks.Callback):
         accs = []
@@ -64,13 +68,16 @@ if __name__ == "__main__":
             print()
             print(f'accs_std:{accs.std()}')
 
-    classifier_loss = define_rpn_class_loss(1)
+    classifier_loss = define_rpn_class_loss(1, weight=C.weights)
     regressor_loss = define_rpn_regr_loss(10)
 
     model.compile(optimizer=adam, loss={'classifier': classifier_loss,\
                                         'regressor': regressor_loss},
-                                    metrics={'classifier': [unmasked_binary_accuracy, unmasked_precision, unmasked_recall, positive_number],\
+                                    metrics={'classifier': [unmasked_precision, unmasked_recall, positive_number],\
                                             'regressor': unmasked_IoU1D})
+    model.load_weights(Path.cwd().joinpath(weight_file_name))
+
+    # for layer in model.layers: print(layer.get_config(), layer.get_weights())
     result = model.evaluate(x=val_generator, return_dict=True)
     # result = {key:[value] for key, value in result.items()}
     # df = pd.DataFrame.from_dict(result)
