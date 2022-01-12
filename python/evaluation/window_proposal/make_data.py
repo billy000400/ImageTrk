@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
     C = wcnn_config(track_dir, data_dir)
 
-    dp_list = ['train_CeEndpoint-mix']
+    dp_list = ['val_CeEndpoint-mix']
     resolution = 256
     eventNum = 723
 
