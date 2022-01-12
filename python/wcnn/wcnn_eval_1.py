@@ -75,7 +75,6 @@ if __name__ == "__main__":
                                         'regressor': regressor_loss},
                                     metrics={'classifier': [unmasked_precision, unmasked_recall, positive_number],\
                                             'regressor': unmasked_IoU1D})
-    model.load_weights(Path.cwd().joinpath(weight_file_name))
 
     # for layer in model.layers: print(layer.get_config(), layer.get_weights())
     result = model.evaluate(x=val_generator)
