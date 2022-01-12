@@ -58,7 +58,7 @@ def train(C):
     # setup callbacks
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
     ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(model_weights_file),\
-                        monitor='loss', verbose=1,\
+                        monitor='val_loss', verbose=1,\
                         save_weights_only=True,\
                         save_best_only=True, mode='min', save_freq='epoch')
 
@@ -76,7 +76,7 @@ def train(C):
                 validation_data=val_generator,\
                 shuffle=True,\
                 callbacks = [CsvCallback, ModelCallback, tensorboard_callback],\
-                epochs=4000)
+                epochs=1000)
 
     model.evaluate(x=train_generator)
 
