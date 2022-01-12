@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     dp_list = ['val_CeEndpoint-mix']
     resolution = 256
-    eventNum = 723
+    eventNum = 231
 
     C.set_train_dp_list(dp_list)
     C.set_resolution(resolution)
