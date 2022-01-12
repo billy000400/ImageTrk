@@ -90,9 +90,9 @@ def make_data(C):
     data_dir.mkdir(parents=True, exist_ok=True)
 
     ### directories for numpy data
-    train_x_dir = data_dir.joinpath('X')
-    train_y1_dir = data_dir.joinpath('Y1')
-    train_y2_dir = data_dir.joinpath('Y2')
+    train_x_dir = data_dir.joinpath('X_train')
+    train_y1_dir = data_dir.joinpath('Y1_train')
+    train_y2_dir = data_dir.joinpath('Y2_train')
 
     shutil.rmtree(train_x_dir, ignore_errors=True)
     shutil.rmtree(train_y1_dir, ignore_errors=True)
