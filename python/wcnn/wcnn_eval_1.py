@@ -23,7 +23,7 @@ from matplotlib import pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 
-util_dir = Path.cwd().parent.parent.joinpath('Utility')
+util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
 from HitGenerators import Event_V2 as Event
