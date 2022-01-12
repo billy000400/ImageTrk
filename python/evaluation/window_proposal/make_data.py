@@ -54,8 +54,8 @@ def zt2map(zs, ts, res):
 
 def zt2vecs(hitsInTracks, tmin, tmax, res):
     step = (tmax-tmin)/res
-    vec1 = np.zeros(shape=(res,1,1), dtype=float)
-    vec2 = np.zeros(shape=(res,1,2), dtype=float)
+    vec1 = np.zeros(shape=(res,1,1), dtype=np.float)
+    vec2 = np.zeros(shape=(res,1,2), dtype=np.float)
     vec2[:] = np.nan
 
     for hitPerTrack in hitsInTracks:
