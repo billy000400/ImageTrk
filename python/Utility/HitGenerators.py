@@ -294,6 +294,7 @@ class Event_V2:
 
     def __count_event(self):
         eventNumMax = self.session.query(Particle.run, Particle.subRun, Particle.event).distinct().count()
+        print(eventNumMax)
         if self.eventNum is None:
             self.eventNum = eventNumMax
         elif eventNumMax < self.eventNum:

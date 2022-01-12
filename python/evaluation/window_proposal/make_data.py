@@ -28,7 +28,7 @@ def discretize(x, min, max, res):
     # return the discretized index of a value given a range and resolution
     step = (max-min)/res
     result = (x-min)//step
-    if result == res:
+    if result >= res:
         result = res-1
     return int(result)
 
@@ -40,9 +40,8 @@ def residue(x, min, max, res):
 def zt2map(zs, ts, res):
     # return a z-t ptcl number map
     map = np.zeros(shape=(res,res), dtype=float)
-    zmin = min(zs)
-    zmax = max(zs)
-    tmin, tmax = min(ts), max(ts)
+    zmin, zmax = -1520, 1520
+    tmin, tmax = -40, 1800
 
     for z, t in zip(zs, ts):
         zIdx = discretize(z, zmin, zmax, res)
@@ -138,7 +137,7 @@ def make_data(C):
         hits = [hit for hitsPerTrack in hitsInTracks for hit in hitsPerTrack]
         zs = [hit[2] for hit in hits]
         ts = [hit[3] for hit in hits]
-        tmin, tmax = min(ts), max(ts)
+        tmin, tmax = -40, 1800
 
         map = zt2map(zs, ts, C.resolution)
         [vec1, vec2] = zt2vecs(hitsInTracks, tmin, tmax, C.resolution)

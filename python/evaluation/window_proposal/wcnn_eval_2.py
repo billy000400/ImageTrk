@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   01-11-2022
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 01-11-2022
+
+
+
 ### This script is to visually compare the ground truth and the prediction
 ### made by WCNN
 import sys
@@ -18,6 +26,57 @@ from Information import *
 from HitGenerators import Event_V2 as Event
 from Abstract import *
 from Architectures import WCNN
+
+def take_score(w_p):
+    return w_p[2]
+
+def union1D(intv_a, intv_b, intersection):
+    w_a = intv_a[1]-intv_a[0]
+    w_b = intv_b[1]-intv_b[0]
+    return w_a+w_b-intersection
+
+def intersection1D(intv_a, intv_b):
+    # rec_a(b) should be (xmin, xmax, ymin, ymax)
+    w = min([intv_a[1], intv_b[1]]) - max([intv_a[0], intv_b[0]])
+    return max([w, 0])
+
+def iou1D(intv_a, intv_b):
+    overlap = intersection1D(intv_a, intv_b)
+    sum = union1D(intv_a, intv_b, overlap)
+    return overlap/sum
+
+
+def ap_1D(ws_t, ws_p, threshold=0.9):
+    ws_p_ordered = sorted(ws_p, key=take_score)
+    all_positive = len(ws_t)
+    TP, FP = 0, 0
+    precisions, recalls = [1.0], [0.0]
+    for w_p in ws_p_ordered:
+        iou_max = 0.0
+        argmax = None
+        for i, w_t in enumerate(ws_t):
+            iou = iou1D(w_t, w_p)
+            if iou > iou_max:
+                iou_max = iou
+                argmax = i
+        if iou_max < threshold:
+            FP += 1
+        else:
+            TP += 1
+            precisions.append(float(TP)/(TP+FP))
+            recalls.append(TP/all_positive)
+            del ws_t[argmax]
+
+    precisions.append(0.0)
+    recalls.append(1.0)
+
+    ap = 0.0
+    for i in range(len(recalls)-1):
+        dx = recalls[i+1] - recalls[i]
+        y = precisions[i+1]
+        ap += dx*y
+
+    return ap
 
 def plot_hits_and_windows(hit_all, track_all, windows):
 
@@ -78,12 +137,23 @@ if __name__ == "__main__":
         # obtain window truth
         windows_r = trk2windows(hits_filtered, trks_filtered)
         windows_r = np.array(windows_r)
+        gts = windows_r.tolist()
 
         # predict windows
         map = hit2ztmap(hits_filtered, 256)
         windows_p, scores = wcnn.propose(map)
         windows_p = np.array(windows_p)
-        print(windows_p.shape)
-        print(windows_r.shape)
+        scores = np.array(scores)
 
-        plot_hits_and_windows(hits_filtered, trks_filtered, windows_r)
+        preds = []
+        for window_p, score in zip(windows_p, scores):
+            preds.append([window_p[0], window_p[1], score])
+
+        ap = ap_1D(gts, preds)
+        print(ap)
+
+    print("over")
+        # print(windows_p.shape)
+        # print(windows_r.shape)
+
+        # plot_hits_and_windows(hits_filtered, trks_filtered, windows_r)
