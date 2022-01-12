@@ -68,7 +68,7 @@ if __name__ == "__main__":
             print()
             print(f'accs_std:{accs.std()}')
 
-    classifier_loss = define_rpn_class_loss(1, weight=C.weights)
+    classifier_loss = define_rpn_class_loss(1, weight=None)
     regressor_loss = define_rpn_regr_loss(10)
 
     model.compile(optimizer=adam, loss={'classifier': classifier_loss,\
