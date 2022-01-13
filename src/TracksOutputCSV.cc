@@ -55,7 +55,7 @@ using std::to_string;
 using CLHEP::Hep3Vector;
 
 namespace mu2e{
-	class TracksOutputSQL : public art::EDAnalyzer {
+	class TracksOutputCSV : public art::EDAnalyzer {
 
     public:
 			struct Config {
@@ -72,7 +72,7 @@ namespace mu2e{
 			// the following line is needed to enable art --print-description
 			typedef art::EDAnalyzer::Table<Config> Parameters;
 
-    	explicit TracksOutputSQL(const Parameters&);
+    	explicit TracksOutputCSV(const Parameters&);
       void analyze(const art::Event& event) override;
 			void beginJob() override;
       void endJob() override;
@@ -121,14 +121,14 @@ namespace mu2e{
     };
 
   // Constructor
-  TracksOutputSQL::TracksOutputSQL(Parameters const& conf)
+  TracksOutputCSV::TracksOutputCSV(Parameters const& conf)
 	: art::EDAnalyzer(conf)
 	, _conf(conf())
 	, _verbose(conf().verbose())
 	{}
 
 	// begin job
-	void TracksOutputSQL::beginJob(){
+	void TracksOutputCSV::beginJob(){
 		dataSetName = _conf.dataSetName();
 		create_DB(dataSetName);
 
@@ -139,14 +139,14 @@ namespace mu2e{
 	}
 
   // end job
-  void TracksOutputSQL::endJob(){
+  void TracksOutputCSV::endJob(){
 		Particle_writter.close();
 		StrawDigiMC_writter.close();
 		StrawHit_writter.close();
 	}
 
   // Analyzer
-  void TracksOutputSQL::analyze(const art::Event& event){
+  void TracksOutputCSV::analyze(const art::Event& event){
 
 		// Get run, subrun, and event number
 		runNum = event.run();
@@ -238,7 +238,7 @@ namespace mu2e{
 
   }// end of analyzer
 
-	void TracksOutputSQL::create_DB(std::string &dbName)
+	void TracksOutputCSV::create_DB(std::string &dbName)
 	{
 
 		std::cout << "Creating csv files for " << dbName << "\n";
@@ -294,14 +294,14 @@ namespace mu2e{
 	}
 
 	// append particle
-	void TracksOutputSQL::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
+	void TracksOutputCSV::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
 	{
 		Particle_writter << ptclId << "," << run << "," << subrun << "," << event << ",";
 		Particle_writter << track << "," << pdgId << "\n";
 	}
 
 	// append StrawDigiMC
-	void TracksOutputSQL::append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
+	void TracksOutputCSV::append_digi(int &digiId,int &ptclId, double &x, double &y, double &z, double &t, double &p, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
 		StrawDigiMC_writter << digiId << "," << ptclId << ",";
 		StrawDigiMC_writter << x << "," << y << "," << z << "," << t << "," << p << ",";
@@ -309,7 +309,7 @@ namespace mu2e{
 	}
 
 	// append StrawHit
-	void TracksOutputSQL::append_hit(int &hitId, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
+	void TracksOutputCSV::append_hit(int &hitId, int &ptclId, int &digiId, double &x, double &y, double &z, double &t, int &station, int &plane, int &panel, int &layer, int &straw, int &uniquePanel, int &uniqueFace, int &uniqueStraw)
 	{
 		StrawHit_writter << hitId << "," << ptclId << "," << digiId << ",";
 		StrawHit_writter << x << "," << y << "," << z << "," << t << ",";
@@ -317,5 +317,5 @@ namespace mu2e{
 	}
 } // end namespace mu2e
 
-using mu2e::TracksOutputSQL;
-DEFINE_ART_MODULE(mu2e::TracksOutputSQL);
+using mu2e::TracksOutputCSV;
+DEFINE_ART_MODULE(mu2e::TracksOutputCSV);
