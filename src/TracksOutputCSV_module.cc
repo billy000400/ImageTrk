@@ -265,8 +265,8 @@ namespace mu2e{
 
     // Check if an old database exists
     Particle_path = trkDir+dbName+"_Particle.csv";
-		StrawDigiMC_path = trkDir+dbName+"_Particle.csv";
-		StrawHit_path = trkDir+dbName+"_Particle.csv";
+		StrawDigiMC_path = trkDir+dbName+"_StrawDigiMC.csv";
+		StrawHit_path = trkDir+dbName+"_StrawHit.csv";
     bool oldDbExist1 = boost::filesystem::exists(Particle_path);
 		bool oldDbExist2 = boost::filesystem::exists(StrawDigiMC_path);
 		bool oldDbExist3 = boost::filesystem::exists(StrawHit_path);
