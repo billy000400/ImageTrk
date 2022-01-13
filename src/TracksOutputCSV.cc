@@ -278,9 +278,9 @@ namespace mu2e{
 		(oldDbExist3)?boost::filesystem::remove(StrawHit_path):true;
 
 		// connect the db
-		Particle_writter.open(Particle_path, ios::app);
-		StrawDigiMC_writter.open(StrawDigiMC_path, ios::app);
-		StrawHit_writter.open(StrawHit_path, ios::app);
+		Particle_writter.open(Particle_path, std::ios::app);
+		StrawDigiMC_writter.open(StrawDigiMC_path, std::ios::app);
+		StrawHit_writter.open(StrawHit_path, std::ios::app);
 
 		// create tables
 		Particle_writter << "id,run,subRun,event,track,pdgId\n";
