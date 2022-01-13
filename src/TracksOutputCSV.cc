@@ -114,9 +114,9 @@ namespace mu2e{
 			std::string StrawHit_path;
 
 			// table writters
-			ofstream Particle_writter;
-			ofstream StrawDigiMC_writter;
-			ofstream StrawHit_writter;
+			std::ofstream Particle_writter;
+			std::ofstream StrawDigiMC_writter;
+			std::ofstream StrawHit_writter;
     };
 
   // Constructor
