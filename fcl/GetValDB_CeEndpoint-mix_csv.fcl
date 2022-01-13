@@ -3,7 +3,7 @@
 #include "TrkHitReco/fcl/prolog.fcl"
 #include "Filters/fcl/prolog.fcl"
 
-process_name : TracksToSQL
+process_name : TracksToCSV
 
 source:{ module_type : RootInput
 	# fileNames : ["data/dig.Billy.muon.test.0003.art"]
