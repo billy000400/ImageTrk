@@ -18,6 +18,7 @@
 // Email: li000400@umn.edu
 
 // C++ include
+#include <ios>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -214,7 +215,7 @@ namespace mu2e{
 			// 'x, y, z
 			// corrected time
 			// strawId
-			strawHItID++;
+			strawHitID++;
       ComboHit const& ch = _chcol->at(istr);
       Hep3Vector pos_reco = ch.posCLHEP();
       double x_reco = pos_reco.x();
