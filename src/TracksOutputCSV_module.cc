@@ -283,21 +283,21 @@ namespace mu2e{
 		StrawHit_writter.open(StrawHit_path, std::ios::app);
 
 		// create tables
-		Particle_writter << "id,run,subRun,event,track,pdgId\n";
+		Particle_writter << "id,run,subRun,event,track,pdgId" << std::endl;
 
 		StrawDigiMC_writter << "id,particle,x,y,z,t,p,station,plane,panel,layer,"
-														"straw,uniquePanel,uniqueFace,uniqueStraw\n";
+														"straw,uniquePanel,uniqueFace,uniqueStraw" << std::endl;
 
 		StrawHit_writter << "id,particle,strawDigiMC,x_reco,y_reco,z_reco,t_reco,"
 												"station,plane,panel,layer,straw,"
-												"uniquePanel,uniqueFace,uniqueStraw\n";
+												"uniquePanel,uniqueFace,uniqueStraw" << std::endl;
 	}
 
 	// append particle
 	void TracksOutputCSV::append_ptcl(int &ptclId, int &run, int &subrun, int &event, int &track, int &pdgId)
 	{
 		Particle_writter << ptclId << "," << run << "," << subrun << "," << event << ",";
-		Particle_writter << track << "," << pdgId << "\n";
+		Particle_writter << track << "," << pdgId << std::endl;
 	}
 
 	// append StrawDigiMC
@@ -305,7 +305,7 @@ namespace mu2e{
 	{
 		StrawDigiMC_writter << digiId << "," << ptclId << ",";
 		StrawDigiMC_writter << x << "," << y << "," << z << "," << t << "," << p << ",";
-		StrawDigiMC_writter << station << "," << plane << "," << panel << "," << layer << "," << straw << "," << uniquePanel << "," << uniqueFace << "," << uniqueStraw << "\n";
+		StrawDigiMC_writter << station << "," << plane << "," << panel << "," << layer << "," << straw << "," << uniquePanel << "," << uniqueFace << "," << uniqueStraw << std::endl;
 	}
 
 	// append StrawHit
@@ -313,7 +313,7 @@ namespace mu2e{
 	{
 		StrawHit_writter << hitId << "," << ptclId << "," << digiId << ",";
 		StrawHit_writter << x << "," << y << "," << z << "," << t << ",";
-		StrawHit_writter << station << "," << plane << "," << panel << "," << layer << "," << straw << "," << uniquePanel << "," << uniqueFace << "," << uniqueStraw << "\n";
+		StrawHit_writter << station << "," << plane << "," << panel << "," << layer << "," << straw << "," << uniquePanel << "," << uniqueFace << "," << uniqueStraw << std::endl;
 	}
 } // end namespace mu2e
 
