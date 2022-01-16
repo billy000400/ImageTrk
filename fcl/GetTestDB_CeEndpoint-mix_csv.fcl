@@ -1,0 +1,65 @@
+#include "fcl/minimalMessageService.fcl"
+#include "fcl/standardServices.fcl"
+#include "TrkHitReco/fcl/prolog.fcl"
+#include "Filters/fcl/prolog.fcl"
+
+process_name : TracksToCSV
+
+source:{ module_type : RootInput
+	# fileNames : ["data/dig.Billy.muon.test.0003.art"]
+	#fileNames : ["data/dig.Billy.flateminus.FRCNN.0001.art"]
+	#fileNames : ["/mu2e/app/Tutorials_2019/data/dig.mu2e.CeEndpoint-mix-subset.MDC2018d.001002_00000000.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/15/dig.mu2e.CeEndpoint.MDC2018b.001002_00000192.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/4e/dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/04/b4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000149.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/10/d0/dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/15/31/dig.mu2e.CeEndpoint.MDC2018b.001002_00000150.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/18/02/dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/52/dig.mu2e.CeEndpoint.MDC2018b.001002_00000136.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/fa/dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/26/2f/dig.mu2e.CeEndpoint.MDC2018b.001002_00000169.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/27/b9/dig.mu2e.CeEndpoint.MDC2018b.001002_00000172.art"]
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/36/a4/dig.mu2e.CeEndpoint.MDC2018b.001002_00000012.art",
+								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/01/4e/dig.mu2e.CeEndpoint.MDC2018b.001002_00000020.art",
+								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/10/d0/dig.mu2e.CeEndpoint.MDC2018b.001002_00000014.art",
+								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/18/02/dig.mu2e.CeEndpoint.MDC2018b.001002_00000024.art",
+								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/19/fa/dig.mu2e.CeEndpoint.MDC2018b.001002_00000011.art",
+								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
+
+	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
+  fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/15/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00004724.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/26/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000651.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/2f/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002217.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/3f/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000406.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/4c/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000986.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/67/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002767.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/7b/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002850.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/7e/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000934.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/9a/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000006.art",
+                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/01/9e/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002594.art"]
+
+	maxEvents: -1
+}
+
+services : @local::Services.Reco
+
+physics:
+{
+
+		producers : {
+				@table::TrkHitReco.producers
+		}
+
+    analyzers : {
+        CHD : {
+          module_type : TracksOutputCSV
+					StrawDigiMCCollection : "compressDigiMCs"
+          ComboHitCollection : "makeSH"
+					dataSetName : "test_CeEndpoint-mix"
+        }
+    }
+
+	 MyTrigPath : [ @sequence::TrkHitReco.PrepareHits]
+   MyEndPath : [CHD]
+}
