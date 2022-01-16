@@ -2,7 +2,7 @@
 # @Date:   11-03-2021
 # @Email:  li000400@umn.edu
 # @Last modified by:   billyli
-# @Last modified time: 01-11-2022
+# @Last modified time: 01-16-2022
 
 
 
@@ -257,7 +257,7 @@ class Event:
 
 
 class Event_V2:
-    def __init__(self, db_files, hitNumCut=0, eventNum=None):
+    def __init__(self, db_files, hitNumCut=0, totNum=None):
         self.dbs = db_files
         self.hitNumCut = hitNumCut
 
@@ -267,20 +267,24 @@ class Event_V2:
         self.session = None
         self.__update_db()
 
-        self.eventNum = eventNum
+        self.totNum = totNum
+        self.eventNum = None
+        self.leftNum = None
         self.__count_event()
 
         self.ptclNums = []
         self.pdgIds = []
         self.strawHits = []
+        self.hitNum = None
 
         self.ptclNumIter = None
         self.pdgIdIter = None
         # self.strawHitIter = None
-        self.__make_iters()
 
-        self.current_ptclId = 1
-        self.current_hitId = 1
+        self.current_ptclId = None
+        self.current_hitId = None
+
+        self.__make_iters()
 
     def __connect_db(self):
         engine = create_engine('sqlite:///'+str(self.current_db))
@@ -294,14 +298,20 @@ class Event_V2:
 
     def __count_event(self):
         eventNumMax = self.session.query(Particle.run, Particle.subRun, Particle.event).distinct().count()
-        print(eventNumMax)
-        if self.eventNum is None:
+
+        if self.totNum == None:
             self.eventNum = eventNumMax
-        elif eventNumMax < self.eventNum:
-            pwarn(f"The required event number: {self.eventNum}\
-             is greater than the maximum: {eventNumMax}")
-            pwarn(f"Changing event number to maximum")
-            self.eventNum = eventNumMax
+            return
+
+        if self.leftNum is None:
+            self.eventNum = min([self.totNum, eventNumMax])
+            self.leftNum = self.totNum - self.eventNum
+        elif self.leftNum > 0:
+            self.eventNum = min([self.leftNum, eventNumMax])
+            self.leftNum = self.leftNum - self.eventNum
+        else:
+            self.eventNum = 0
+
 
     def __make_iters(self):
 
@@ -351,8 +361,14 @@ class Event_V2:
         self.ptclNumIter = iter(self.ptclNums)
         self.pdgIdIter = iter(self.pdgIds)
 
+        pinfo("Getting StrawHits")
         self.strawHits = self.session.query(StrawHit).order_by(StrawHit.particle).all()
+        self.hitNum = len(self.strawHits)
         # self.strawHitIter = iter(self.strawHits)
+
+        self.current_ptclId = 1
+        self.current_hitId = 1
+
         return
 
     def generate(self, mode='eval'):
@@ -368,7 +384,8 @@ class Event_V2:
             pinfo('Run out of particles')
             pinfo('Connecting to the next track database')
             self.__update_db()
-            self.__find_iters()
+            self.__count_event()
+            self.__make_iters()
             ptclNumInWindow = next(self.ptclNumIter)
             pdgIdsInWindow = next(self.pdgIdIter)
 
@@ -377,10 +394,14 @@ class Event_V2:
         trkIdx = 0
         for i in range(ptclNumInWindow):
             hitsPerPtcl = []
+
             while self.strawHits[self.current_hitId].particle == self.current_ptclId:
                 hit = self.strawHits[self.current_hitId]
                 hitsPerPtcl.append(hit)
                 self.current_hitId += 1
+                if self.current_hitId == self.hitNum:
+                    break
+
             self.current_ptclId += 1
             hitNum = len(hitsPerPtcl)
             if hitNum < self.hitNumCut:
@@ -395,6 +416,9 @@ class Event_V2:
             pdgId = next(pdgIdIter)
             track.append(pdgId)
             trkIdx += 1
+
+        if len(hits)==0:
+            print(ptclNumInWindow)
 
         if mode == 'eval':
             return hits, tracks

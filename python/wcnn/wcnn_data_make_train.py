@@ -1,3 +1,11 @@
+# @Author: Billy Li <billyli>
+# @Date:   01-12-2022
+# @Email:  li000400@umn.edu
+# @Last modified by:   billyli
+# @Last modified time: 01-16-2022
+
+
+
 import sys
 from pathlib import Path
 import shutil
@@ -48,8 +56,8 @@ def zt2map(zs, ts, res):
 
 def zt2vecs(hitsInTracks, tmin, tmax, res):
     step = (tmax-tmin)/res
-    vec1 = np.zeros(shape=(res,1,1), dtype=np.float)
-    vec2 = np.zeros(shape=(res,1,2), dtype=np.float)
+    vec1 = np.zeros(shape=(res,1,1), dtype=float)
+    vec2 = np.zeros(shape=(res,1,2), dtype=float)
     vec2[:] = np.nan
 
     for hitPerTrack in hitsInTracks:
@@ -105,7 +113,7 @@ def make_data(C):
     ## prepare event generator
     # Billy: I'm quite confident that all major tracks(e-) have more than 9 hits
     hitNumCut = 10
-    gen = Event(C.train_db_files, hitNumCut=hitNumCut)
+    gen = Event(C.train_db_files, hitNumCut=hitNumCut, totNum=C.eventNum)
 
     maps = []
     vec1s = []
@@ -177,7 +185,7 @@ if __name__ == "__main__":
 
     C = wcnn_config(track_dir, data_dir)
 
-    dp_list = ['train_CeEndpoint-mix']
+    dp_list = ['val_CeEndpoint-mix', 'train_CeEndpoint-mix']
     resolution = 256
     eventNum = 723
 
