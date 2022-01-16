@@ -276,7 +276,7 @@ class Event_V2:
 
         self.ptclNumIter = None
         self.pdgIdIter = None
-        self.strawHitIter = None
+        # self.strawHitIter = None
         self.__make_iters()
 
         self.current_ptclId = 1
@@ -352,7 +352,7 @@ class Event_V2:
         self.pdgIdIter = iter(self.pdgIds)
 
         self.strawHits = self.session.query(StrawHit).order_by(StrawHit.particle).all()
-        self.strawHitIter = iter(self.strawHits)
+        # self.strawHitIter = iter(self.strawHits)
         return
 
     def generate(self, mode='eval'):
