@@ -51,7 +51,7 @@ physics:
           module_type : TracksOutputCSV
 					StrawDigiMCCollection : "compressDigiMCs"
           ComboHitCollection : "makeSH"
-					dataSetName : "train_CeEndpoint-mix"
+					dataSetName : "train_CeEndpoint-mix_3"
         }
     }
 
