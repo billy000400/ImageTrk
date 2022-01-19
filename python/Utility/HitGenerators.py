@@ -282,7 +282,7 @@ class Event_V2:
         # self.strawHitIter = None
 
         self.current_ptclId = None
-        self.current_hitId = None
+        self.current_hitIdx = None
 
         self.__make_iters()
 
@@ -367,7 +367,7 @@ class Event_V2:
         # self.strawHitIter = iter(self.strawHits)
 
         self.current_ptclId = 1
-        self.current_hitId = 1
+        self.current_hitIdx = 0
 
         return
 
@@ -395,11 +395,11 @@ class Event_V2:
         for i in range(ptclNumInWindow):
             hitsPerPtcl = []
 
-            while self.strawHits[self.current_hitId].particle == self.current_ptclId:
-                hit = self.strawHits[self.current_hitId]
+            while self.strawHits[self.current_hitIdx].particle == self.current_ptclId:
+                hit = self.strawHits[self.current_hitIdx]
                 hitsPerPtcl.append(hit)
-                self.current_hitId += 1
-                if self.current_hitId == self.hitNum:
+                self.current_hitIdx += 1
+                if (self.current_hitIdx == self.hitNum):
                     break
 
             self.current_ptclId += 1
@@ -419,6 +419,9 @@ class Event_V2:
 
         if len(hits)==0:
             print(ptclNumInWindow)
+            print(self.current_hitIdx)
+            print(self.hitNum)
+            print(self.current_ptclId)
 
         if mode == 'eval':
             return hits, tracks

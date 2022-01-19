@@ -283,14 +283,14 @@ namespace mu2e{
 		StrawHit_writter.open(StrawHit_path, std::ios::app);
 
 		// create tables
-		Particle_writter << "id,run,subRun,event,track,pdgId" << std::endl;
-
-		StrawDigiMC_writter << "id,particle,x,y,z,t,p,station,plane,panel,layer,"
-														"straw,uniquePanel,uniqueFace,uniqueStraw" << std::endl;
-
-		StrawHit_writter << "id,particle,strawDigiMC,x_reco,y_reco,z_reco,t_reco,"
-												"station,plane,panel,layer,straw,"
-												"uniquePanel,uniqueFace,uniqueStraw" << std::endl;
+		// Particle_writter << "id,run,subRun,event,track,pdgId" << std::endl;
+		//
+		// StrawDigiMC_writter << "id,particle,x,y,z,t,p,station,plane,panel,layer,"
+		// 												"straw,uniquePanel,uniqueFace,uniqueStraw" << std::endl;
+		//
+		// StrawHit_writter << "id,particle,strawDigiMC,x_reco,y_reco,z_reco,t_reco,"
+		// 										"station,plane,panel,layer,straw,"
+		// 										"uniquePanel,uniqueFace,uniqueStraw" << std::endl;
 	}
 
 	// append particle
