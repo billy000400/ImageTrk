@@ -28,12 +28,7 @@ source:{ module_type : RootInput
 								#"/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint/MDC2018b/art/21/fc/dig.mu2e.CeEndpoint.MDC2018b.001002_00000044.art"]
 
 	#fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/DIOLeadingLog-cut-mix/MDC2018h/art/00/01/dig.mu2e.DIOLeadingLog-cut-mix.MDC2018h.001002_00005698.art"]
-  fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/08/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00004107.art",
-                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/09/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00003172.art",
-                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/0c/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00001520.art",
-                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/0e/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00003914.art",
-                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/1a/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00003299.art",
-                "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/1b/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002821.art",
+  fileNames : ["/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/1b/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00002821.art",
                 "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/1c/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00001024.art",
                 "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/1e/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00004403.art",
                 "/pnfs/mu2e/tape/phy-sim/dig/mu2e/CeEndpoint-mix/MDC2018d/art/0a/24/dig.mu2e.CeEndpoint-mix.MDC2018d.001002_00000324.art",
@@ -56,7 +51,7 @@ physics:
           module_type : TracksOutputCSV
 					StrawDigiMCCollection : "compressDigiMCs"
           ComboHitCollection : "makeSH"
-					dataSetName : "val_CeEndpoint-mix"
+					dataSetName : "val_CeEndpoint-mix_2"
         }
     }
 
