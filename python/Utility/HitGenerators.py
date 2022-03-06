@@ -272,9 +272,9 @@ class Event_V2:
         self.leftNum = None
         self.__count_event()
 
-        self.ptclNums = []
-        self.pdgIds = []
-        self.strawHits = []
+        self.ptclNums = None
+        self.pdgIds = None
+        self.strawHits = None
         self.hitNum = None
 
         self.ptclNumIter = None
@@ -314,6 +314,9 @@ class Event_V2:
 
 
     def __make_iters(self):
+
+        self.ptclNums = []
+        self.pdgIds = []
 
         ptcls = self.session.query(Particle).order_by(Particle.run, Particle.subRun, Particle.event).all()
         ptclIter = iter(ptcls)

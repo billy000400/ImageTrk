@@ -18,7 +18,7 @@ util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
 from Configuration import wcnn_config
-from Architectures import Img2Vec
+from Architectures import Img2VecV4
 from DataGenerator import DataGeneratorV2
 from Loss import *
 from Metric import *
@@ -41,7 +41,7 @@ def train(C):
     pinfo('I/O Path is configured')
 
     # build the model
-    model = Img2Vec(input_shape=(256, 256, 1)).get_model()
+    model = Img2VecV4(input_shape=(64, 64, 1)).get_model()
     model.summary()
 
     classifier_loss = define_rpn_class_loss(1, weight=C.weights)
@@ -57,6 +57,9 @@ def train(C):
 
     # setup callbacks
     CsvCallback = tf.keras.callbacks.CSVLogger(str(record_file), separator=",", append=False)
+
+    earlyStopCallback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
+
     ModelCallback = tf.keras.callbacks.ModelCheckpoint(str(model_weights_file),\
                         monitor='val_loss', verbose=1,\
                         save_weights_only=True,\
@@ -75,8 +78,8 @@ def train(C):
     model.fit(x=train_generator,
                 validation_data=val_generator,\
                 shuffle=True,\
-                callbacks = [CsvCallback, ModelCallback, tensorboard_callback],\
-                epochs=1000)
+                callbacks = [CsvCallback, ModelCallback, tensorboard_callback, earlyStopCallback],\
+                epochs=500)
 
     model.evaluate(x=train_generator)
 
@@ -98,8 +101,8 @@ if __name__ == "__main__":
     C = pickle.load(open(pickle_path,'rb'))
 
     # initialize parameters
-    model_name = 'wcnn_01_weight_1_10'
-    record_name = 'wcnn_record_01_weight_1_10'
+    model_name = 'wcnn_01_weight_1_10_res64_dropout0.3'
+    record_name = 'wcnn_record_01_weight_1_10_res64_dropout0.3s'
     C.set_outputs(model_name, record_name)
 
     C = train(C)

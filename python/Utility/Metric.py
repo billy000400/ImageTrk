@@ -97,7 +97,8 @@ def unmasked_precision(p_r, p_p):
     mmp_r = tf.boolean_mask(mp_r, mask=pred_positive_mask)
     true_positive = tf.math.reduce_sum(tf.cast(mmp_r==1, tf.float32))
 
-    return true_positive/pred_positive*100
+    precision = true_positive/pred_positive*100
+    return tf.where(tf.math.is_nan(precision), 0.0, precision) 
 
 def unmasked_recall(p_r, p_p):
     mask = ~tf.math.is_nan(p_r)

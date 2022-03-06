@@ -185,9 +185,14 @@ if __name__ == "__main__":
 
     C = wcnn_config(track_dir, data_dir)
 
-    dp_list = ['train_CeEndpoint-mix-fromCSV_1', 'train_CeEndpoint-mix-fromCSV_2']
-    resolution = 256
-    eventNum = 1500
+    dp_list = ['train_CeEndpoint-mix-fromCSV_1',\
+                'train_CeEndpoint-mix-fromCSV_3',\
+                'train_CeEndpoint-mix-fromCSV_2',\
+                'train_CeEndpoint-mix-fromCSV_4',\
+                'train_CeEndpoint-mix-fromCSV_5',\
+                'train_CeEndpoint-mix-fromCSV_6']
+    resolution = 64
+    eventNum = 5400
 
     C.set_train_dp_list(dp_list)
     C.set_resolution(resolution)

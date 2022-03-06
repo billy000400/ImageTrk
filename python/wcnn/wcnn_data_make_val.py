@@ -20,7 +20,7 @@ def discretize(x, min, max, res):
     # return the discretized index of a value given a range and resolution
     step = (max-min)/res
     result = (x-min)//step
-    if result == res:
+    if result >= res:
         result = res-1
     return int(result)
 
@@ -175,7 +175,8 @@ if __name__ == "__main__":
     pickle_path = cwd.joinpath('wcnn.config.pickle')
     C = pickle.load(open(pickle_path,'rb'))
 
-    dp_list = ['val_CeEndpoint-mix']
+    dp_list = ['val_CeEndpoint-mix-fromCSV_1',\
+                'val_CeEndpoint-mix-fromCSV_2']
     C.set_val_dp_list(dp_list)
 
     start = timeit.default_timer()
