@@ -7,16 +7,18 @@ from matplotlib import pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
-from HitGenerators import Event
+from HitGenerators import Event_V2 as Event
 
 track_dir = Path("../../tracks")
-db_files = [track_dir.joinpath('train_CeEndpoint-mix.db')]
+db_files = [track_dir.joinpath('train_CeEndpoint-mix-fromCSV_1.db')]
 
 # dist, db_files, hitNumCut=20):
-gen = Event(db_files, 10)
+
 
 windowNum = 100
 trackNums = []
+
+gen = Event(db_files, hitNumCut=20, totNum=windowNum)
 for idx in range(windowNum):
     sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
     if idx+1 == windowNum:
@@ -24,7 +26,7 @@ for idx in range(windowNum):
     sys.stdout.flush()
     hit_all, track_all = gen.generate(mode='eval')
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection='3d')
 
     for trkIdx, hitIdcPdgId in track_all.items():

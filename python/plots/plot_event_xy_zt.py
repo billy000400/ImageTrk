@@ -7,13 +7,14 @@ from matplotlib import pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
-from HitGenerators import Event
+from HitGenerators import Event_V2 as Event
 
 track_dir = Path("../../tracks")
 db_files = [track_dir.joinpath('train_CeEndpoint-mix.db')]
 
 # dist, db_files, hitNumCut=20):
-gen = Event(db_files, 10)
+windowNum = 100
+gen = Event(db_files, hitNumCut=10, totNum=windowNum)
 
 def cluster_hits_by_time(hit_all):
     clusters = []
@@ -34,11 +35,12 @@ def cluster_hits_by_time(hit_all):
             current_cluster=[hit]
         else:
             current_cluster.append(hit)
+    clusters.append(current_cluster)
 
     return clusters
 
 
-windowNum = 100
+
 trackNums = []
 for idx in range(windowNum):
     sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
@@ -67,10 +69,11 @@ for idx in range(windowNum):
         ts = [coord[3] for coord in cluster]
         ax2.scatter(zs, ts, alpha=1, label=clusterIdx)
 
-    ax3.legend()
     ax3.set(xlim=[-810, 810], ylim=[-810, 810])
 
-    ax1.legend()
+    ax1.set(xlabel='z', ylabel='t')
+
+    ax2.set(xlabel='z', ylabel='t')
 
     plt.show()
     plt.close()

@@ -2,6 +2,8 @@ data/*
 !data/plot_learningcurve.py
 !data/plot_window.py
 
+python/*/.ipynb_checkpoints
+
 tmp/
 weights/
 python/Utility/__pycache__

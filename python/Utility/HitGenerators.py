@@ -430,3 +430,177 @@ class Event_V2:
             return hits, tracks
         else:
             return hits
+
+class Event_MC:
+    def __init__(self, db_files, digiNumCut=0, totNum=None):
+        self.dbs = db_files
+        self.digiNumCut = digiNumCut
+
+        self.db_iter = iter(db_files)
+
+        self.current_db = None
+        self.session = None
+        self.__update_db()
+
+        self.totNum = totNum
+        self.eventNum = None
+        self.leftNum = None
+        self.__count_event()
+
+        self.ptclNums = None
+        self.pdgIds = None
+        self.strawDigiMCs = None
+        self.digiNum = None
+
+        self.ptclNumIter = None
+        self.pdgIdIter = None
+        # self.strawHitIter = None
+
+        self.current_ptclId = None
+        self.current_digiIdx = None
+
+        self.__make_iters()
+
+    def __connect_db(self):
+        engine = create_engine('sqlite:///'+str(self.current_db))
+        Session = sessionmaker(bind=engine) # session factory
+        session = Session() # session object
+        self.session = session
+
+    def __update_db(self):
+        self.current_db = next(self.db_iter)
+        self.__connect_db()
+
+    def __count_event(self):
+        eventNumMax = self.session.query(Particle.run, Particle.subRun, Particle.event).distinct().count()
+
+        if self.totNum == None:
+            self.eventNum = eventNumMax
+            return
+
+        if self.leftNum is None:
+            self.eventNum = min([self.totNum, eventNumMax])
+            self.leftNum = self.totNum - self.eventNum
+        elif self.leftNum > 0:
+            self.eventNum = min([self.leftNum, eventNumMax])
+            self.leftNum = self.leftNum - self.eventNum
+        else:
+            self.eventNum = 0
+
+
+    def __make_iters(self):
+
+        self.ptclNums = []
+        self.pdgIds = []
+
+        ptcls = self.session.query(Particle).order_by(Particle.run, Particle.subRun, Particle.event).all()
+        ptclIter = iter(ptcls)
+
+        runs = self.session.query(Particle.run).distinct().order_by(Particle.run).all()
+        scanEvtNum = 0
+        for run in runs:
+            if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                break
+            run = run[0]
+            subRuns = self.session.query(Particle.subRun)\
+                .filter(Particle.run==run)\
+                .distinct()\
+                .order_by(Particle.subRun)\
+                .all()
+            for subRun in subRuns:
+                if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                    break
+                subRun = subRun[0]
+                events = self.session.query(Particle.event)\
+                    .filter(Particle.run==run)\
+                    .filter(Particle.subRun==subRun)\
+                    .distinct()\
+                    .order_by(Particle.event)\
+                    .all()
+                for event in events:
+                    if ((self.eventNum!=None) and (scanEvtNum>=self.eventNum)):
+                        break
+                    sys.stdout.write(t_info(f'Getting ids for event: {scanEvtNum+1}/{self.eventNum}', special='\r'))
+                    sys.stdout.flush()
+                    event = event[0]
+                    ptclsInWindow = self.session.query(Particle)\
+                        .filter(Particle.run==run)\
+                        .filter(Particle.subRun==subRun)\
+                        .filter(Particle.event==event).all()
+                    ptclNumInWindow = len(ptclsInWindow)
+                    self.ptclNums.append(ptclNumInWindow)
+                    self.pdgIds.append([ptcl.pdgId for ptcl in ptclsInWindow])
+                    scanEvtNum += 1
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+
+
+        pinfo("Constructing iterators")
+        self.ptclNumIter = iter(self.ptclNums)
+        self.pdgIdIter = iter(self.pdgIds)
+
+        pinfo("Getting StrawDigiMCs")
+        self.strawDigiMCs = self.session.query(StrawDigiMC).order_by(StrawDigiMC.particle).all()
+        self.digiNum = len(self.strawDigiMCs)
+
+        self.current_ptclId = 1
+        self.current_digiIdx = 0
+
+        return
+
+    def generate(self, mode='eval'):
+        tracks = {}
+        digis = {}
+
+        try:
+            ptclNumInWindow = next(self.ptclNumIter)
+            pdgIdsInWindow = next(self.pdgIdIter)
+        except:
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            pinfo('Run out of particles')
+            pinfo('Connecting to the next track database')
+            self.__update_db()
+            self.__count_event()
+            self.__make_iters()
+            ptclNumInWindow = next(self.ptclNumIter)
+            pdgIdsInWindow = next(self.pdgIdIter)
+
+        pdgIdIter = iter(pdgIdsInWindow)
+
+        trkIdx = 0
+        for i in range(ptclNumInWindow):
+            digisPerPtcl = []
+
+            while self.strawDigiMCs[self.current_digiIdx].particle == self.current_ptclId:
+                digi = self.strawDigiMCs[self.current_digiIdx]
+                digisPerPtcl.append(digi)
+                self.current_digiIdx += 1
+                if (self.current_digiIdx == self.digiNum):
+                    break
+
+            self.current_ptclId += 1
+            digiNum = len(digisPerPtcl)
+            if digiNum < self.digiNumCut:
+                next(pdgIdIter)
+                continue
+            tracks[trkIdx] = []
+            track = tracks[trkIdx]
+            for digi in digisPerPtcl:
+                track.append(digi.id)
+                digis[digi.id] = (digi.x, digi.y, digi.z, digi.t)
+
+            pdgId = next(pdgIdIter)
+            track.append(pdgId)
+            trkIdx += 1
+
+        if len(digis)==0:
+            print(ptclNumInWindow)
+            print(self.current_digiIdx)
+            print(self.digiNum)
+            print(self.current_ptclId)
+
+        if mode == 'eval':
+            return digis, tracks
+        else:
+            return digis
