@@ -7,35 +7,39 @@ from matplotlib import pyplot as plt
 util_dir = Path.cwd().parent.joinpath('Utility')
 sys.path.insert(1, str(util_dir))
 from Information import *
-from HitGenerators import Event_V2 as Event
+from HitGenerators import Event_MC as Event
 
 track_dir = Path("../../tracks")
-db_files = [track_dir.joinpath('train_CeEndpoint-mix-fromCSV_1.db')]
+db_files = [track_dir.joinpath('train_CeEndpoint-mix.db')]
 
 # dist, db_files, hitNumCut=20):
 
-# find the longest track
-def findLongestTrk(tracks):
-    idx = None
-    lmax = 0
-    for trkIdx, hits in tracks.items():
-        l = len(hits)
-        if l > lmax:
-            idx=trkIdx
-    return trkIdx
 
-# find the smallest t among tracks
-def find_tmin(tracks):
-    ts = []
-    for trkIdx, hits in tracks.items():
-        for hit in hits:
-            ts.append(hit[3])
-    return min(ts)
+def cluster_hits_by_time(hit_all):
+    clusters = []
+    t_prev = -1
+    current_cluster = []
+    hits = [hit for hitIdx, hit in hit_all.items()]
+    hits.sort(key=lambda hit: hit[3])
+    for hit in hits:
+        t_curr = hit[3]
+        if t_prev==-1:
+            t_prev=t_curr
+            current_cluster.append(hit)
+            continue
+        delta_t = t_curr - t_prev
+        t_prev = t_curr
+        if delta_t > 30:
+            clusters.append(current_cluster)
+            current_cluster=[hit]
+        else:
+            current_cluster.append(hit)
+    clusters.append(current_cluster)
+
+    return clusters
 
 windowNum = 100
-trackNums = []
-
-gen = Event(db_files, hitNumCut=13, totNum=windowNum)
+gen = Event(db_files, digiNumCut=13, totNum=windowNum)
 for idx in range(windowNum):
     sys.stdout.write(t_info(f'Parsing windows {idx+1}/{windowNum}', special='\r'))
     if idx+1 == windowNum:
@@ -67,19 +71,17 @@ for idx in range(windowNum):
                 tracks_selected[trkIdx] = hitsInWindow
 
         # plot them
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection='3d')
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10,10))
 
         for trkIdx, hitsInWindow in tracks_selected.items():
             xs = [hit[0] for hit in hitsInWindow]
             ys = [hit[1] for hit in hitsInWindow]
             zs = [hit[2] for hit in hitsInWindow]
-            ax.scatter(xs, zs, ys, alpha=1, label=trkIdx)
+            ax1.scatter(xs, ys, alpha=1, label=trkIdx, s=2)
 
-        ax.set(xlim=[-810, 810], ylim=[-1600, 1600], zlim=[-810, 810])
-        ax.set(title=f'hits for t in [{tmin}, {tmin+100}]')
+        ax1.set(xlim=[-810, 810], ylim=[-810, 810], xlabel='x', ylabel='y')
+        ax1.legend()
 
-        ax.legend()
         plt.show()
         plt.close()
 
