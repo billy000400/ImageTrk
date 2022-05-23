@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 'train_CeEndpoint-mix-fromCSV_4',\
                 'train_CeEndpoint-mix-fromCSV_5',\
                 'train_CeEndpoint-mix-fromCSV_6']
-    resolution = 64
+    resolution = 128
     eventNum = 5400
 
     C.set_train_dp_list(dp_list)
